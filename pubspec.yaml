@@ -1,0 +1,46 @@
+name: fuzzyboard
+description: A responsive workflow engine dashboard built with Flutter.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.2
+
+  # Routing
+  go_router: ^14.0.0
+
+  # Animations
+  flutter_animate: ^4.5.0
+
+  # Charts
+  fl_chart: ^0.68.0
+
+  # Persistence
+  shared_preferences: ^2.2.3
+
+  # Typography
+  google_fonts: ^6.2.1
+
+  # Unique IDs
+  uuid: ^4.4.0
+
+  # Color picker
+  flutter_colorpicker: ^1.1.0
+
+  # Icons (cupertino + material)
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

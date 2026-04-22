@@ -1,0 +1,291 @@
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../../models/task.dart';
+import '../../models/workflow.dart';
+import '../../models/plugin.dart';
+
+/// Top-level application state provider.
+class AppProvider extends ChangeNotifier {
+  final _uuid = const Uuid();
+
+  // ── Event bus ─────────────────────────────────────────────────────────────
+  String _lastEvent = '';
+  String get lastEvent => _lastEvent;
+  void emitEvent(String event) {
+    _lastEvent = event;
+    notifyListeners();
+  }
+
+  // ── Dev Mode ──────────────────────────────────────────────────────────────
+  bool _devMode = false;
+  bool get devMode => _devMode;
+  void toggleDevMode() {
+    _devMode = !_devMode;
+    emitEvent('dev_mode_${_devMode ? 'on' : 'off'}');
+  }
+
+  final List<String> _logs = [];
+  List<String> get logs => List.unmodifiable(_logs);
+  void addLog(String msg) {
+    _logs.insert(0, '[${DateTime.now().toIso8601String()}] $msg');
+    if (_logs.length > 500) _logs.removeLast();
+    notifyListeners();
+  }
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+  final List<Task> _tasks = [
+    Task(
+      id: 'task-1',
+      name: 'Send Welcome Email',
+      description: 'Trigger a welcome email when a user signs up.',
+      status: TaskStatus.done,
+      priority: TaskPriority.high,
+      tags: ['email', 'onboarding'],
+    ),
+    Task(
+      id: 'task-2',
+      name: 'Process Payment',
+      description: 'Validate and process payment via Stripe.',
+      status: TaskStatus.inProgress,
+      priority: TaskPriority.critical,
+      tags: ['payment', 'stripe'],
+    ),
+    Task(
+      id: 'task-3',
+      name: 'Generate Report',
+      description: 'Compile weekly analytics report from DB.',
+      status: TaskStatus.todo,
+      priority: TaskPriority.medium,
+      tags: ['analytics'],
+    ),
+    Task(
+      id: 'task-4',
+      name: 'Sync CRM Data',
+      description: 'Synchronize customer data to external CRM.',
+      status: TaskStatus.todo,
+      priority: TaskPriority.low,
+      tags: ['crm', 'sync'],
+    ),
+  ];
+
+  List<Task> get tasks => List.unmodifiable(_tasks);
+
+  void addTask(Task task) {
+    _tasks.add(task);
+    addLog('Task created: ${task.name}');
+    emitEvent('task_created');
+  }
+
+  void updateTask(Task task) {
+    final idx = _tasks.indexWhere((t) => t.id == task.id);
+    if (idx != -1) {
+      _tasks[idx] = task;
+      addLog('Task updated: ${task.name}');
+      notifyListeners();
+    }
+  }
+
+  void deleteTask(String id) {
+    _tasks.removeWhere((t) => t.id == id);
+    addLog('Task deleted: $id');
+    emitEvent('task_deleted');
+  }
+
+  String generateId() => _uuid.v4();
+
+  // ── Workflows ─────────────────────────────────────────────────────────────
+  final List<Workflow> _workflows = [
+    Workflow(
+      id: 'wf-1',
+      name: 'User Onboarding',
+      description: 'Automates the full user onboarding flow.',
+      isActive: true,
+      runCount: 142,
+      nodes: [
+        WorkflowNode(
+          id: 'n1',
+          label: 'New Signup',
+          type: NodeType.trigger,
+          position: const Offset(80, 160),
+        ),
+        WorkflowNode(
+          id: 'n2',
+          label: 'Send Welcome Email',
+          type: NodeType.action,
+          position: const Offset(300, 160),
+        ),
+        WorkflowNode(
+          id: 'n3',
+          label: 'Wait 1 day',
+          type: NodeType.delay,
+          position: const Offset(520, 160),
+        ),
+        WorkflowNode(
+          id: 'n4',
+          label: 'Profile Complete?',
+          type: NodeType.condition,
+          position: const Offset(740, 160),
+        ),
+        WorkflowNode(
+          id: 'n5',
+          label: 'Send Reminder',
+          type: NodeType.action,
+          position: const Offset(960, 280),
+        ),
+        WorkflowNode(
+          id: 'n6',
+          label: 'Done',
+          type: NodeType.end,
+          position: const Offset(960, 60),
+        ),
+      ],
+      connections: [
+        WorkflowConnection(id: 'c1', fromNodeId: 'n1', toNodeId: 'n2'),
+        WorkflowConnection(id: 'c2', fromNodeId: 'n2', toNodeId: 'n3'),
+        WorkflowConnection(id: 'c3', fromNodeId: 'n3', toNodeId: 'n4'),
+        WorkflowConnection(
+            id: 'c4',
+            fromNodeId: 'n4',
+            toNodeId: 'n6',
+            type: ConnectionType.success,
+            label: 'Yes'),
+        WorkflowConnection(
+            id: 'c5',
+            fromNodeId: 'n4',
+            toNodeId: 'n5',
+            type: ConnectionType.failure,
+            label: 'No'),
+      ],
+    ),
+    Workflow(
+      id: 'wf-2',
+      name: 'Payment Processing',
+      description: 'Handles payment flow and failure recovery.',
+      isActive: false,
+      runCount: 89,
+    ),
+  ];
+
+  List<Workflow> get workflows => List.unmodifiable(_workflows);
+
+  void addWorkflow(Workflow wf) {
+    _workflows.add(wf);
+    addLog('Workflow created: ${wf.name}');
+    emitEvent('workflow_created');
+  }
+
+  void updateWorkflow(Workflow wf) {
+    final idx = _workflows.indexWhere((w) => w.id == wf.id);
+    if (idx != -1) {
+      _workflows[idx] = wf;
+      addLog('Workflow updated: ${wf.name}');
+      notifyListeners();
+    }
+  }
+
+  void deleteWorkflow(String id) {
+    _workflows.removeWhere((w) => w.id == id);
+    addLog('Workflow deleted: $id');
+    emitEvent('workflow_deleted');
+  }
+
+  void toggleWorkflow(String id) {
+    final idx = _workflows.indexWhere((w) => w.id == id);
+    if (idx != -1) {
+      _workflows[idx].isActive = !_workflows[idx].isActive;
+      addLog(
+          'Workflow ${_workflows[idx].name} ${_workflows[idx].isActive ? 'activated' : 'deactivated'}');
+      emitEvent('workflow_toggled');
+    }
+  }
+
+  // ── Plugins ───────────────────────────────────────────────────────────────
+  final List<Plugin> _plugins = [
+    Plugin(
+      id: 'pg-1',
+      name: 'HTTP Request',
+      description: 'Make HTTP requests to any endpoint.',
+      author: 'FuzzyBoard',
+      version: '1.0.0',
+      category: PluginCategory.action,
+      status: PluginStatus.active,
+      isInstalled: true,
+      rating: 4.8,
+      downloadCount: 12400,
+      iconEmoji: '🌐',
+    ),
+    Plugin(
+      id: 'pg-2',
+      name: 'Cron Trigger',
+      description: 'Schedule workflows with cron expressions.',
+      author: 'FuzzyBoard',
+      version: '1.2.1',
+      category: PluginCategory.trigger,
+      status: PluginStatus.active,
+      isInstalled: true,
+      rating: 4.9,
+      downloadCount: 9800,
+      iconEmoji: '⏰',
+    ),
+    Plugin(
+      id: 'pg-3',
+      name: 'Slack Notifier',
+      description: 'Send Slack messages from your workflows.',
+      author: 'Community',
+      version: '2.0.0',
+      category: PluginCategory.integration,
+      isInstalled: false,
+      rating: 4.5,
+      downloadCount: 7200,
+      iconEmoji: '💬',
+    ),
+    Plugin(
+      id: 'pg-4',
+      name: 'PostgreSQL',
+      description: 'Query and write to PostgreSQL databases.',
+      author: 'FuzzyBoard',
+      version: '1.5.0',
+      category: PluginCategory.integration,
+      status: PluginStatus.active,
+      isInstalled: true,
+      rating: 4.7,
+      downloadCount: 15300,
+      iconEmoji: '🐘',
+    ),
+    Plugin(
+      id: 'pg-5',
+      name: 'Email Sender',
+      description: 'Send emails via SMTP or API providers.',
+      author: 'FuzzyBoard',
+      version: '1.1.0',
+      category: PluginCategory.action,
+      isInstalled: false,
+      rating: 4.3,
+      downloadCount: 6100,
+      iconEmoji: '📧',
+    ),
+  ];
+
+  List<Plugin> get plugins => List.unmodifiable(_plugins);
+  List<Plugin> get installedPlugins => _plugins.where((p) => p.isInstalled).toList();
+
+  void installPlugin(String id) {
+    final idx = _plugins.indexWhere((p) => p.id == id);
+    if (idx != -1) {
+      _plugins[idx].isInstalled = true;
+      _plugins[idx].status = PluginStatus.active;
+      addLog('Plugin installed: ${_plugins[idx].name}');
+      emitEvent('plugin_installed');
+    }
+  }
+
+  void uninstallPlugin(String id) {
+    final idx = _plugins.indexWhere((p) => p.id == id);
+    if (idx != -1) {
+      _plugins[idx].isInstalled = false;
+      _plugins[idx].status = PluginStatus.inactive;
+      addLog('Plugin uninstalled: ${_plugins[idx].name}');
+      emitEvent('plugin_uninstalled');
+    }
+  }
+}

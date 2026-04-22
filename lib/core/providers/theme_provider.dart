@@ -42,7 +42,8 @@ class ThemeProvider extends ChangeNotifier {
     _seedColor = color;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    // Store as ARGB integer
-    await prefs.setInt('seedColor', color.toARGB32());
+    // Store as ARGB integer (color.value returns the ARGB int representation)
+    // ignore: deprecated_member_use
+    await prefs.setInt('seedColor', color.value);
   }
 }

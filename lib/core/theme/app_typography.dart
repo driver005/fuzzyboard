@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// All text styles for FuzzyBoard.
-/// Swap [GoogleFonts.interTextTheme] for any other Google Font family to
-/// instantly change the app-wide typography.
+/// Swap `GoogleFonts.interTextTheme(...)` for any other Google Font call to
+/// instantly change the app-wide typography (e.g. `GoogleFonts.poppinsTextTheme(...)`).
 class AppTypography {
   AppTypography._();
 

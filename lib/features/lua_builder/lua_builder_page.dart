@@ -1,0 +1,496 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/theme/app_typography.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_card.dart';
+
+/// Visual Lua Boolean Expression Builder.
+/// Supports simple boolean expressions: AND, OR, NOT, comparisons.
+class LuaBuilderPage extends StatefulWidget {
+  const LuaBuilderPage({super.key});
+
+  @override
+  State<LuaBuilderPage> createState() => _LuaBuilderPageState();
+}
+
+class _LuaBuilderPageState extends State<LuaBuilderPage> {
+  _ExpressionNode _root = _GroupNode(op: 'and');
+
+  String _toLua(_ExpressionNode node) {
+    if (node is _ConditionNode) {
+      if (node.left.isEmpty) return 'true';
+      final val = node.quoted ? '"${node.right}"' : node.right;
+      final expr = '${node.left} ${node.op} $val';
+      return node.negated ? 'not ($expr)' : expr;
+    } else if (node is _GroupNode) {
+      if (node.children.isEmpty) return 'true';
+      final parts =
+          node.children.map((c) => _toLua(c)).toList();
+      if (parts.length == 1) {
+        return node.negated ? 'not (${parts.first})' : parts.first;
+      }
+      final joined = parts.join(' ${node.op} ');
+      return node.negated ? 'not ($joined)' : '($joined)';
+    }
+    return 'true';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Lua Expression Builder'),
+        actions: [
+          AppButton(
+            label: 'Copy',
+            icon: const Icon(Icons.copy),
+            size: AppButtonSize.sm,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Lua expression copied!')),
+              );
+            },
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth > 700;
+          return wide
+              ? Row(
+                  children: [
+                    Expanded(
+                        flex: 3,
+                        child: _buildBuilder()),
+                    VerticalDivider(
+                        width: 1,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.2)),
+                    Expanded(
+                        flex: 2,
+                        child: _buildOutput()),
+                  ],
+                )
+              : DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      const TabBar(tabs: [
+                        Tab(text: 'Builder'),
+                        Tab(text: 'Lua Code'),
+                      ]),
+                      Expanded(
+                        child: TabBarView(children: [
+                          _buildBuilder(),
+                          _buildOutput(),
+                        ]),
+                      ),
+                    ],
+                  ),
+                );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBuilder() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header
+        AppCard(
+          title: '🌙 Lua Expression Builder',
+          subtitle: 'Build boolean logic visually',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Compose boolean expressions using AND, OR, NOT and comparison operators. '
+                'The result is valid Lua code you can paste into your workflow scripts.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6)),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(),
+        const SizedBox(height: 16),
+        // Root group
+        _buildGroupNode(_root as _GroupNode, isRoot: true),
+      ],
+    );
+  }
+
+  Widget _buildGroupNode(_GroupNode group, {bool isRoot = false}) {
+    final cs = Theme.of(context).colorScheme;
+    final groupColor = group.op == 'and'
+        ? const Color(0xFF3B82F6)
+        : const Color(0xFF8B5CF6);
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: groupColor, width: 3),
+        ),
+      ),
+      margin: const EdgeInsets.only(left: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Group header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+            child: Row(
+              children: [
+                // AND/OR toggle
+                ToggleButtons(
+                  isSelected: [group.op == 'and', group.op == 'or'],
+                  onPressed: (i) =>
+                      setState(() => group.op = i == 0 ? 'and' : 'or'),
+                  borderRadius: BorderRadius.circular(8),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 32),
+                  children: const [
+                    Text('AND', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text('OR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                // NOT toggle
+                _SmallToggle(
+                    label: 'NOT',
+                    active: group.negated,
+                    onTap: () => setState(() => group.negated = !group.negated)),
+                const Spacer(),
+                // Add condition
+                AppButton(
+                  label: 'Add Condition',
+                  icon: const Icon(Icons.add),
+                  size: AppButtonSize.sm,
+                  variant: AppButtonVariant.outline,
+                  onPressed: () => setState(() {
+                    group.children.add(_ConditionNode());
+                  }),
+                ),
+                const SizedBox(width: 6),
+                AppButton(
+                  label: 'Add Group',
+                  icon: const Icon(Icons.account_tree_outlined),
+                  size: AppButtonSize.sm,
+                  variant: AppButtonVariant.ghost,
+                  onPressed: () => setState(() {
+                    group.children.add(_GroupNode(op: 'and'));
+                  }),
+                ),
+                if (!isRoot) ...[
+                  const SizedBox(width: 6),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 16,
+                        color: cs.onSurface.withOpacity(0.4)),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => setState(() {
+                      _removeFromTree(_root as _GroupNode, group);
+                    }),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Children
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Column(
+              children: group.children.asMap().entries.map((e) {
+                final child = e.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: child is _GroupNode
+                      ? _buildGroupNode(child)
+                      : _buildConditionNode(child as _ConditionNode, group),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConditionNode(_ConditionNode node, _GroupNode parent) {
+    const ops = ['==', '~=', '>', '<', '>=', '<='];
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outline.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          // NOT toggle
+          _SmallToggle(
+              label: 'NOT',
+              active: node.negated,
+              onTap: () => setState(() => node.negated = !node.negated)),
+          const SizedBox(width: 8),
+          // Left operand
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'variable',
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none),
+                filled: true,
+              ),
+              controller: TextEditingController(text: node.left)
+                ..selection = TextSelection.collapsed(offset: node.left.length),
+              onChanged: (v) => node.left = v,
+              style: AppTypography.mono.copyWith(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Operator
+          SizedBox(
+            width: 70,
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: node.op,
+                items: ops
+                    .map((o) =>
+                        DropdownMenuItem(value: o, child: Text(o)))
+                    .toList(),
+                onChanged: (v) =>
+                    setState(() => node.op = v ?? node.op),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Right operand
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'value',
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none),
+                filled: true,
+              ),
+              onChanged: (v) => node.right = v,
+              style: AppTypography.mono.copyWith(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Quoted toggle
+          _SmallToggle(
+              label: '"str"',
+              active: node.quoted,
+              onTap: () => setState(() => node.quoted = !node.quoted)),
+          const SizedBox(width: 4),
+          // Delete
+          IconButton(
+            icon: Icon(Icons.close,
+                size: 16, color: cs.onSurface.withOpacity(0.4)),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => setState(() => parent.children.remove(node)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _removeFromTree(_GroupNode group, _GroupNode target) {
+    group.children.removeWhere((c) => c == target);
+    for (final child in group.children) {
+      if (child is _GroupNode) {
+        _removeFromTree(child, target);
+      }
+    }
+  }
+
+  Widget _buildOutput() {
+    final isDark =
+        Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final lua = _toLua(_root);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text('Generated Lua',
+                  style: Theme.of(context).textTheme.titleSmall),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('LIVE',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF8B5CF6),
+                        fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+        // Full script template
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF0D0D1A)
+                  : const Color(0xFFF5F5FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: SelectableText(
+              '-- FuzzyBoard Lua Expression\n-- Auto-generated by Lua Builder\n\nlocal function evaluate(ctx)\n  return $lua\nend\n\n-- Example usage:\n-- local result = evaluate({\n--   status = "active",\n--   count = 5,\n-- })',
+              style: AppTypography.mono.copyWith(
+                color: const Color(0xFF8B5CF6),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+        // Cheat sheet
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: AppCard(
+            title: '📖 Lua Cheatsheet',
+            child: _LuaCheatsheet(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LuaCheatsheet extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rows = [
+      ('==', 'Equal'),
+      ('~=', 'Not equal'),
+      ('>', 'Greater than'),
+      ('<', 'Less than'),
+      ('and', 'Logical AND'),
+      ('or', 'Logical OR'),
+      ('not', 'Logical NOT'),
+    ];
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      children: rows.map((r) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(r.$1,
+                  style: AppTypography.mono.copyWith(
+                      fontSize: 11, color: const Color(0xFF8B5CF6))),
+            ),
+            const SizedBox(width: 4),
+            Text(r.$2, style: theme.textTheme.bodySmall),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _SmallToggle extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _SmallToggle(
+      {required this.label, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: active
+              ? cs.primary.withOpacity(0.2)
+              : cs.onSurface.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: active ? cs.primary : cs.onSurface.withOpacity(0.5),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Expression tree nodes ─────────────────────────────────────────────────────
+
+abstract class _ExpressionNode {}
+
+class _GroupNode extends _ExpressionNode {
+  String op;
+  bool negated;
+  final List<_ExpressionNode> children;
+
+  _GroupNode({
+    required this.op,
+    this.negated = false,
+    List<_ExpressionNode>? children,
+  }) : children = children ?? [];
+}
+
+class _ConditionNode extends _ExpressionNode {
+  String left;
+  String op;
+  String right;
+  bool quoted;
+  bool negated;
+
+  _ConditionNode({
+    this.left = '',
+    this.op = '==',
+    this.right = '',
+    this.quoted = false,
+    this.negated = false,
+  });
+}

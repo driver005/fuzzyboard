@@ -67,9 +67,10 @@ class CmsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Callers mutate the [CmsContentType] object in-place; this method notifies listeners.
   void updateContentType(CmsContentType ct) {
-    final idx = contentTypes.indexWhere((t) => t.id == ct.id);
-    if (idx != -1) { contentTypes[idx] = ct; notifyListeners(); }
+    assert(contentTypes.any((t) => t.id == ct.id), 'updateContentType: id not found');
+    notifyListeners();
   }
 
   void deleteContentType(String id) {
@@ -132,9 +133,10 @@ class CmsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Callers mutate the [CmsEntry] object in-place; this method notifies listeners.
   void updateEntry(CmsEntry entry) {
-    final idx = entries.indexWhere((e) => e.id == entry.id);
-    if (idx != -1) { entries[idx] = entry; notifyListeners(); }
+    assert(entries.any((e) => e.id == entry.id), 'updateEntry: id not found');
+    notifyListeners();
   }
 
   void deleteEntry(String id) {
@@ -195,9 +197,10 @@ class CmsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Callers mutate the [CmsPage] object in-place; this method notifies listeners.
   void updatePage(CmsPage page) {
-    final idx = pages.indexWhere((p) => p.id == page.id);
-    if (idx != -1) { pages[idx] = page; notifyListeners(); }
+    assert(pages.any((p) => p.id == page.id), 'updatePage: id not found');
+    notifyListeners();
   }
 
   void deletePage(String id) {
@@ -219,9 +222,10 @@ class CmsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Callers mutate the [CmsCategory] object in-place; this method notifies listeners.
   void updateCategory(CmsCategory cat) {
-    final idx = categories.indexWhere((c) => c.id == cat.id);
-    if (idx != -1) { categories[idx] = cat; notifyListeners(); }
+    assert(categories.any((c) => c.id == cat.id), 'updateCategory: id not found');
+    notifyListeners();
   }
 
   void deleteCategory(String id) {

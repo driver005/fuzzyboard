@@ -16,43 +16,48 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ── Settings flags ────────────────────────────────────────────────────────
-  bool showAvatar = true;
-  bool reducedMotion = false;
-  bool verboseLogging = false;
-  bool autoSave = true;
+  bool _showAvatar = true;
+  bool _reducedMotion = false;
+  bool _verboseLogging = false;
+  bool _autoSave = true;
+
+  bool get showAvatar => _showAvatar;
+  bool get reducedMotion => _reducedMotion;
+  bool get verboseLogging => _verboseLogging;
+  bool get autoSave => _autoSave;
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    showAvatar = prefs.getBool('showAvatar') ?? true;
-    reducedMotion = prefs.getBool('reducedMotion') ?? false;
-    verboseLogging = prefs.getBool('verboseLogging') ?? false;
-    autoSave = prefs.getBool('autoSave') ?? true;
+    _showAvatar = prefs.getBool('showAvatar') ?? true;
+    _reducedMotion = prefs.getBool('reducedMotion') ?? false;
+    _verboseLogging = prefs.getBool('verboseLogging') ?? false;
+    _autoSave = prefs.getBool('autoSave') ?? true;
     notifyListeners();
   }
 
-  void setShowAvatar(bool v) async {
-    showAvatar = v;
+  Future<void> setShowAvatar(bool v) async {
+    _showAvatar = v;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('showAvatar', v);
   }
 
-  void setReducedMotion(bool v) async {
-    reducedMotion = v;
+  Future<void> setReducedMotion(bool v) async {
+    _reducedMotion = v;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('reducedMotion', v);
   }
 
-  void setVerboseLogging(bool v) async {
-    verboseLogging = v;
+  Future<void> setVerboseLogging(bool v) async {
+    _verboseLogging = v;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('verboseLogging', v);
   }
 
-  void setAutoSave(bool v) async {
-    autoSave = v;
+  Future<void> setAutoSave(bool v) async {
+    _autoSave = v;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('autoSave', v);

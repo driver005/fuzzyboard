@@ -210,7 +210,7 @@ class _NavTile extends StatelessWidget {
 
     return Tooltip(
       message: collapsed ? item.label : '',
-      placement: TooltipPlacement.right,
+      preferBelow: false,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         decoration: isActive

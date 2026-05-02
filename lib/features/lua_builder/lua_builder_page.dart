@@ -14,7 +14,7 @@ class LuaBuilderPage extends StatefulWidget {
 }
 
 class _LuaBuilderPageState extends State<LuaBuilderPage> {
-  _ExpressionNode _root = _GroupNode(op: 'and');
+  final _ExpressionNode _root = _GroupNode(op: 'and');
 
   String _toLua(_ExpressionNode node) {
     if (node is _ConditionNode) {
@@ -24,8 +24,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
       return node.negated ? 'not ($expr)' : expr;
     } else if (node is _GroupNode) {
       if (node.children.isEmpty) return 'true';
-      final parts =
-          node.children.map((c) => _toLua(c)).toList();
+      final parts = node.children.map((c) => _toLua(c)).toList();
       if (parts.length == 1) {
         return node.negated ? 'not (${parts.first})' : parts.first;
       }
@@ -37,8 +36,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -50,8 +48,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             size: AppButtonSize.sm,
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Lua expression copied!')),
+                const SnackBar(content: Text('Lua expression copied!')),
               );
             },
           ),
@@ -64,18 +61,14 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
           return wide
               ? Row(
                   children: [
-                    Expanded(
-                        flex: 3,
-                        child: _buildBuilder()),
+                    Expanded(flex: 3, child: _buildBuilder()),
                     VerticalDivider(
                         width: 1,
                         color: Theme.of(context)
                             .colorScheme
                             .outline
                             .withOpacity(0.2)),
-                    Expanded(
-                        flex: 2,
-                        child: _buildOutput()),
+                    Expanded(flex: 2, child: _buildOutput()),
                   ],
                 )
               : DefaultTabController(
@@ -132,11 +125,13 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
 
   Widget _buildGroupNode(_GroupNode group, {bool isRoot = false}) {
     final cs = Theme.of(context).colorScheme;
-    final groupColor = group.op == 'and'
-        ? const Color(0xFF3B82F6)
-        : const Color(0xFF8B5CF6);
+    final groupColor =
+        group.op == 'and' ? const Color(0xFF3B82F6) : const Color(0xFF8B5CF6);
 
     return Container(
+      // Add this — forces the container (and its Row children) to
+      // fill the available width rather than size to content
+      width: double.infinity,
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(color: groupColor, width: 3),
@@ -146,31 +141,33 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Group header
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
             child: Row(
               children: [
-                // AND/OR toggle
                 ToggleButtons(
                   isSelected: [group.op == 'and', group.op == 'or'],
                   onPressed: (i) =>
                       setState(() => group.op = i == 0 ? 'and' : 'or'),
                   borderRadius: BorderRadius.circular(8),
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 32),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 32),
                   children: const [
-                    Text('AND', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    Text('OR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text('AND',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text('OR',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(width: 8),
-                // NOT toggle
                 _SmallToggle(
                     label: 'NOT',
                     active: group.negated,
-                    onTap: () => setState(() => group.negated = !group.negated)),
+                    onTap: () =>
+                        setState(() => group.negated = !group.negated)),
                 const Spacer(),
-                // Add condition
                 AppButton(
                   label: 'Add Condition',
                   icon: const Icon(Icons.add),
@@ -193,8 +190,8 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
                 if (!isRoot) ...[
                   const SizedBox(width: 6),
                   IconButton(
-                    icon: Icon(Icons.close, size: 16,
-                        color: cs.onSurface.withOpacity(0.4)),
+                    icon: Icon(Icons.close,
+                        size: 16, color: cs.onSurface.withOpacity(0.4)),
                     visualDensity: VisualDensity.compact,
                     onPressed: () => setState(() {
                       _removeFromTree(_root as _GroupNode, group);
@@ -204,10 +201,11 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
               ],
             ),
           ),
-          // Children
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Column(
+              // Add this too — same issue would occur in nested columns
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: group.children.asMap().entries.map((e) {
                 final child = e.value;
                 return Padding(
@@ -270,11 +268,9 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
               child: DropdownButton<String>(
                 value: node.op,
                 items: ops
-                    .map((o) =>
-                        DropdownMenuItem(value: o, child: Text(o)))
+                    .map((o) => DropdownMenuItem(value: o, child: Text(o)))
                     .toList(),
-                onChanged: (v) =>
-                    setState(() => node.op = v ?? node.op),
+                onChanged: (v) => setState(() => node.op = v ?? node.op),
               ),
             ),
           ),
@@ -324,8 +320,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
   }
 
   Widget _buildOutput() {
-    final isDark =
-        Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     final lua = _toLua(_root);
 
     return Column(
@@ -339,8 +334,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
                   style: Theme.of(context).textTheme.titleSmall),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFF8B5CF6).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(6),
@@ -360,9 +354,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF0D0D1A)
-                  : const Color(0xFFF5F5FF),
+              color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F5FF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: SelectableText(
@@ -415,8 +407,8 @@ class _LuaCheatsheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(r.$1,
-                  style: AppTypography.mono.copyWith(
-                      fontSize: 11, color: const Color(0xFF8B5CF6))),
+                  style: AppTypography.mono
+                      .copyWith(fontSize: 11, color: const Color(0xFF8B5CF6))),
             ),
             const SizedBox(width: 4),
             Text(r.$2, style: theme.textTheme.bodySmall),
@@ -442,8 +434,7 @@ class _SmallToggle extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: active
               ? cs.primary.withOpacity(0.2)

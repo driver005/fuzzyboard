@@ -72,7 +72,6 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
 
   void _onNodeTap(String id) {
     if (_connecting && _connectFromId != null && _connectFromId != id) {
-      // Create connection
       final conn = WorkflowConnection(
         id: _uuid.v4(),
         fromNodeId: _connectFromId!,
@@ -131,9 +130,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       ),
       body: Row(
         children: [
-          // Left panel – node palette
           _NodePalette(onAdd: _addNode),
-          // Canvas
           Expanded(
             child: Stack(
               children: [
@@ -283,7 +280,9 @@ class _PaletteItem extends StatelessWidget {
               const SizedBox(height: 4),
               Text(type.name,
                   style: TextStyle(
-                      fontSize: 9, color: color, fontWeight: FontWeight.w600)),
+                      fontSize: 9,
+                      color: color,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -344,7 +343,6 @@ class _NodeWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
@@ -370,7 +368,6 @@ class _NodeWidget extends StatelessWidget {
                 ],
               ),
             ),
-            // Body
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Text(
@@ -381,7 +378,6 @@ class _NodeWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // Actions
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
               child: Row(
@@ -473,99 +469,109 @@ class _NodeConfigPanelState extends State<_NodeConfigPanel> {
     final isDark = cs.brightness == Brightness.dark;
     final color = WorkflowNode.colorForType(widget.node.type);
 
-    return Material(
-      elevation: 8,
-      color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              border: Border(
-                  bottom: BorderSide(color: cs.outline.withOpacity(0.2))),
-            ),
-            child: Row(
-              children: [
-                Icon(WorkflowNode.iconForType(widget.node.type),
-                    color: color, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text('Configure Node',
-                      style: theme.textTheme.titleSmall),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: widget.onClose,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    // FIX 1: SizedBox.expand() gives the Material full height so the inner
+    //         Expanded child has a finite constraint to work against.
+    // FIX 2: shadowColor must be fully opaque — semi-transparent Colors.black26
+    //         triggers the material.dart:209 assertion on Flutter web.
+    return SizedBox.expand(
+      child: Material(
+        elevation: 8,
+        color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+        shadowColor: Colors.black,
+        surfaceTintColor: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                border: Border(
+                    bottom:
+                        BorderSide(color: cs.outline.withOpacity(0.2))),
+              ),
+              child: Row(
                 children: [
-                  Text('Label',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _label,
-                    decoration: InputDecoration(
-                      hintText: 'Node label',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                    ),
-                    onChanged: (v) {
-                      widget.node.label = v;
-                      widget.onUpdate(widget.node);
-                    },
+                  Icon(WorkflowNode.iconForType(widget.node.type),
+                      color: color, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Configure Node',
+                        style: theme.textTheme.titleSmall),
                   ),
-                  const SizedBox(height: 16),
-                  Text('Type',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(WorkflowNode.iconForType(widget.node.type),
-                            color: color, size: 16),
-                        const SizedBox(width: 8),
-                        Text(widget.node.type.name,
-                            style: TextStyle(
-                                color: color, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: widget.onClose,
+                    visualDensity: VisualDensity.compact,
                   ),
-                  const SizedBox(height: 16),
-                  Text('ID',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Text(widget.node.id,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                          color: cs.onSurface.withOpacity(0.5))),
                 ],
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Label',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _label,
+                      decoration: InputDecoration(
+                        hintText: 'Node label',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                      ),
+                      onChanged: (v) {
+                        widget.node.label = v;
+                        widget.onUpdate(widget.node);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Type',
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(WorkflowNode.iconForType(widget.node.type),
+                              color: color, size: 16),
+                          const SizedBox(width: 8),
+                          Text(widget.node.type.name,
+                              style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('ID',
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Text(widget.node.id,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            fontFamily: 'monospace',
+                            color: cs.onSurface.withOpacity(0.5))),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -639,19 +645,19 @@ class _ConnectionsPainter extends CustomPainter {
 
       canvas.drawPath(path, paint);
 
-      // Arrowhead – use the curve's tangent at the end point
       final arrowPaint = Paint()
         ..color = color.withOpacity(0.7)
         ..style = PaintingStyle.fill;
       const arrowSize = 8.0;
-      // Approximate tangent direction at the end of the bezier using cp2→end
       final dx = end.dx - cp2.dx;
       final dy = end.dy - cp2.dy;
       final angle = math.atan2(dy, dx);
-      final p1 = end + Offset(arrowSize * math.cos(angle + 2.5),
-          arrowSize * math.sin(angle + 2.5));
-      final p2 = end + Offset(arrowSize * math.cos(angle - 2.5),
-          arrowSize * math.sin(angle - 2.5));
+      final p1 = end +
+          Offset(arrowSize * math.cos(angle + 2.5),
+              arrowSize * math.sin(angle + 2.5));
+      final p2 = end +
+          Offset(arrowSize * math.cos(angle - 2.5),
+              arrowSize * math.sin(angle - 2.5));
       canvas.drawPath(
           Path()
             ..moveTo(end.dx, end.dy)

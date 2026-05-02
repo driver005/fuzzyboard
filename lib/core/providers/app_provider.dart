@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../../models/task.dart';
 import '../../models/workflow.dart';
 import '../../models/plugin.dart';
+import '../../models/chat_message.dart';
+import '../../models/page_widget.dart';
 
 /// Top-level application state provider.
 class AppProvider extends ChangeNotifier {
@@ -287,5 +289,59 @@ class AppProvider extends ChangeNotifier {
       addLog('Plugin uninstalled: ${_plugins[idx].name}');
       emitEvent('plugin_uninstalled');
     }
+  }
+
+  // ── Chat Messages ─────────────────────────────────────────────────────────
+  final List<ChatMessage> chatMessages = [
+    ChatMessage(
+      id: 'cm-1',
+      role: ChatRole.assistant,
+      text: 'Hey! I\'m FuzzyAI 🤖 — your AI assistant. Ask me anything about your workflows or tasks!',
+      timestamp: DateTime(2024, 1, 1, 0, 0),
+    ),
+    ChatMessage(
+      id: 'cm-2',
+      role: ChatRole.user,
+      text: 'How many tasks do I have?',
+      timestamp: DateTime(2024, 1, 1, 0, 1),
+    ),
+    ChatMessage(
+      id: 'cm-3',
+      role: ChatRole.assistant,
+      text: 'You currently have 4 tasks. 1 is done, 1 is in progress, and 2 are pending. 💪',
+      timestamp: DateTime(2024, 1, 1, 0, 1),
+    ),
+  ];
+
+  void addChatMessage(ChatMessage message) {
+    chatMessages.add(message);
+    notifyListeners();
+  }
+
+  // ── Voice Commands ────────────────────────────────────────────────────────
+  final List<String> voiceCommands = [
+    'Show me the dashboard',
+    'How many workflows are active?',
+    'Navigate to tasks',
+    'Create a new workflow',
+  ];
+
+  void addVoiceCommand(String command) {
+    voiceCommands.insert(0, command);
+    if (voiceCommands.length > 50) voiceCommands.removeLast();
+    notifyListeners();
+  }
+
+  // ── Page Widgets ──────────────────────────────────────────────────────────
+  final List<PageWidget> pageWidgets = [];
+
+  void addPageWidget(PageWidget widget) {
+    pageWidgets.add(widget);
+    notifyListeners();
+  }
+
+  void removePageWidget(String id) {
+    pageWidgets.removeWhere((w) => w.id == id);
+    notifyListeners();
   }
 }

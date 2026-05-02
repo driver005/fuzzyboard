@@ -65,6 +65,30 @@ const _navItems = [
     route: '/lua',
   ),
   _NavItem(
+    label: 'Search',
+    icon: Icons.search_outlined,
+    activeIcon: Icons.search,
+    route: '/search',
+  ),
+  _NavItem(
+    label: 'AI Chat',
+    icon: Icons.chat_outlined,
+    activeIcon: Icons.chat,
+    route: '/chat',
+  ),
+  _NavItem(
+    label: 'Voice',
+    icon: Icons.mic_outlined,
+    activeIcon: Icons.mic,
+    route: '/voice',
+  ),
+  _NavItem(
+    label: 'Page Builder',
+    icon: Icons.dashboard_customize_outlined,
+    activeIcon: Icons.dashboard_customize,
+    route: '/builder',
+  ),
+  _NavItem(
     label: 'Dev Mode',
     icon: Icons.bug_report_outlined,
     activeIcon: Icons.bug_report,

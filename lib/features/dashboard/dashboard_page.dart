@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../models/task.dart';
 import '../../models/workflow.dart';
 import '../../shared/layout/responsive_layout.dart';
+import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/avatar_widget.dart';
 
@@ -15,12 +17,23 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
+    final userProvider = context.watch<UserProvider>();
     final mobile = isMobile(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          AppButton(
+            label: userProvider.isAdmin ? 'Admin View' : 'User View',
+            icon: const Icon(Icons.switch_account),
+            size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
+            onPressed: () => userProvider.switchRole(
+              userProvider.isAdmin ? UserRole.user : UserRole.admin,
+            ),
+          ),
+          const SizedBox(width: 8),
           if (mobile) const Padding(
             padding: EdgeInsets.only(right: 12),
             child: AvatarWidget(size: 40),
@@ -30,7 +43,7 @@ class DashboardPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _WelcomeBanner(),
+          _WelcomeBanner(isAdmin: userProvider.isAdmin),
           const SizedBox(height: 20),
           // Stat cards
           ResponsiveGrid(
@@ -93,6 +106,9 @@ class DashboardPage extends StatelessWidget {
 }
 
 class _WelcomeBanner extends StatelessWidget {
+  final bool isAdmin;
+  const _WelcomeBanner({required this.isAdmin});
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -125,6 +141,24 @@ class _WelcomeBanner extends StatelessWidget {
                       .bodyMedium
                       ?.copyWith(color: Colors.white.withOpacity(0.85)),
                 ),
+                if (isAdmin) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
+                        SizedBox(width: 4),
+                        Text('Admin Dashboard', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

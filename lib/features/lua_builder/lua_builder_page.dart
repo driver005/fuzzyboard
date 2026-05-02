@@ -223,91 +223,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
   }
 
   Widget _buildConditionNode(_ConditionNode node, _GroupNode parent) {
-    const ops = ['==', '~=', '>', '<', '>=', '<='];
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: cs.outline.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          // NOT toggle
-          _SmallToggle(
-              label: 'NOT',
-              active: node.negated,
-              onTap: () => setState(() => node.negated = !node.negated)),
-          const SizedBox(width: 8),
-          // Left operand
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'variable',
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none),
-                filled: true,
-              ),
-              controller: TextEditingController(text: node.left)
-                ..selection = TextSelection.collapsed(offset: node.left.length),
-              onChanged: (v) => node.left = v,
-              style: AppTypography.mono.copyWith(fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Operator
-          SizedBox(
-            width: 70,
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: node.op,
-                items: ops
-                    .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-                    .toList(),
-                onChanged: (v) => setState(() => node.op = v ?? node.op),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Right operand
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'value',
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none),
-                filled: true,
-              ),
-              onChanged: (v) => node.right = v,
-              style: AppTypography.mono.copyWith(fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Quoted toggle
-          _SmallToggle(
-              label: '"str"',
-              active: node.quoted,
-              onTap: () => setState(() => node.quoted = !node.quoted)),
-          const SizedBox(width: 4),
-          // Delete
-          IconButton(
-            icon: Icon(Icons.close,
-                size: 16, color: cs.onSurface.withOpacity(0.4)),
-            visualDensity: VisualDensity.compact,
-            onPressed: () => setState(() => parent.children.remove(node)),
-          ),
-        ],
-      ),
-    );
+    return _ConditionRow(node: node, parent: parent, onChanged: () => setState(() {}));
   }
 
   void _removeFromTree(_GroupNode group, _GroupNode target) {
@@ -449,6 +365,132 @@ class _SmallToggle extends StatelessWidget {
             color: active ? cs.primary : cs.onSurface.withOpacity(0.5),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Condition Row ─────────────────────────────────────────────────────────────
+
+class _ConditionRow extends StatefulWidget {
+  final _ConditionNode node;
+  final _GroupNode parent;
+  final VoidCallback onChanged;
+
+  const _ConditionRow({
+    required this.node,
+    required this.parent,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ConditionRow> createState() => _ConditionRowState();
+}
+
+class _ConditionRowState extends State<_ConditionRow> {
+  late TextEditingController leftController;
+  late TextEditingController rightController;
+
+  @override
+  void initState() {
+    super.initState();
+    leftController = TextEditingController(text: widget.node.left);
+    rightController = TextEditingController(text: widget.node.right);
+  }
+
+  @override
+  void dispose() {
+    leftController.dispose();
+    rightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const ops = ['==', '~=', '>', '<', '>=', '<='];
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outline.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          _SmallToggle(
+            label: 'NOT',
+            active: widget.node.negated,
+            onTap: () {
+              widget.node.negated = !widget.node.negated;
+              widget.onChanged();
+            },
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'variable',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                filled: true,
+              ),
+              controller: leftController,
+              onChanged: (v) {
+                widget.node.left = v;
+                widget.onChanged();
+              },
+              style: AppTypography.mono.copyWith(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 70,
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: widget.node.op,
+                items: ops.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+                onChanged: (v) {
+                  widget.node.op = v ?? widget.node.op;
+                  widget.onChanged();
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'value',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                filled: true,
+              ),
+              controller: rightController,
+              onChanged: (v) {
+                widget.node.right = v;
+                widget.onChanged();
+              },
+              style: AppTypography.mono.copyWith(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          _SmallToggle(
+            label: '"str"',
+            active: widget.node.quoted,
+            onTap: () {
+              widget.node.quoted = !widget.node.quoted;
+              widget.onChanged();
+            },
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(Icons.close, size: 16, color: cs.onSurface.withOpacity(0.4)),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => widget.parent.children.remove(widget.node),
+          ),
+        ],
       ),
     );
   }

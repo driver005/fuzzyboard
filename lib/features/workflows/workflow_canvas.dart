@@ -147,16 +147,6 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                     child: const SizedBox.expand(),
                   ),
                 ),
-                // Connections
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _ConnectionsPainter(
-                      nodes: _workflow.nodes,
-                      connections: _workflow.connections,
-                      primaryColor: cs.primary,
-                    ),
-                  ),
-                ),
                 // Interactive view
                 InteractiveViewer(
                   transformationController: _transform,
@@ -167,28 +157,40 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                     width: 2000,
                     height: 1500,
                     child: Stack(
-                      children: _workflow.nodes.map((node) {
-                        return Positioned(
-                          left: node.position.dx,
-                          top: node.position.dy,
-                          child: _NodeWidget(
-                            node: node,
-                            isSelected: _selectedNodeId == node.id,
-                            isConnectSource: _connectFromId == node.id,
-                            onTap: () => _onNodeTap(node.id),
-                            onDrag: (delta) {
-                              setState(() {
-                                node.position = Offset(
-                                  node.position.dx + delta.dx,
-                                  node.position.dy + delta.dy,
-                                );
-                              });
-                            },
-                            onConnect: () => _startConnect(node.id),
-                            onDelete: () => _deleteNode(node.id),
+                      children: [
+                        // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _ConnectionsPainter(
+                              nodes: _workflow.nodes,
+                              connections: _workflow.connections,
+                              primaryColor: cs.primary,
+                            ),
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        ..._workflow.nodes.map((node) {
+                          return Positioned(
+                            left: node.position.dx,
+                            top: node.position.dy,
+                            child: _NodeWidget(
+                              node: node,
+                              isSelected: _selectedNodeId == node.id,
+                              isConnectSource: _connectFromId == node.id,
+                              onTap: () => _onNodeTap(node.id),
+                              onDrag: (delta) {
+                                setState(() {
+                                  node.position = Offset(
+                                    node.position.dx + delta.dx,
+                                    node.position.dy + delta.dy,
+                                  );
+                                });
+                              },
+                              onConnect: () => _startConnect(node.id),
+                              onDelete: () => _deleteNode(node.id),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ),
                 ),

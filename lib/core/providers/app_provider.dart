@@ -6,6 +6,7 @@ import '../../models/workflow.dart';
 import '../../models/plugin.dart';
 import '../../models/chat_message.dart';
 import '../../models/page_widget.dart';
+import '../../models/workflow_run.dart';
 
 /// Top-level application state provider.
 class AppProvider extends ChangeNotifier {
@@ -256,6 +257,19 @@ class AppProvider extends ChangeNotifier {
       addLog(
           'Workflow ${_workflows[idx].name} ${_workflows[idx].isActive ? 'activated' : 'deactivated'}');
       emitEvent('workflow_toggled');
+      if (_workflows[idx].isActive) {
+        final runId = _uuid.v4();
+        addWorkflowRun(WorkflowRun(
+          id: runId,
+          workflowId: id,
+          startedAt: DateTime.now(),
+          status: WorkflowRunStatus.running,
+        ));
+        _workflows[idx].runCount++;
+        Future.delayed(const Duration(seconds: 2), () {
+          completeWorkflowRun(runId, WorkflowRunStatus.success);
+        });
+      }
     }
   }
 
@@ -405,6 +419,30 @@ class AppProvider extends ChangeNotifier {
 
   void removePageWidget(String id) {
     pageWidgets.removeWhere((w) => w.id == id);
+    notifyListeners();
+  }
+
+  void reorderPageWidget(int oldIndex, int newIndex) {
+    final widget = pageWidgets.removeAt(oldIndex);
+    pageWidgets.insert(newIndex, widget);
+    notifyListeners();
+  }
+
+  // ── Workflow Runs ─────────────────────────────────────────────────────────
+  final List<WorkflowRun> workflowRuns = [];
+
+  List<WorkflowRun> runsForWorkflow(String workflowId) =>
+      workflowRuns.where((r) => r.workflowId == workflowId).toList();
+
+  void addWorkflowRun(WorkflowRun run) {
+    workflowRuns.insert(0, run);
+    notifyListeners();
+  }
+
+  void completeWorkflowRun(String runId, WorkflowRunStatus status) {
+    final idx = workflowRuns.indexWhere((r) => r.id == runId);
+    if (idx == -1) return;
+    workflowRuns[idx].status = status;
     notifyListeners();
   }
 }

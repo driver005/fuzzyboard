@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/providers/app_provider.dart';
@@ -23,6 +25,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   String? _connectFromId;
   final TransformationController _transform = TransformationController();
   final _uuid = const Uuid();
+  final List<Map<String, dynamic>> _undoStack = [];
+  final List<Map<String, dynamic>> _redoStack = [];
 
   @override
   void initState() {
@@ -49,6 +53,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       type: type,
       position: const Offset(300, 300),
     );
+    _pushUndo();
     setState(() => _workflow.nodes.add(node));
   }
 
@@ -62,6 +67,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       };
 
   void _deleteNode(String id) {
+    _pushUndo();
     setState(() {
       _workflow.nodes.removeWhere((n) => n.id == id);
       _workflow.connections
@@ -77,6 +83,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         fromNodeId: _connectFromId!,
         toNodeId: id,
       );
+      _pushUndo();
       setState(() {
         _workflow.connections.add(conn);
         _connecting = false;
@@ -92,6 +99,145 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       _connecting = true;
       _connectFromId = id;
     });
+  }
+
+  Map<String, dynamic> _captureSnapshot() {
+    return {
+      'nodes': _workflow.nodes.map((n) => {
+        'id': n.id, 'label': n.label, 'type': n.type.name,
+        'x': n.position.dx, 'y': n.position.dy, 'config': Map.from(n.config),
+      }).toList(),
+      'connections': _workflow.connections.map((c) => {
+        'id': c.id, 'from': c.fromNodeId, 'to': c.toNodeId,
+        'type': c.type.name, 'label': c.label,
+      }).toList(),
+    };
+  }
+
+  void _pushUndo() {
+    _undoStack.add(_captureSnapshot());
+    if (_undoStack.length > 30) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  void _applySnapshot(Map<String, dynamic> snapshot) {
+    final nodes = (snapshot['nodes'] as List).map((n) => WorkflowNode(
+      id: n['id'] as String, label: n['label'] as String,
+      type: NodeType.values.firstWhere((t) => t.name == n['type'], orElse: () => NodeType.action),
+      position: Offset((n['x'] as num).toDouble(), (n['y'] as num).toDouble()),
+      config: Map<String, dynamic>.from(n['config'] as Map? ?? {}),
+    )).toList();
+    final connections = (snapshot['connections'] as List).map((c) => WorkflowConnection(
+      id: c['id'] as String, fromNodeId: c['from'] as String, toNodeId: c['to'] as String,
+      type: ConnectionType.values.firstWhere((t) => t.name == c['type'], orElse: () => ConnectionType.always),
+      label: c['label'] as String?,
+    )).toList();
+    setState(() {
+      _workflow.nodes..clear()..addAll(nodes);
+      _workflow.connections..clear()..addAll(connections);
+    });
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(_captureSnapshot());
+    _applySnapshot(_undoStack.removeLast());
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty) return;
+    _undoStack.add(_captureSnapshot());
+    _applySnapshot(_redoStack.removeLast());
+  }
+
+  /// Export the current workflow as JSON and copy to clipboard.
+  Future<void> _exportJson() async {
+    final data = {
+      'id': _workflow.id,
+      'name': _workflow.name,
+      'description': _workflow.description,
+      'nodes': _workflow.nodes.map((n) => {
+        'id': n.id,
+        'label': n.label,
+        'type': n.type.name,
+        'x': n.position.dx,
+        'y': n.position.dy,
+        'config': n.config,
+      }).toList(),
+      'connections': _workflow.connections.map((c) => {
+        'id': c.id,
+        'from': c.fromNodeId,
+        'to': c.toNodeId,
+        'type': c.type.name,
+        'label': c.label,
+      }).toList(),
+    };
+    final json = const JsonEncoder.withIndent('  ').convert(data);
+    await Clipboard.setData(ClipboardData(text: json));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Workflow JSON copied to clipboard!')),
+      );
+    }
+  }
+
+  /// Show import dialog and parse JSON.
+  void _showImportDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Import Workflow JSON'),
+        content: SizedBox(
+          width: 500,
+          child: TextField(
+            controller: controller,
+            maxLines: 12,
+            decoration: const InputDecoration(
+              hintText: 'Paste workflow JSON here...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            child: const Text('Import'),
+            onPressed: () {
+              try {
+                final data = jsonDecode(controller.text) as Map<String, dynamic>;
+                final nodes = (data['nodes'] as List).map((n) => WorkflowNode(
+                  id: n['id'] as String,
+                  label: n['label'] as String,
+                  type: NodeType.values.firstWhere((t) => t.name == n['type'], orElse: () => NodeType.action),
+                  position: Offset((n['x'] as num).toDouble(), (n['y'] as num).toDouble()),
+                  config: Map<String, dynamic>.from(n['config'] as Map? ?? {}),
+                )).toList();
+                final connections = (data['connections'] as List).map((c) => WorkflowConnection(
+                  id: c['id'] as String,
+                  fromNodeId: c['from'] as String,
+                  toNodeId: c['to'] as String,
+                  type: ConnectionType.values.firstWhere((t) => t.name == c['type'], orElse: () => ConnectionType.always),
+                  label: c['label'] as String?,
+                )).toList();
+                setState(() {
+                  _workflow.nodes
+                    ..clear()
+                    ..addAll(nodes);
+                  _workflow.connections
+                    ..clear()
+                    ..addAll(connections);
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workflow imported!')));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import error: $e')));
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -118,6 +264,33 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                 _connectFromId = null;
               }),
             ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: 'Undo',
+            onPressed: _undoStack.isEmpty ? null : _undo,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: 'Redo',
+            onPressed: _redoStack.isEmpty ? null : _redo,
+          ),
+          const SizedBox(width: 8),
+          AppButton(
+            label: 'Export',
+            icon: const Icon(Icons.upload_outlined),
+            size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
+            onPressed: _exportJson,
+          ),
+          const SizedBox(width: 8),
+          AppButton(
+            label: 'Import',
+            icon: const Icon(Icons.download_outlined),
+            size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
+            onPressed: _showImportDialog,
+          ),
           const SizedBox(width: 8),
           AppButton(
             label: 'Save',

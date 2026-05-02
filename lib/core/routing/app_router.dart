@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/app_provider.dart';
+import '../../core/providers/theme_provider.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/tasks/tasks_page.dart';
 import '../../features/workflows/workflows_page.dart';
@@ -61,19 +64,21 @@ class _AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final mobile = isMobile(context);
     final desktop = isDesktop(context);
+    final themeProvider = context.watch<ThemeProvider>();
+    final app = context.watch<AppProvider>();
 
     return Scaffold(
       body: Row(
         children: [
           if (!mobile)
-            AppSidebar(collapsed: !desktop),
+            AppSidebar(collapsed: !desktop || themeProvider.compactSidebar),
           if (!mobile)
             const VerticalDivider(width: 1),
           Expanded(child: child),
         ],
       ),
       bottomNavigationBar: mobile ? const AppBottomNav() : null,
-      floatingActionButton: mobile
+      floatingActionButton: mobile || !app.showAvatar
           ? null
           : const Padding(
               padding: EdgeInsets.only(bottom: 12, right: 12),

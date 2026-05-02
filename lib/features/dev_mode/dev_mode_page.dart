@@ -110,7 +110,7 @@ class _LogsTab extends StatelessWidget {
                 icon: const Icon(Icons.delete_sweep),
                 variant: AppButtonVariant.ghost,
                 size: AppButtonSize.sm,
-                onPressed: () {},
+                onPressed: () => context.read<AppProvider>().clearLogs(),
               ),
               const Spacer(),
               Text('${logs.length} entries',

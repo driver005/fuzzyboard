@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/plugin.dart';
@@ -58,15 +59,15 @@ class _SearchPageState extends State<SearchPage> {
                       children: [
                         if (tasks.isNotEmpty) ...[
                           _sectionHeader(context, Icons.task_alt, 'Tasks'),
-                          ...tasks.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key)),
+                          ...tasks.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key, '/tasks')),
                         ],
                         if (workflows.isNotEmpty) ...[
                           _sectionHeader(context, Icons.account_tree, 'Workflows'),
-                          ...workflows.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key)),
+                          ...workflows.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key, '/workflows')),
                         ],
                         if (plugins.isNotEmpty) ...[
                           _sectionHeader(context, Icons.extension, 'Plugins'),
-                          ...plugins.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key)),
+                          ...plugins.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key, '/plugins')),
                         ],
                       ],
                     ),
@@ -96,7 +97,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _resultTile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index) {
+  Widget _resultTile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index, String route) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
@@ -108,7 +109,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         title: title,
         subtitle: subtitle,
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opened: $title'))),
+        onTap: () => context.go(route),
       ).animate(delay: Duration(milliseconds: index * 60)).fadeIn().slideX(begin: 0.1),
     );
   }

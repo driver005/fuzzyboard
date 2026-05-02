@@ -30,7 +30,8 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
     final widgets = app.pageWidgets;
-    final selected = selectedId != null ? widgets.cast<PageWidget?>().firstWhere((w) => w!.id == selectedId, orElse: () => null) : null;
+    final matchingWidgets = selectedId != null ? widgets.where((w) => w.id == selectedId) : const Iterable<PageWidget>.empty();
+    final selected = matchingWidgets.isEmpty ? null : matchingWidgets.first;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;

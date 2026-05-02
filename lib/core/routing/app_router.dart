@@ -13,6 +13,12 @@ import '../../features/search/search_page.dart';
 import '../../features/chat/chat_page.dart';
 import '../../features/voice/voice_mode_page.dart';
 import '../../features/page_builder/page_builder_page.dart';
+import '../../features/cms/cms_overview_page.dart';
+import '../../features/cms/content_types_page.dart';
+import '../../features/cms/content_entries_page.dart';
+import '../../features/cms/media_library_page.dart';
+import '../../features/cms/pages_manager_page.dart';
+import '../../features/cms/categories_page.dart';
 import '../../shared/widgets/sidebar.dart';
 import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/avatar_widget.dart';
@@ -34,6 +40,12 @@ final appRouter = GoRouter(
         GoRoute(path: '/chat', builder: (_, __) => const ChatPage()),
         GoRoute(path: '/voice', builder: (_, __) => const VoiceModePage()),
         GoRoute(path: '/builder', builder: (_, __) => const PageBuilderPage()),
+        GoRoute(path: '/cms', builder: (_, __) => const CmsOverviewPage()),
+        GoRoute(path: '/cms/types', builder: (_, __) => const ContentTypesPage()),
+        GoRoute(path: '/cms/entries', builder: (_, __) => const ContentEntriesPage()),
+        GoRoute(path: '/cms/media', builder: (_, __) => const MediaLibraryPage()),
+        GoRoute(path: '/cms/pages', builder: (_, __) => const PagesManagerPage()),
+        GoRoute(path: '/cms/categories', builder: (_, __) => const CategoriesPage()),
         GoRoute(path: '/dev', builder: (_, __) => const DevModePage()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
       ],

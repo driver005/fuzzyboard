@@ -89,6 +89,42 @@ const _navItems = [
     route: '/builder',
   ),
   _NavItem(
+    label: 'CMS',
+    icon: Icons.web_outlined,
+    activeIcon: Icons.web,
+    route: '/cms',
+  ),
+  _NavItem(
+    label: 'Content Types',
+    icon: Icons.schema_outlined,
+    activeIcon: Icons.schema,
+    route: '/cms/types',
+  ),
+  _NavItem(
+    label: 'Entries',
+    icon: Icons.article_outlined,
+    activeIcon: Icons.article,
+    route: '/cms/entries',
+  ),
+  _NavItem(
+    label: 'Media',
+    icon: Icons.photo_library_outlined,
+    activeIcon: Icons.photo_library,
+    route: '/cms/media',
+  ),
+  _NavItem(
+    label: 'Pages',
+    icon: Icons.pages_outlined,
+    activeIcon: Icons.pages,
+    route: '/cms/pages',
+  ),
+  _NavItem(
+    label: 'Categories',
+    icon: Icons.label_outlined,
+    activeIcon: Icons.label,
+    route: '/cms/categories',
+  ),
+  _NavItem(
     label: 'Dev Mode',
     icon: Icons.bug_report_outlined,
     activeIcon: Icons.bug_report,

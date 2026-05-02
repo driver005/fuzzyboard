@@ -4,6 +4,7 @@ import 'core/providers/app_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/providers/user_provider.dart';
 import 'core/providers/screen_registry.dart';
+import 'core/providers/cms_provider.dart';
 import 'core/routing/app_router.dart';
 
 class FuzzyBoardApp extends StatelessWidget {
@@ -17,6 +18,7 @@ class FuzzyBoardApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ScreenRegistryProvider()),
+        ChangeNotifierProvider(create: (_) => CmsProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp.router(

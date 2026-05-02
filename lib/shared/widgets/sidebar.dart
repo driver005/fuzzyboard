@@ -7,21 +7,44 @@ import '../../core/providers/theme_provider.dart';
 const double _sidebarWidth = 240;
 const double _railWidth = 72;
 
-class _NavItem {
+// Sealed-like base for sidebar list entries
+abstract class _SidebarEntry {
+  const _SidebarEntry();
+}
+
+/// A standard navigation tile entry.
+class _NavItem extends _SidebarEntry {
   final String label;
   final IconData icon;
   final IconData activeIcon;
   final String route;
+  final bool isSubItem;
 
   const _NavItem({
     required this.label,
     required this.icon,
     required this.activeIcon,
     required this.route,
+    this.isSubItem = false,
   });
 }
 
-const _navItems = [
+/// A collapsible section header in the sidebar.
+class _SectionHeader extends _SidebarEntry {
+  final String label;
+  final IconData icon;
+  /// The route prefix used to determine whether the section is "active"
+  /// (auto-expanded).
+  final String routePrefix;
+
+  const _SectionHeader({
+    required this.label,
+    required this.icon,
+    required this.routePrefix,
+  });
+}
+
+const _navItems = <_SidebarEntry>[
   _NavItem(
     label: 'Dashboard',
     icon: Icons.dashboard_outlined,
@@ -65,6 +88,75 @@ const _navItems = [
     route: '/lua',
   ),
   _NavItem(
+    label: 'Search',
+    icon: Icons.search_outlined,
+    activeIcon: Icons.search,
+    route: '/search',
+  ),
+  _NavItem(
+    label: 'AI Chat',
+    icon: Icons.chat_outlined,
+    activeIcon: Icons.chat,
+    route: '/chat',
+  ),
+  _NavItem(
+    label: 'Voice',
+    icon: Icons.mic_outlined,
+    activeIcon: Icons.mic,
+    route: '/voice',
+  ),
+  _NavItem(
+    label: 'Page Builder',
+    icon: Icons.dashboard_customize_outlined,
+    activeIcon: Icons.dashboard_customize,
+    route: '/builder',
+  ),
+  // ── CMS section ────────────────────────────────────────────────────────────
+  _SectionHeader(label: 'CMS', icon: Icons.web_outlined, routePrefix: '/cms'),
+  _NavItem(
+    label: 'Overview',
+    icon: Icons.dashboard_outlined,
+    activeIcon: Icons.dashboard,
+    route: '/cms',
+    isSubItem: true,
+  ),
+  _NavItem(
+    label: 'Content Types',
+    icon: Icons.schema_outlined,
+    activeIcon: Icons.schema,
+    route: '/cms/types',
+    isSubItem: true,
+  ),
+  _NavItem(
+    label: 'Entries',
+    icon: Icons.article_outlined,
+    activeIcon: Icons.article,
+    route: '/cms/entries',
+    isSubItem: true,
+  ),
+  _NavItem(
+    label: 'Media',
+    icon: Icons.photo_library_outlined,
+    activeIcon: Icons.photo_library,
+    route: '/cms/media',
+    isSubItem: true,
+  ),
+  _NavItem(
+    label: 'Pages',
+    icon: Icons.pages_outlined,
+    activeIcon: Icons.pages,
+    route: '/cms/pages',
+    isSubItem: true,
+  ),
+  _NavItem(
+    label: 'Categories',
+    icon: Icons.label_outlined,
+    activeIcon: Icons.label,
+    route: '/cms/categories',
+    isSubItem: true,
+  ),
+  // ──────────────────────────────────────────────────────────────────────────
+  _NavItem(
     label: 'Dev Mode',
     icon: Icons.bug_report_outlined,
     activeIcon: Icons.bug_report,
@@ -79,9 +171,23 @@ const _navItems = [
 ];
 
 /// Desktop / tablet sidebar
-class AppSidebar extends StatelessWidget {
+class AppSidebar extends StatefulWidget {
   final bool collapsed;
   const AppSidebar({super.key, this.collapsed = false});
+
+  @override
+  State<AppSidebar> createState() => _AppSidebarState();
+}
+
+class _AppSidebarState extends State<AppSidebar> {
+  // Tracks which section headers are expanded. Keyed by routePrefix.
+  final Map<String, bool> sectionExpanded = {};
+
+  bool isSectionExpanded(String routePrefix, String loc) {
+    // Auto-expand if user is on a sub-route; otherwise use stored state.
+    if (sectionExpanded.containsKey(routePrefix)) return sectionExpanded[routePrefix]!;
+    return loc.startsWith(routePrefix);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +201,28 @@ class AppSidebar extends StatelessWidget {
     final sidebarColor =
         isDark ? const Color(0xFF16162A) : Colors.white;
 
+    // Build visible items based on section-expansion state.
+    final visibleItems = <_SidebarEntry>[];
+    for (final entry in _navItems) {
+      if (entry is _SectionHeader) {
+        visibleItems.add(entry);
+        // Add sub-items only when section is expanded
+        if (!widget.collapsed && isSectionExpanded(entry.routePrefix, loc)) {
+          // Collect all following sub-items
+          final headerIdx = _navItems.indexOf(entry);
+          for (int j = headerIdx + 1; j < _navItems.length; j++) {
+            final next = _navItems[j];
+            if (next is _SectionHeader) break;
+            if (next is _NavItem && next.isSubItem) visibleItems.add(next);
+          }
+        }
+      } else if (entry is _NavItem && !entry.isSubItem) {
+        visibleItems.add(entry);
+      }
+    }
+
     return Container(
-      width: collapsed ? _railWidth : _sidebarWidth,
+      width: widget.collapsed ? _railWidth : _sidebarWidth,
       color: sidebarColor,
       child: Column(
         children: [
@@ -118,7 +244,7 @@ class AppSidebar extends StatelessWidget {
                   ),
                   child: const Icon(Icons.blur_on, color: Colors.white, size: 20),
                 ),
-                if (!collapsed) ...[
+                if (!widget.collapsed) ...[
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,15 +267,53 @@ class AppSidebar extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: _navItems.length,
+              itemCount: visibleItems.length,
               itemBuilder: (context, i) {
-                final item = _navItems[i];
+                final entry = visibleItems[i];
+                if (entry is _SectionHeader) {
+                  final expanded = !widget.collapsed && isSectionExpanded(entry.routePrefix, loc);
+                  final sectionActive = loc.startsWith(entry.routePrefix);
+                  if (widget.collapsed) {
+                    // In collapsed mode show icon only
+                    return Tooltip(
+                      message: entry.label,
+                      preferBelow: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        child: Icon(entry.icon,
+                            size: 22,
+                            color: sectionActive ? cs.primary : cs.onSurface.withOpacity(0.5)),
+                      ),
+                    );
+                  }
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => setState(() => sectionExpanded[entry.routePrefix] = !expanded),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(children: [
+                        Icon(entry.icon, size: 18,
+                            color: sectionActive ? cs.primary : cs.onSurface.withOpacity(0.5)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(entry.label,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                                color: sectionActive ? cs.primary : cs.onSurface.withOpacity(0.5),
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5))),
+                        Icon(expanded ? Icons.expand_less : Icons.expand_more,
+                            size: 16, color: cs.onSurface.withOpacity(0.4)),
+                      ]),
+                    ),
+                  );
+                }
+                // It's a _NavItem
+                final item = entry as _NavItem;
                 final isActive = loc == item.route ||
                     (item.route != '/' && loc.startsWith(item.route));
                 return _NavTile(
                   item: item,
                   isActive: isActive,
-                  collapsed: collapsed,
+                  collapsed: widget.collapsed,
                   onTap: () => context.go(item.route),
                 );
               },
@@ -164,7 +328,7 @@ class AppSidebar extends StatelessWidget {
                 _SidebarAction(
                   icon: devMode ? Icons.bug_report : Icons.bug_report_outlined,
                   label: 'Dev Mode',
-                  collapsed: collapsed,
+                  collapsed: widget.collapsed,
                   active: devMode,
                   onTap: () => context.read<AppProvider>().toggleDevMode(),
                 ),
@@ -174,7 +338,7 @@ class AppSidebar extends StatelessWidget {
                       ? Icons.dark_mode
                       : Icons.light_mode,
                   label: 'Toggle Theme',
-                  collapsed: collapsed,
+                  collapsed: widget.collapsed,
                   onTap: () => themeProvider.setThemeMode(
                     themeProvider.themeMode == ThemeMode.dark
                         ? ThemeMode.light
@@ -221,17 +385,20 @@ class _NavTile extends StatelessWidget {
             : null,
         child: ListTile(
           dense: true,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: collapsed ? 16 : 12, vertical: 0),
+          contentPadding: EdgeInsets.only(
+            left: collapsed ? 16 : (item.isSubItem ? 28 : 12),
+            right: 12,
+          ),
           leading: Icon(
             isActive ? item.activeIcon : item.icon,
-            size: 22,
+            size: item.isSubItem ? 18 : 22,
             color: isActive ? cs.primary : cs.onSurface.withOpacity(0.6),
           ),
           title: collapsed
               ? null
               : Text(item.label,
                   style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: item.isSubItem ? 13 : null,
                     fontWeight:
                         isActive ? FontWeight.w600 : FontWeight.w400,
                     color:

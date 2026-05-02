@@ -154,7 +154,10 @@ class _PageDialogState extends State<_PageDialog> {
 
   void _autoSlug() {
     if (widget.existing != null) return;
-    final slug = '/' + titleController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    final raw = titleController.text.trim().toLowerCase();
+    final slug = '/' + raw
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
     if (slug != '/') slugController.text = slug;
   }
 

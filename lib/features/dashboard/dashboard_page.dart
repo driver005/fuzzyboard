@@ -261,7 +261,7 @@ class _WorkflowRunsChart extends StatelessWidget {
     final base = totalRuns > 0 ? totalRuns / 7 : 5;
     final spots = List.generate(7, (i) {
       final variance = (i % 3 == 0 ? 1.3 : i % 2 == 0 ? 0.8 : 1.0);
-      return FlSpot(i.toDouble(), (base * variance).clamp(0, double.infinity));
+      return FlSpot(i.toDouble(), (base * variance).clamp(0.0, base * 2.0));
     });
     return AppCard(
       title: 'Runs (Last 7 days)',

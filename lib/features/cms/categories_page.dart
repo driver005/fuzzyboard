@@ -95,7 +95,10 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 
   void _autoSlug() {
     if (widget.existing != null) return;
-    slugController.text = nameController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    final raw = nameController.text.trim().toLowerCase();
+    slugController.text = raw
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
   }
 
   @override

@@ -488,7 +488,10 @@ class _ConditionRowState extends State<_ConditionRow> {
           IconButton(
             icon: Icon(Icons.close, size: 16, color: cs.onSurface.withOpacity(0.4)),
             visualDensity: VisualDensity.compact,
-            onPressed: () => widget.parent.children.remove(widget.node),
+            onPressed: () {
+              widget.parent.children.remove(widget.node);
+              widget.onChanged();
+            },
           ),
         ],
       ),

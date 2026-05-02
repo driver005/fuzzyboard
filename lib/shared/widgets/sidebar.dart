@@ -7,6 +7,9 @@ import '../../core/providers/theme_provider.dart';
 const double _sidebarWidth = 240;
 const double _railWidth = 72;
 
+/// Which top-level navigation tab is currently active.
+enum AppHeaderTab { data, pages }
+
 // Sealed-like base for sidebar list entries
 abstract class _SidebarEntry {
   const _SidebarEntry();
@@ -33,6 +36,7 @@ class _NavItem extends _SidebarEntry {
 class _SectionHeader extends _SidebarEntry {
   final String label;
   final IconData icon;
+
   /// The route prefix used to determine whether the section is "active"
   /// (auto-expanded).
   final String routePrefix;
@@ -44,7 +48,8 @@ class _SectionHeader extends _SidebarEntry {
   });
 }
 
-const _navItems = <_SidebarEntry>[
+// ── Data tab nav items ────────────────────────────────────────────────────────
+const _dataNavItems = <_SidebarEntry>[
   _NavItem(
     label: 'Dashboard',
     icon: Icons.dashboard_outlined,
@@ -106,12 +111,27 @@ const _navItems = <_SidebarEntry>[
     route: '/voice',
   ),
   _NavItem(
+    label: 'Dev Mode',
+    icon: Icons.bug_report_outlined,
+    activeIcon: Icons.bug_report,
+    route: '/dev',
+  ),
+  _NavItem(
+    label: 'Settings',
+    icon: Icons.settings_outlined,
+    activeIcon: Icons.settings,
+    route: '/settings',
+  ),
+];
+
+// ── Pages tab nav items ───────────────────────────────────────────────────────
+const _pagesNavItems = <_SidebarEntry>[
+  _NavItem(
     label: 'Page Builder',
     icon: Icons.dashboard_customize_outlined,
     activeIcon: Icons.dashboard_customize,
     route: '/builder',
   ),
-  // ── CMS section ────────────────────────────────────────────────────────────
   _SectionHeader(label: 'CMS', icon: Icons.web_outlined, routePrefix: '/cms'),
   _NavItem(
     label: 'Overview',
@@ -155,25 +175,18 @@ const _navItems = <_SidebarEntry>[
     route: '/cms/categories',
     isSubItem: true,
   ),
-  // ──────────────────────────────────────────────────────────────────────────
-  _NavItem(
-    label: 'Dev Mode',
-    icon: Icons.bug_report_outlined,
-    activeIcon: Icons.bug_report,
-    route: '/dev',
-  ),
-  _NavItem(
-    label: 'Settings',
-    icon: Icons.settings_outlined,
-    activeIcon: Icons.settings,
-    route: '/settings',
-  ),
 ];
 
 /// Desktop / tablet sidebar
 class AppSidebar extends StatefulWidget {
   final bool collapsed;
-  const AppSidebar({super.key, this.collapsed = false});
+  final AppHeaderTab tab;
+
+  const AppSidebar({
+    super.key,
+    this.collapsed = false,
+    this.tab = AppHeaderTab.data,
+  });
 
   @override
   State<AppSidebar> createState() => _AppSidebarState();
@@ -189,6 +202,9 @@ class _AppSidebarState extends State<AppSidebar> {
     return loc.startsWith(routePrefix);
   }
 
+  List<_SidebarEntry> get navItems =>
+      widget.tab == AppHeaderTab.pages ? _pagesNavItems : _dataNavItems;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -198,20 +214,18 @@ class _AppSidebarState extends State<AppSidebar> {
     final devMode = context.watch<AppProvider>().devMode;
     final themeProvider = context.watch<ThemeProvider>();
 
-    final sidebarColor =
-        isDark ? const Color(0xFF16162A) : Colors.white;
+    final sidebarColor = isDark ? const Color(0xFF16162A) : Colors.white;
 
     // Build visible items based on section-expansion state.
     final visibleItems = <_SidebarEntry>[];
-    for (final entry in _navItems) {
+    for (final entry in navItems) {
       if (entry is _SectionHeader) {
         visibleItems.add(entry);
         // Add sub-items only when section is expanded
         if (!widget.collapsed && isSectionExpanded(entry.routePrefix, loc)) {
-          // Collect all following sub-items
-          final headerIdx = _navItems.indexOf(entry);
-          for (int j = headerIdx + 1; j < _navItems.length; j++) {
-            final next = _navItems[j];
+          final headerIdx = navItems.indexOf(entry);
+          for (int j = headerIdx + 1; j < navItems.length; j++) {
+            final next = navItems[j];
             if (next is _SectionHeader) break;
             if (next is _NavItem && next.isSubItem) visibleItems.add(next);
           }
@@ -226,42 +240,6 @@ class _AppSidebarState extends State<AppSidebar> {
       color: sidebarColor,
       child: Column(
         children: [
-          // Logo
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [cs.primary, cs.secondary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.blur_on, color: Colors.white, size: 20),
-                ),
-                if (!widget.collapsed) ...[
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('FuzzyBoard',
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      Text('Workflow Engine',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurface.withOpacity(0.5))),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const Divider(height: 1),
           const SizedBox(height: 8),
           // Nav items
           Expanded(
@@ -465,12 +443,20 @@ class _SidebarAction extends StatelessWidget {
 
 /// Bottom navigation bar for mobile
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({super.key});
+  final AppHeaderTab tab;
+
+  const AppBottomNav({super.key, this.tab = AppHeaderTab.data});
 
   @override
   Widget build(BuildContext context) {
     final loc = GoRouterState.of(context).uri.toString();
-    final mobileItems = _navItems.whereType<_NavItem>().take(5).toList();
+    final sourceItems = tab == AppHeaderTab.pages ? _pagesNavItems : _dataNavItems;
+    final mobileItems = sourceItems
+        .whereType<_NavItem>()
+        .where((i) => !i.isSubItem)
+        .take(5)
+        .toList();
+
     int currentIndex = mobileItems.indexWhere(
       (item) =>
           loc == item.route ||

@@ -376,6 +376,11 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearChat() {
+    chatMessages.clear();
+    notifyListeners();
+  }
+
   // ── Voice Commands ────────────────────────────────────────────────────────
   final List<String> voiceCommands = [
     'Show me the dashboard',

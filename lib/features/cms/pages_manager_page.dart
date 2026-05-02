@@ -147,10 +147,20 @@ class _PageDialogState extends State<_PageDialog> {
     seoDescController = TextEditingController(text: widget.existing?.seoDescription ?? '');
     status = widget.existing?.status ?? CmsPageStatus.draft;
     template = widget.existing?.template ?? 'default';
+    if (widget.existing == null) {
+      titleController.addListener(_autoSlug);
+    }
+  }
+
+  void _autoSlug() {
+    if (widget.existing != null) return;
+    final slug = '/' + titleController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    if (slug != '/') slugController.text = slug;
   }
 
   @override
   void dispose() {
+    titleController.removeListener(_autoSlug);
     titleController.dispose();
     slugController.dispose();
     seoTitleController.dispose();

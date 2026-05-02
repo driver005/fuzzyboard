@@ -470,7 +470,7 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = GoRouterState.of(context).uri.toString();
-    final mobileItems = _navItems.take(5).toList();
+    final mobileItems = _navItems.whereType<_NavItem>().take(5).toList();
     int currentIndex = mobileItems.indexWhere(
       (item) =>
           loc == item.route ||

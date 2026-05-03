@@ -86,7 +86,7 @@ class Task {
         'description': description,
         'ownerEmail': ownerEmail,
         'retryCount': retryCount,
-        'retryLogic': retryPolicy.label,
+        'retryPolicy': retryPolicy.label,
         'retryDelaySeconds': retryDelaySeconds,
         'timeoutSeconds': timeoutSeconds,
         'responseTimeoutSeconds': responseTimeoutSeconds,

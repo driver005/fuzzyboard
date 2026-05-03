@@ -696,7 +696,7 @@ class _TaskFullModalState extends State<_TaskFullModal>
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  if (!isNew) ...[
+                  if (!isNew && widget.task?.status != null) ...[
                     const SizedBox(width: 10),
                     _StatusBadgeTask(status: widget.task!.status),
                   ],
@@ -966,8 +966,6 @@ class _AdvancedTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final plugins = context.watch<AppProvider>().installedPlugins;
 
     return SingleChildScrollView(
@@ -1086,12 +1084,15 @@ class _AdvancedTab extends StatelessWidget {
                   )),
             ],
           ),
-          if (selectedPluginId != null) ...[
+          if (selectedPluginId != null && plugins.isNotEmpty) ...[
             const SizedBox(height: 8),
-            _PluginConfigPreview(
-              plugin: plugins.firstWhere((p) => p.id == selectedPluginId,
-                  orElse: () => plugins.first),
-            ),
+            Builder(builder: (context) {
+              final plugin = plugins.cast<dynamic>().firstWhere(
+                  (p) => (p as dynamic).id == selectedPluginId,
+                  orElse: () => null);
+              if (plugin == null) return const SizedBox.shrink();
+              return _PluginConfigPreview(plugin: plugin);
+            }),
           ],
         ],
       ),

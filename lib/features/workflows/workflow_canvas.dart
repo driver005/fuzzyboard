@@ -24,6 +24,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   bool _connecting = false;
   String? _connectFromId;
   final TransformationController _transform = TransformationController();
+  final FocusNode _keyboardFocus = FocusNode();
   final _uuid = const Uuid();
   final List<Map<String, dynamic>> _undoStack = [];
   final List<Map<String, dynamic>> _redoStack = [];
@@ -38,6 +39,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   @override
   void dispose() {
     _transform.dispose();
+    _keyboardFocus.dispose();
     super.dispose();
   }
 
@@ -331,7 +333,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     final isDark = cs.brightness == Brightness.dark;
 
     return KeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
+      focusNode: _keyboardFocus,
       autofocus: true,
       onKeyEvent: (event) {
         if (event is KeyDownEvent &&
@@ -569,7 +571,7 @@ class _PaletteItem extends StatelessWidget {
   final void Function(NodeType) onAdd;
   const _PaletteItem({required this.type, required this.onAdd});
 
-  static String _descForType(NodeType t) => switch (t) {
+  static String _descriptionForType(NodeType t) => switch (t) {
         NodeType.trigger => 'Starts the workflow (e.g. on event)',
         NodeType.action => 'Runs an action (e.g. send email)',
         NodeType.condition => 'Branch on true/false',
@@ -582,7 +584,7 @@ class _PaletteItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = WorkflowNode.colorForType(type);
     return Tooltip(
-      message: _descForType(type),
+      message: _descriptionForType(type),
       preferBelow: false,
       child: InkWell(
         onTap: () => onAdd(type),
@@ -803,17 +805,17 @@ class _NodeConfigPanel extends StatefulWidget {
 }
 
 class _NodeConfigPanelState extends State<_NodeConfigPanel> {
-  late TextEditingController labelCtrl;
+  late TextEditingController labelController;
 
   @override
   void initState() {
     super.initState();
-    labelCtrl = TextEditingController(text: widget.node.label);
+    labelController = TextEditingController(text: widget.node.label);
   }
 
   @override
   void dispose() {
-    labelCtrl.dispose();
+    labelController.dispose();
     super.dispose();
   }
 
@@ -881,7 +883,7 @@ class _NodeConfigPanelState extends State<_NodeConfigPanel> {
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     TextField(
-                      controller: labelCtrl,
+                      controller: labelController,
                       decoration: InputDecoration(
                         hintText: 'Node label',
                         border: OutlineInputBorder(

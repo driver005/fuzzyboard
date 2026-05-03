@@ -43,7 +43,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
 
   void _showSaveAsTaskDialog(BuildContext context) {
     final nameController = TextEditingController(text: 'Lua Expression');
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Save Lua Expression as Task'),
@@ -110,7 +110,7 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
           ),
         ],
       ),
-    );
+    ).then((_) => nameController.dispose());
   }
 
   @override

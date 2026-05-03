@@ -83,7 +83,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
   void _showSaveAsTaskDialog(BuildContext context) {
     final nameController = TextEditingController(
         text: 'Query $_selectedTable');
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Save SQL as Task'),
@@ -149,7 +149,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
           ),
         ],
       ),
-    );
+    ).then((_) => nameController.dispose());
   }
 
   @override

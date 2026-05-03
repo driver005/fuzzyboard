@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/app_button.dart';
@@ -38,7 +39,7 @@ class _DevModePageState extends State<DevModePage>
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('Dev Mode'),
+            Text(context.l10n.devModeTitle),
             const SizedBox(width: 8),
             if (app.devMode)
               Container(
@@ -48,8 +49,8 @@ class _DevModePageState extends State<DevModePage>
                   color: const Color(0xFF8B5CF6).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('ACTIVE',
-                    style: TextStyle(
+                child: Text(context.l10n.activeBadge,
+                    style: const TextStyle(
                         fontSize: 10,
                         color: Color(0xFF8B5CF6),
                         fontWeight: FontWeight.w700,
@@ -59,7 +60,7 @@ class _DevModePageState extends State<DevModePage>
         ),
         actions: [
           AppButton(
-            label: app.devMode ? 'Disable Dev Mode' : 'Enable Dev Mode',
+            label: app.devMode ? context.l10n.disableDevMode : context.l10n.enableDevMode,
             icon: const Icon(Icons.bug_report),
             variant:
                 app.devMode ? AppButtonVariant.danger : AppButtonVariant.primary,
@@ -70,10 +71,10 @@ class _DevModePageState extends State<DevModePage>
         ],
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(icon: Icon(Icons.terminal, size: 18), text: 'Logs'),
-            Tab(icon: Icon(Icons.memory, size: 18), text: 'State'),
-            Tab(icon: Icon(Icons.science, size: 18), text: 'Tests'),
+          tabs: [
+            Tab(icon: const Icon(Icons.terminal, size: 18), text: context.l10n.logsTab),
+            Tab(icon: const Icon(Icons.memory, size: 18), text: context.l10n.stateTab),
+            Tab(icon: const Icon(Icons.science, size: 18), text: context.l10n.testsTab),
           ],
         ),
       ),
@@ -106,14 +107,14 @@ class _LogsTab extends StatelessWidget {
           child: Row(
             children: [
               AppButton(
-                label: 'Clear',
+                label: context.l10n.clearLogsButton,
                 icon: const Icon(Icons.delete_sweep),
                 variant: AppButtonVariant.ghost,
                 size: AppButtonSize.sm,
                 onPressed: () => context.read<AppProvider>().clearLogs(),
               ),
               const Spacer(),
-              Text('${logs.length} entries',
+              Text(context.l10n.logEntriesCount(logs.length),
                   style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.5))),
             ],
@@ -125,7 +126,7 @@ class _LogsTab extends StatelessWidget {
             color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF8F8FF),
             child: logs.isEmpty
                 ? Center(
-                    child: Text('No logs yet',
+                    child: Text(context.l10n.noLogsYet,
                         style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.4))),
                   )
@@ -169,7 +170,7 @@ class _StateTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         AppCard(
-          title: 'Tasks State',
+          title: context.l10n.tasksStateCard,
           child: _JsonViewer({
             'count': app.tasks.length,
             'tasks': app.tasks
@@ -184,7 +185,7 @@ class _StateTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         AppCard(
-          title: 'Workflows State',
+          title: context.l10n.workflowsStateCard,
           child: _JsonViewer({
             'count': app.workflows.length,
             'workflows': app.workflows
@@ -199,7 +200,7 @@ class _StateTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         AppCard(
-          title: 'Plugins State',
+          title: context.l10n.pluginsStateCard,
           child: _JsonViewer({
             'installed': app.installedPlugins.length,
             'total': app.plugins.length,
@@ -214,19 +215,19 @@ class _JsonViewer extends StatelessWidget {
   final Map<String, dynamic> data;
   const _JsonViewer(this.data);
 
-  String _format(Map<String, dynamic> map, {int indent = 0}) {
+  String format(Map<String, dynamic> map, {int indent = 0}) {
     final buf = StringBuffer();
     final prefix = '  ' * indent;
     buf.writeln('{');
     map.forEach((k, v) {
       buf.write('$prefix  "$k": ');
       if (v is Map<String, dynamic>) {
-        buf.writeln(_format(v, indent: indent + 1));
+        buf.writeln(format(v, indent: indent + 1));
       } else if (v is List) {
         buf.writeln('[');
         for (final item in v) {
           if (item is Map<String, dynamic>) {
-            buf.writeln('$prefix    ${_format(item, indent: indent + 2)},');
+            buf.writeln('$prefix    ${format(item, indent: indent + 2)},');
           } else {
             buf.writeln('$prefix    $item,');
           }
@@ -252,7 +253,7 @@ class _JsonViewer extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: SelectableText(
-        _format(data),
+        format(data),
         style: AppTypography.mono.copyWith(
           fontSize: 11,
           color: const Color(0xFF10B981),
@@ -273,7 +274,7 @@ class _TestsTabState extends State<_TestsTab> {
   final _results = <_TestResult>[];
   bool _running = false;
 
-  Future<void> _runTests() async {
+  Future<void> run_tests() async {
     setState(() {
       _running = true;
       _results.clear();
@@ -312,15 +313,15 @@ class _TestsTabState extends State<_TestsTab> {
           child: Row(
             children: [
               AppButton(
-                label: _running ? 'Running...' : 'Run All Tests',
+                label: _running ? context.l10n.runningTests : context.l10n.runAllTests,
                 icon: const Icon(Icons.play_arrow),
                 loading: _running,
-                onPressed: _running ? null : _runTests,
+                onPressed: _running ? null : run_tests,
               ),
               const SizedBox(width: 16),
               if (_results.isNotEmpty)
                 Text(
-                  '$passed/${_results.length} passed',
+                  context.l10n.testsPassed(passed, _results.length),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: passed == _results.length
                         ? const Color(0xFF10B981)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../shared/widgets/app_card.dart';
 
@@ -46,7 +47,7 @@ class _VoiceModePageState extends State<VoiceModePage> with SingleTickerProvider
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Voice Mode')),
+      appBar: AppBar(title: Text(context.l10n.voiceModeTitle)),
       body: Column(children: [
         Expanded(
           flex: 2,
@@ -75,11 +76,11 @@ class _VoiceModePageState extends State<VoiceModePage> with SingleTickerProvider
                 },
               ),
               const SizedBox(height: 24),
-              Text(isListening ? 'Listening…' : 'Tap to speak',
+              Text(isListening ? context.l10n.listeningStatus : context.l10n.tapToSpeakPrompt,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(color: isListening ? cs.primary : cs.onSurface.withOpacity(0.6)),
               ).animate(key: ValueKey(isListening)).fadeIn(),
               const SizedBox(height: 8),
-              Text(isListening ? 'FuzzyAI is hearing you' : 'Start Listening',
+              Text(isListening ? context.l10n.fuzzyAIListening : context.l10n.startListeningPrompt,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
             ]),
           ),
@@ -89,7 +90,7 @@ class _VoiceModePageState extends State<VoiceModePage> with SingleTickerProvider
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text('Recent Commands', style: Theme.of(context).textTheme.titleSmall),
+              child: Text(context.l10n.recentCommandsTitle, style: Theme.of(context).textTheme.titleSmall),
             ),
             Expanded(
               child: ListView.builder(

@@ -6,6 +6,7 @@ import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
+import '../../app.dart';
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});
@@ -35,7 +36,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Marketplace'),
+        title: Text(context.l10n.marketplaceTitle),
       ),
       body: Column(
         children: [
@@ -48,7 +49,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
               children: [
                 Expanded(
                   child: AppInput(
-                    hint: 'Search plugins...',
+                    hint: context.l10n.searchPluginsHint,
                     prefix: const Icon(Icons.search, size: 18),
                     onChanged: (v) => setState(() => _search = v),
                   ),
@@ -71,7 +72,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
               scrollDirection: Axis.horizontal,
               children: [
                 _CategoryChip(
-                    label: 'All',
+                    label: context.l10n.allCategoriesFilter,
                     selected: _filterCategory == null,
                     onTap: () =>
                         setState(() => _filterCategory = null)),
@@ -90,7 +91,7 @@ class _MarketplacePageState extends State<MarketplacePage> {
           // Plugin grid
           Expanded(
             child: plugins.isEmpty
-                ? const Center(child: Text('No plugins found'))
+                ? Center(child: Text(context.l10n.noPluginsFound))
                 : ListView(
                     padding: const EdgeInsets.all(16),
                     children: plugins
@@ -134,10 +135,10 @@ class _MarketplaceBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Plugin Marketplace',
+                Text(context.l10n.pluginMarketplaceTitle,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white, fontWeight: FontWeight.w700)),
-                Text('Extend your workflow engine with community plugins.',
+                Text(context.l10n.pluginMarketplaceSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white.withOpacity(0.85))),
               ],
@@ -227,7 +228,7 @@ class _MarketplaceCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       const Icon(Icons.download, size: 12),
                       Text(
-                          ' ${_formatCount(plugin.downloadCount!)}',
+                          ' ${format_count(plugin.downloadCount!)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurface.withOpacity(0.4))),
                     ],
@@ -239,13 +240,13 @@ class _MarketplaceCard extends StatelessWidget {
           const SizedBox(width: 12),
           plugin.isInstalled
               ? AppButton(
-                  label: 'Installed',
+                  label: context.l10n.installedBadge,
                   variant: AppButtonVariant.ghost,
                   size: AppButtonSize.sm,
                   onPressed: null,
                 )
               : AppButton(
-                  label: 'Install',
+                  label: context.l10n.installButton,
                   icon: const Icon(Icons.download),
                   size: AppButtonSize.sm,
                   onPressed: () => app.installPlugin(plugin.id),
@@ -255,7 +256,7 @@ class _MarketplaceCard extends StatelessWidget {
     );
   }
 
-  String _formatCount(int n) {
+  String format_count(int n) {
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
     return '$n';
   }
@@ -320,7 +321,7 @@ class _CategoryFilter extends StatelessWidget {
       icon: const Icon(Icons.filter_list, size: 20),
       onSelected: onChanged,
       itemBuilder: (_) => [
-        const PopupMenuItem(value: null, child: Text('All Categories')),
+        PopupMenuItem(value: null, child: Text(context.l10n.allCategoriesFilter)),
         ...PluginCategory.values.map((c) =>
             PopupMenuItem(value: c, child: Text(c.label))),
       ],

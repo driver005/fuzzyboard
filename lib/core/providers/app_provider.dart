@@ -13,7 +13,7 @@ class AppProvider extends ChangeNotifier {
   final _uuid = const Uuid();
 
   AppProvider() {
-    _loadSettings();
+    load_settings();
   }
 
   // ── Settings flags ────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ class AppProvider extends ChangeNotifier {
   bool get verboseLogging => _verboseLogging;
   bool get autoSave => _autoSave;
 
-  Future<void> _loadSettings() async {
+  Future<void> load_settings() async {
     final prefs = await SharedPreferences.getInstance();
     _showAvatar = prefs.getBool('showAvatar') ?? true;
     _reducedMotion = prefs.getBool('reducedMotion') ?? false;

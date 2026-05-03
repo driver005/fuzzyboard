@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/theme_provider.dart';
 
@@ -49,133 +50,139 @@ class _SectionHeader extends _SidebarEntry {
 }
 
 // ── Data tab nav items ────────────────────────────────────────────────────────
-const _dataNavItems = <_SidebarEntry>[
-  _NavItem(
-    label: 'Dashboard',
-    icon: Icons.dashboard_outlined,
-    activeIcon: Icons.dashboard,
-    route: '/',
-  ),
-  _NavItem(
-    label: 'Tasks',
-    icon: Icons.task_outlined,
-    activeIcon: Icons.task,
-    route: '/tasks',
-  ),
-  _NavItem(
-    label: 'Workflows',
-    icon: Icons.account_tree_outlined,
-    activeIcon: Icons.account_tree,
-    route: '/workflows',
-  ),
-  _NavItem(
-    label: 'Plugins',
-    icon: Icons.extension_outlined,
-    activeIcon: Icons.extension,
-    route: '/plugins',
-  ),
-  _NavItem(
-    label: 'Marketplace',
-    icon: Icons.store_outlined,
-    activeIcon: Icons.store,
-    route: '/marketplace',
-  ),
-  _NavItem(
-    label: 'SQL Builder',
-    icon: Icons.table_chart_outlined,
-    activeIcon: Icons.table_chart,
-    route: '/sql',
-  ),
-  _NavItem(
-    label: 'Lua Builder',
-    icon: Icons.code_outlined,
-    activeIcon: Icons.code,
-    route: '/lua',
-  ),
-  _NavItem(
-    label: 'Search',
-    icon: Icons.search_outlined,
-    activeIcon: Icons.search,
-    route: '/search',
-  ),
-  _NavItem(
-    label: 'AI Chat',
-    icon: Icons.chat_outlined,
-    activeIcon: Icons.chat,
-    route: '/chat',
-  ),
-  _NavItem(
-    label: 'Voice',
-    icon: Icons.mic_outlined,
-    activeIcon: Icons.mic,
-    route: '/voice',
-  ),
-  _NavItem(
-    label: 'Dev Mode',
-    icon: Icons.bug_report_outlined,
-    activeIcon: Icons.bug_report,
-    route: '/dev',
-  ),
-  _NavItem(
-    label: 'Settings',
-    icon: Icons.settings_outlined,
-    activeIcon: Icons.settings,
-    route: '/settings',
-  ),
-];
+List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
+  final l10n = context.l10n;
+  return [
+    _NavItem(
+      label: l10n.sidebarDashboard,
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard,
+      route: '/',
+    ),
+    _NavItem(
+      label: l10n.sidebarTasks,
+      icon: Icons.task_outlined,
+      activeIcon: Icons.task,
+      route: '/tasks',
+    ),
+    _NavItem(
+      label: l10n.sidebarWorkflows,
+      icon: Icons.account_tree_outlined,
+      activeIcon: Icons.account_tree,
+      route: '/workflows',
+    ),
+    _NavItem(
+      label: l10n.sidebarPlugins,
+      icon: Icons.extension_outlined,
+      activeIcon: Icons.extension,
+      route: '/plugins',
+    ),
+    _NavItem(
+      label: l10n.sidebarMarketplace,
+      icon: Icons.store_outlined,
+      activeIcon: Icons.store,
+      route: '/marketplace',
+    ),
+    _NavItem(
+      label: l10n.sidebarSqlBuilder,
+      icon: Icons.table_chart_outlined,
+      activeIcon: Icons.table_chart,
+      route: '/sql',
+    ),
+    _NavItem(
+      label: l10n.sidebarLuaBuilder,
+      icon: Icons.code_outlined,
+      activeIcon: Icons.code,
+      route: '/lua',
+    ),
+    _NavItem(
+      label: l10n.sidebarSearch,
+      icon: Icons.search_outlined,
+      activeIcon: Icons.search,
+      route: '/search',
+    ),
+    _NavItem(
+      label: l10n.sidebarAiChat,
+      icon: Icons.chat_outlined,
+      activeIcon: Icons.chat,
+      route: '/chat',
+    ),
+    _NavItem(
+      label: l10n.sidebarVoice,
+      icon: Icons.mic_outlined,
+      activeIcon: Icons.mic,
+      route: '/voice',
+    ),
+    _NavItem(
+      label: l10n.sidebarDevMode,
+      icon: Icons.bug_report_outlined,
+      activeIcon: Icons.bug_report,
+      route: '/dev',
+    ),
+    _NavItem(
+      label: l10n.sidebarSettings,
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings,
+      route: '/settings',
+    ),
+  ];
+}
 
 // ── Pages tab nav items ───────────────────────────────────────────────────────
-const _pagesNavItems = <_SidebarEntry>[
-  _NavItem(
-    label: 'Page Builder',
-    icon: Icons.dashboard_customize_outlined,
-    activeIcon: Icons.dashboard_customize,
-    route: '/builder',
-  ),
-  _SectionHeader(label: 'CMS', icon: Icons.web_outlined, routePrefix: '/cms'),
-  _NavItem(
-    label: 'Overview',
-    icon: Icons.dashboard_outlined,
-    activeIcon: Icons.dashboard,
-    route: '/cms',
-    isSubItem: true,
-  ),
-  _NavItem(
-    label: 'Content Types',
-    icon: Icons.schema_outlined,
-    activeIcon: Icons.schema,
-    route: '/cms/types',
-    isSubItem: true,
-  ),
-  _NavItem(
-    label: 'Entries',
-    icon: Icons.article_outlined,
-    activeIcon: Icons.article,
-    route: '/cms/entries',
-    isSubItem: true,
-  ),
-  _NavItem(
-    label: 'Media',
-    icon: Icons.photo_library_outlined,
-    activeIcon: Icons.photo_library,
-    route: '/cms/media',
-    isSubItem: true,
-  ),
-  _NavItem(
-    label: 'Pages',
-    icon: Icons.pages_outlined,
-    activeIcon: Icons.pages,
-    route: '/cms/pages',
-    isSubItem: true,
-  ),
-  _NavItem(
-    label: 'Categories',
-    icon: Icons.label_outlined,
-    activeIcon: Icons.label,
-    route: '/cms/categories',
-    isSubItem: true,
-  ),
-];
+List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
+  final l10n = context.l10n;
+  return [
+    _NavItem(
+      label: l10n.sidebarPageBuilder,
+      icon: Icons.dashboard_customize_outlined,
+      activeIcon: Icons.dashboard_customize,
+      route: '/builder',
+    ),
+    _SectionHeader(label: l10n.sidebarCms, icon: Icons.web_outlined, routePrefix: '/cms'),
+    _NavItem(
+      label: l10n.sidebarCmsOverview,
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard,
+      route: '/cms',
+      isSubItem: true,
+    ),
+    _NavItem(
+      label: l10n.sidebarContentTypes,
+      icon: Icons.schema_outlined,
+      activeIcon: Icons.schema,
+      route: '/cms/types',
+      isSubItem: true,
+    ),
+    _NavItem(
+      label: l10n.sidebarEntries,
+      icon: Icons.article_outlined,
+      activeIcon: Icons.article,
+      route: '/cms/entries',
+      isSubItem: true,
+    ),
+    _NavItem(
+      label: l10n.sidebarMedia,
+      icon: Icons.photo_library_outlined,
+      activeIcon: Icons.photo_library,
+      route: '/cms/media',
+      isSubItem: true,
+    ),
+    _NavItem(
+      label: l10n.sidebarPages,
+      icon: Icons.pages_outlined,
+      activeIcon: Icons.pages,
+      route: '/cms/pages',
+      isSubItem: true,
+    ),
+    _NavItem(
+      label: l10n.sidebarCategories,
+      icon: Icons.label_outlined,
+      activeIcon: Icons.label,
+      route: '/cms/categories',
+      isSubItem: true,
+    ),
+  ];
+}
 
 /// Desktop / tablet sidebar
 class AppSidebar extends StatefulWidget {
@@ -202,8 +209,8 @@ class _AppSidebarState extends State<AppSidebar> {
     return loc.startsWith(routePrefix);
   }
 
-  List<_SidebarEntry> get navItems =>
-      widget.tab == AppHeaderTab.pages ? _pagesNavItems : _dataNavItems;
+  List<_SidebarEntry> navItems(BuildContext context) =>
+      widget.tab == AppHeaderTab.pages ? _buildPagesNavItems(context) : _buildDataNavItems(context);
 
   @override
   Widget build(BuildContext context) {
@@ -217,15 +224,16 @@ class _AppSidebarState extends State<AppSidebar> {
     final sidebarColor = isDark ? const Color(0xFF16162A) : Colors.white;
 
     // Build visible items based on section-expansion state.
+    final items = navItems(context);
     final visibleItems = <_SidebarEntry>[];
-    for (final entry in navItems) {
+    for (final entry in items) {
       if (entry is _SectionHeader) {
         visibleItems.add(entry);
         // Add sub-items only when section is expanded
         if (!widget.collapsed && isSectionExpanded(entry.routePrefix, loc)) {
-          final headerIdx = navItems.indexOf(entry);
-          for (int j = headerIdx + 1; j < navItems.length; j++) {
-            final next = navItems[j];
+          final headerIdx = items.indexOf(entry);
+          for (int j = headerIdx + 1; j < items.length; j++) {
+            final next = items[j];
             if (next is _SectionHeader) break;
             if (next is _NavItem && next.isSubItem) visibleItems.add(next);
           }
@@ -305,7 +313,7 @@ class _AppSidebarState extends State<AppSidebar> {
               children: [
                 _SidebarAction(
                   icon: devMode ? Icons.bug_report : Icons.bug_report_outlined,
-                  label: 'Dev Mode',
+                  label: context.l10n.sidebarDevMode,
                   collapsed: widget.collapsed,
                   active: devMode,
                   onTap: () => context.read<AppProvider>().toggleDevMode(),
@@ -450,7 +458,7 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = GoRouterState.of(context).uri.toString();
-    final sourceItems = tab == AppHeaderTab.pages ? _pagesNavItems : _dataNavItems;
+    final sourceItems = tab == AppHeaderTab.pages ? _buildPagesNavItems(context) : _buildDataNavItems(context);
     final mobileItems = sourceItems
         .whereType<_NavItem>()
         .where((i) => !i.isSubItem)

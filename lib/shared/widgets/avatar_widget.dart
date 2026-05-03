@@ -27,7 +27,7 @@ class _AvatarWidgetState extends State<AvatarWidget>
     'wave': (emoji: '👋', label: 'Hey there!', glow: Color(0xFFEC4899)),
   };
 
-  void _react(String event) {
+  void react(String event) {
     if (event == _prevEvent) return;
     _prevEvent = event;
     setState(() {
@@ -54,7 +54,7 @@ class _AvatarWidgetState extends State<AvatarWidget>
   @override
   Widget build(BuildContext context) {
     final event = context.watch<AppProvider>().lastEvent;
-    _react(event);
+    react(event);
     final mood = _moods[_mood] ?? _moods['idle']!;
 
     return Tooltip(

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/workflow.dart';
+import '../../app.dart';
 import '../../shared/widgets/app_button.dart';
 
 /// Full-screen workflow visual canvas builder.
@@ -24,6 +25,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   bool _connecting = false;
   String? _connectFromId;
   final TransformationController _transform = TransformationController();
+  final FocusNode _keyboardFocus = FocusNode();
   final _uuid = const Uuid();
   final List<Map<String, dynamic>> _undoStack = [];
   final List<Map<String, dynamic>> _redoStack = [];
@@ -38,26 +40,27 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   @override
   void dispose() {
     _transform.dispose();
+    _keyboardFocus.dispose();
     super.dispose();
   }
 
-  void _save() {
+  void save() {
     context.read<AppProvider>().updateWorkflow(_workflow);
     Navigator.of(context).pop();
   }
 
-  void _addNode(NodeType type) {
+  void add_node(NodeType type) {
     final node = WorkflowNode(
       id: _uuid.v4(),
-      label: _labelForType(type),
+      label: label_for_type(type),
       type: type,
       position: const Offset(300, 300),
     );
-    _pushUndo();
+    push_undo();
     setState(() => _workflow.nodes.add(node));
   }
 
-  String _labelForType(NodeType type) => switch (type) {
+  String label_for_type(NodeType type) => switch (type) {
         NodeType.trigger => 'New Trigger',
         NodeType.action => 'New Action',
         NodeType.condition => 'Condition',
@@ -66,8 +69,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         NodeType.end => 'End',
       };
 
-  void _deleteNode(String id) {
-    _pushUndo();
+  void delete_node(String id) {
+    push_undo();
     setState(() {
       _workflow.nodes.removeWhere((n) => n.id == id);
       _workflow.connections
@@ -76,14 +79,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     });
   }
 
-  void _onNodeTap(String id) {
+  void on_node_tap(String id) {
     if (_connecting && _connectFromId != null && _connectFromId != id) {
       final conn = WorkflowConnection(
         id: _uuid.v4(),
         fromNodeId: _connectFromId!,
         toNodeId: id,
       );
-      _pushUndo();
+      push_undo();
       setState(() {
         _workflow.connections.add(conn);
         _connecting = false;
@@ -94,14 +97,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     }
   }
 
-  void _startConnect(String id) {
+  void start_connect(String id) {
     setState(() {
       _connecting = true;
       _connectFromId = id;
     });
   }
 
-  Map<String, dynamic> _captureSnapshot() {
+  Map<String, dynamic> capture_snapshot() {
     return {
       'nodes': _workflow.nodes.map((n) => {
         'id': n.id, 'label': n.label, 'type': n.type.name,
@@ -114,13 +117,13 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     };
   }
 
-  void _pushUndo() {
-    _undoStack.add(_captureSnapshot());
+  void push_undo() {
+    _undoStack.add(capture_snapshot());
     if (_undoStack.length > 30) _undoStack.removeAt(0);
     _redoStack.clear();
   }
 
-  void _applySnapshot(Map<String, dynamic> snapshot) {
+  void apply_snapshot(Map<String, dynamic> snapshot) {
     final nodes = (snapshot['nodes'] as List).map((n) => WorkflowNode(
       id: n['id'] as String, label: n['label'] as String,
       type: NodeType.values.firstWhere((t) => t.name == n['type'], orElse: () => NodeType.action),
@@ -138,20 +141,104 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     });
   }
 
-  void _undo() {
+  void undo() {
     if (_undoStack.isEmpty) return;
-    _redoStack.add(_captureSnapshot());
-    _applySnapshot(_undoStack.removeLast());
+    _redoStack.add(capture_snapshot());
+    apply_snapshot(_undoStack.removeLast());
   }
 
-  void _redo() {
+  void redo() {
     if (_redoStack.isEmpty) return;
-    _undoStack.add(_captureSnapshot());
-    _applySnapshot(_redoStack.removeLast());
+    _undoStack.add(capture_snapshot());
+    apply_snapshot(_redoStack.removeLast());
   }
 
-  /// Export the current workflow as JSON and copy to clipboard.
-  Future<void> _exportJson() async {
+  void delete_connection(String id) {
+    push_undo();
+    setState(() => _workflow.connections.removeWhere((c) => c.id == id));
+  }
+
+  void cancel_connect() {
+    setState(() {
+      _connecting = false;
+      _connectFromId = null;
+    });
+  }
+
+  void show_tutorial() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Text('🗺️ ', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 6),
+            Text(ctx.l10n.canvasWorkflowGuideTitle),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _TutorialSection(
+                  icon: Icons.add_box_outlined,
+                  title: ctx.l10n.addingNodesSection,
+                  body:
+                      'Click any node type in the left palette to place it on the canvas.',
+                ),
+                _TutorialSection(
+                  icon: Icons.drag_indicator,
+                  title: ctx.l10n.movingNodesSection,
+                  body:
+                      'Drag a node to reposition it anywhere on the canvas.',
+                ),
+                _TutorialSection(
+                  icon: Icons.link,
+                  title: ctx.l10n.connectingNodesSection,
+                  body:
+                      'Click the 🔗 icon on a node to enter connect mode, then click the target node to draw an arrow. Press ESC or tap the × chip in the toolbar to cancel.',
+                ),
+                _TutorialSection(
+                  icon: Icons.settings_outlined,
+                  title: ctx.l10n.configuringNodesSection,
+                  body:
+                      'Tap a node to open its config panel on the right. You can rename it, and delete any of its connections there.',
+                ),
+                _TutorialSection(
+                  icon: Icons.delete_outline,
+                  title: ctx.l10n.deletingSection,
+                  body:
+                      'Use the 🗑 icon on a node to remove it and all its connections. To remove a single connection, open the source node config panel.',
+                ),
+                _TutorialSection(
+                  icon: Icons.undo,
+                  title: ctx.l10n.undoRedoSection,
+                  body:
+                      'Up to 30 undo steps are stored. Use the toolbar arrows to step back and forward.',
+                ),
+                _TutorialSection(
+                  icon: Icons.upload_outlined,
+                  title: ctx.l10n.exportImportSection,
+                  body:
+                      'Export copies the workflow as JSON to your clipboard. Import lets you paste JSON to restore a workflow.',
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.l10n.gotItButton),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> export_json() async {
     final data = {
       'id': _workflow.id,
       'name': _workflow.name,
@@ -176,33 +263,33 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     await Clipboard.setData(ClipboardData(text: json));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Workflow JSON copied to clipboard!')),
+        SnackBar(content: Text(context.l10n.canvasWorkflowJsonCopied)),
       );
     }
   }
 
   /// Show import dialog and parse JSON.
-  void _showImportDialog() {
+  void show_import_dialog() {
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Import Workflow JSON'),
+        title: Text(ctx.l10n.canvasImportJsonTitle),
         content: SizedBox(
           width: 500,
           child: TextField(
             controller: controller,
             maxLines: 12,
-            decoration: const InputDecoration(
-              hintText: 'Paste workflow JSON here...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: ctx.l10n.canvasImportJsonHint,
+              border: const OutlineInputBorder(),
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(ctx.l10n.cancelButton)),
           TextButton(
-            child: const Text('Import'),
+            child: Text(ctx.l10n.importButton),
             onPressed: () {
               try {
                 final data = jsonDecode(controller.text) as Map<String, dynamic>;
@@ -229,9 +316,9 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                     ..addAll(connections);
                 });
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workflow imported!')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.canvasWorkflowImported)));
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import error: $e')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.canvasImportError(e.toString()))));
               }
             },
           ),
@@ -246,140 +333,190 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_workflow.name),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          if (_connecting)
-            Chip(
-              label: const Text('Select target node'),
-              backgroundColor: cs.primary.withOpacity(0.15),
-              deleteIcon: const Icon(Icons.close, size: 16),
-              onDeleted: () => setState(() {
-                _connecting = false;
-                _connectFromId = null;
-              }),
+    return KeyboardListener(
+      focusNode: _keyboardFocus,
+      autofocus: true,
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _connecting) {
+          cancel_connect();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_workflow.name),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          actions: [
+            if (_connecting)
+              Chip(
+                avatar: const Icon(Icons.link, size: 16),
+                label: const Text('Click target node — ESC to cancel'),
+                backgroundColor: cs.primary.withOpacity(0.15),
+                deleteIcon: const Icon(Icons.close, size: 16),
+                onDeleted: cancel_connect,
+              ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.undo),
+              tooltip: 'Undo',
+              onPressed: _undoStack.isEmpty ? null : undo,
             ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.undo),
-            tooltip: 'Undo',
-            onPressed: _undoStack.isEmpty ? null : _undo,
-          ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            tooltip: 'Redo',
-            onPressed: _redoStack.isEmpty ? null : _redo,
-          ),
-          const SizedBox(width: 8),
-          AppButton(
-            label: 'Export',
-            icon: const Icon(Icons.upload_outlined),
-            size: AppButtonSize.sm,
-            variant: AppButtonVariant.outline,
-            onPressed: _exportJson,
-          ),
-          const SizedBox(width: 8),
-          AppButton(
-            label: 'Import',
-            icon: const Icon(Icons.download_outlined),
-            size: AppButtonSize.sm,
-            variant: AppButtonVariant.outline,
-            onPressed: _showImportDialog,
-          ),
-          const SizedBox(width: 8),
-          AppButton(
-            label: 'Save',
-            icon: const Icon(Icons.save),
-            size: AppButtonSize.sm,
-            onPressed: _save,
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: Row(
-        children: [
-          _NodePalette(onAdd: _addNode),
-          Expanded(
-            child: Stack(
-              children: [
-                // Grid background
-                Container(
-                  color: isDark
-                      ? const Color(0xFF0F0F1A)
-                      : const Color(0xFFF8F9FF),
-                  child: CustomPaint(
-                    painter: _GridPainter(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.04)
-                            : Colors.black.withOpacity(0.04)),
-                    child: const SizedBox.expand(),
+            IconButton(
+              icon: const Icon(Icons.redo),
+              tooltip: 'Redo',
+              onPressed: _redoStack.isEmpty ? null : redo,
+            ),
+            const SizedBox(width: 8),
+            AppButton(
+              label: context.l10n.canvasExportButton,
+              icon: const Icon(Icons.upload_outlined),
+              size: AppButtonSize.sm,
+              variant: AppButtonVariant.outline,
+              onPressed: export_json,
+            ),
+            const SizedBox(width: 8),
+            AppButton(
+              label: context.l10n.importButton,
+              icon: const Icon(Icons.download_outlined),
+              size: AppButtonSize.sm,
+              variant: AppButtonVariant.outline,
+              onPressed: show_import_dialog,
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              tooltip: 'How to use',
+              onPressed: show_tutorial,
+            ),
+            const SizedBox(width: 8),
+            AppButton(
+              label: 'Save',
+              icon: const Icon(Icons.save),
+              size: AppButtonSize.sm,
+              onPressed: save,
+            ),
+            const SizedBox(width: 12),
+          ],
+        ),
+        body: Row(
+          children: [
+            _NodePalette(onAdd: add_node),
+            Expanded(
+              child: Stack(
+                children: [
+                  // Grid background
+                  Container(
+                    color: isDark
+                        ? const Color(0xFF0F0F1A)
+                        : const Color(0xFFF8F9FF),
+                    child: CustomPaint(
+                      painter: _GridPainter(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.04)
+                              : Colors.black.withOpacity(0.04)),
+                      child: const SizedBox.expand(),
+                    ),
                   ),
-                ),
-                // Interactive view
-                InteractiveViewer(
-                  transformationController: _transform,
-                  boundaryMargin: const EdgeInsets.all(800),
-                  minScale: 0.3,
-                  maxScale: 2.5,
-                  child: SizedBox(
-                    width: 2000,
-                    height: 1500,
-                    child: Stack(
-                      children: [
-                        // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _ConnectionsPainter(
-                              nodes: _workflow.nodes,
-                              connections: _workflow.connections,
-                              primaryColor: cs.primary,
+                  // Interactive view
+                  InteractiveViewer(
+                    transformationController: _transform,
+                    boundaryMargin: const EdgeInsets.all(800),
+                    minScale: 0.3,
+                    maxScale: 2.5,
+                    child: SizedBox(
+                      width: 2000,
+                      height: 1500,
+                      child: Stack(
+                        children: [
+                          // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _ConnectionsPainter(
+                                nodes: _workflow.nodes,
+                                connections: _workflow.connections,
+                                primaryColor: cs.primary,
+                              ),
+                            ),
+                          ),
+                          ..._workflow.nodes.map((node) {
+                            return Positioned(
+                              left: node.position.dx,
+                              top: node.position.dy,
+                              child: _NodeWidget(
+                                node: node,
+                                isSelected: _selectedNodeId == node.id,
+                                isConnectSource: _connectFromId == node.id,
+                                isConnecting: _connecting,
+                                onTap: () => on_node_tap(node.id),
+                                onDrag: (delta) {
+                                  setState(() {
+                                    node.position = Offset(
+                                      node.position.dx + delta.dx,
+                                      node.position.dy + delta.dy,
+                                    );
+                                  });
+                                },
+                                onConnect: () => start_connect(node.id),
+                                onDelete: () => delete_node(node.id),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Connect-mode overlay hint
+                  if (_connecting)
+                    Positioned(
+                      bottom: 16,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Material(
+                          borderRadius: BorderRadius.circular(24),
+                          color: cs.primary,
+                          elevation: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.touch_app,
+                                    color: Colors.white, size: 18),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Click any node to connect — ESC to cancel',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        ..._workflow.nodes.map((node) {
-                          return Positioned(
-                            left: node.position.dx,
-                            top: node.position.dy,
-                            child: _NodeWidget(
-                              node: node,
-                              isSelected: _selectedNodeId == node.id,
-                              isConnectSource: _connectFromId == node.id,
-                              onTap: () => _onNodeTap(node.id),
-                              onDrag: (delta) {
-                                setState(() {
-                                  node.position = Offset(
-                                    node.position.dx + delta.dx,
-                                    node.position.dy + delta.dy,
-                                  );
-                                });
-                              },
-                              onConnect: () => _startConnect(node.id),
-                              onDelete: () => _deleteNode(node.id),
-                            ),
-                          );
-                        }),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                // Selected node config panel
-                if (_selectedNodeId != null)
+                  // Selected node config panel
+                  if (_selectedNodeId != null)
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
-                    width: 260,
+                    width: 280,
                     child: _NodeConfigPanel(
                       node: _workflow.nodes
                           .firstWhere((n) => n.id == _selectedNodeId),
+                      connections: _workflow.connections,
+                      nodes: _workflow.nodes,
                       onClose: () =>
                           setState(() => _selectedNodeId = null),
                       onUpdate: (n) => setState(() {}),
+                      onDeleteConnection: delete_connection,
                     ),
                   ),
               ],
@@ -387,9 +524,10 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
           ),
         ],
       ),
-    );
-  }
-}
+    ),  // Scaffold
+  );  // KeyboardListener
+  }  // build
+}  // _WorkflowCanvasState
 
 // ── Node Palette ─────────────────────────────────────────────────────────────
 
@@ -434,11 +572,21 @@ class _PaletteItem extends StatelessWidget {
   final void Function(NodeType) onAdd;
   const _PaletteItem({required this.type, required this.onAdd});
 
+  static String _descriptionForType(NodeType t) => switch (t) {
+        NodeType.trigger => 'Starts the workflow (e.g. on event)',
+        NodeType.action => 'Runs an action (e.g. send email)',
+        NodeType.condition => 'Branch on true/false',
+        NodeType.delay => 'Wait a specified time',
+        NodeType.script => 'Run a Lua/SQL script',
+        NodeType.end => 'Marks the workflow end',
+      };
+
   @override
   Widget build(BuildContext context) {
     final color = WorkflowNode.colorForType(type);
     return Tooltip(
-      message: type.name,
+      message: _descriptionForType(type),
+      preferBelow: false,
       child: InkWell(
         onTap: () => onAdd(type),
         borderRadius: BorderRadius.circular(10),
@@ -472,6 +620,7 @@ class _NodeWidget extends StatelessWidget {
   final WorkflowNode node;
   final bool isSelected;
   final bool isConnectSource;
+  final bool isConnecting;
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
   final VoidCallback onConnect;
@@ -481,6 +630,7 @@ class _NodeWidget extends StatelessWidget {
     required this.node,
     required this.isSelected,
     required this.isConnectSource,
+    required this.isConnecting,
     required this.onTap,
     required this.onDrag,
     required this.onConnect,
@@ -492,26 +642,33 @@ class _NodeWidget extends StatelessWidget {
     final color = WorkflowNode.colorForType(node.type);
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
+    // When in connect mode and this is NOT the source, show it as a target candidate
+    final isTarget = isConnecting && !isConnectSource;
 
     return GestureDetector(
       onTap: onTap,
       onPanUpdate: (details) => onDrag(details.delta),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
         width: 160,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected || isConnectSource
-                ? color
-                : color.withOpacity(0.3),
-            width: isSelected ? 2.5 : 1.5,
+            color: isConnectSource
+                ? Colors.orange
+                : isTarget
+                    ? color
+                    : isSelected
+                        ? color
+                        : color.withOpacity(0.3),
+            width: isConnectSource || isSelected ? 2.5 : isTarget ? 2 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withOpacity(isTarget ? 0.35 : 0.2),
               blurRadius: 12,
-              spreadRadius: isSelected ? 3 : 0,
+              spreadRadius: isSelected || isTarget ? 3 : 0,
             ),
           ],
         ),
@@ -540,6 +697,9 @@ class _NodeWidget extends StatelessWidget {
                           letterSpacing: 0.5),
                     ),
                   ),
+                  if (isConnectSource)
+                    const Icon(Icons.radio_button_checked,
+                        size: 10, color: Colors.orange),
                 ],
               ),
             ),
@@ -553,24 +713,41 @@ class _NodeWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _NodeAction(
-                      icon: Icons.link,
-                      color: color,
-                      tooltip: 'Connect',
-                      onTap: onConnect),
-                  _NodeAction(
-                      icon: Icons.delete_outline,
-                      color: Colors.red.shade400,
-                      tooltip: 'Delete',
-                      onTap: onDelete),
-                ],
+            if (!isConnecting)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _NodeAction(
+                        icon: Icons.link,
+                        color: color,
+                        tooltip: 'Connect to another node',
+                        onTap: onConnect),
+                    _NodeAction(
+                        icon: Icons.delete_outline,
+                        color: Colors.red.shade400,
+                        tooltip: 'Delete node',
+                        onTap: onDelete),
+                  ],
+                ),
               ),
-            ),
+            if (isTarget)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_downward, size: 12, color: color),
+                    const SizedBox(width: 4),
+                    Text('Tap to connect',
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: color,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -609,13 +786,19 @@ class _NodeAction extends StatelessWidget {
 
 class _NodeConfigPanel extends StatefulWidget {
   final WorkflowNode node;
+  final List<WorkflowConnection> connections;
+  final List<WorkflowNode> nodes;
   final VoidCallback onClose;
   final ValueChanged<WorkflowNode> onUpdate;
+  final ValueChanged<String> onDeleteConnection;
 
   const _NodeConfigPanel({
     required this.node,
+    required this.connections,
+    required this.nodes,
     required this.onClose,
     required this.onUpdate,
+    required this.onDeleteConnection,
   });
 
   @override
@@ -623,17 +806,17 @@ class _NodeConfigPanel extends StatefulWidget {
 }
 
 class _NodeConfigPanelState extends State<_NodeConfigPanel> {
-  late TextEditingController _label;
+  late TextEditingController labelController;
 
   @override
   void initState() {
     super.initState();
-    _label = TextEditingController(text: widget.node.label);
+    labelController = TextEditingController(text: widget.node.label);
   }
 
   @override
   void dispose() {
-    _label.dispose();
+    labelController.dispose();
     super.dispose();
   }
 
@@ -643,6 +826,13 @@ class _NodeConfigPanelState extends State<_NodeConfigPanel> {
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
     final color = WorkflowNode.colorForType(widget.node.type);
+
+    final outgoing = widget.connections
+        .where((c) => c.fromNodeId == widget.node.id)
+        .toList();
+    final incoming = widget.connections
+        .where((c) => c.toNodeId == widget.node.id)
+        .toList();
 
     // FIX 1: SizedBox.expand() gives the Material full height so the inner
     //         Expanded child has a finite constraint to work against.
@@ -694,7 +884,7 @@ class _NodeConfigPanelState extends State<_NodeConfigPanel> {
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     TextField(
-                      controller: _label,
+                      controller: labelController,
                       decoration: InputDecoration(
                         hintText: 'Node label',
                         border: OutlineInputBorder(
@@ -741,12 +931,183 @@ class _NodeConfigPanelState extends State<_NodeConfigPanel> {
                         style: theme.textTheme.bodySmall?.copyWith(
                             fontFamily: 'monospace',
                             color: cs.onSurface.withOpacity(0.5))),
+                    // ── Connections section ───────────────────────────────
+                    if (outgoing.isNotEmpty || incoming.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      Divider(color: cs.outline.withOpacity(0.2)),
+                      const SizedBox(height: 8),
+                      Text('Connections',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      if (outgoing.isNotEmpty) ...[
+                        Text('Outgoing',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: cs.onSurface.withOpacity(0.5),
+                                fontSize: 10)),
+                        const SizedBox(height: 4),
+                        ...outgoing.map((c) => _ConnectionRow(
+                              connection: c,
+                              nodes: widget.nodes,
+                              isOutgoing: true,
+                              onDelete: () =>
+                                  widget.onDeleteConnection(c.id),
+                            )),
+                      ],
+                      if (incoming.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text('Incoming',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: cs.onSurface.withOpacity(0.5),
+                                fontSize: 10)),
+                        const SizedBox(height: 4),
+                        ...incoming.map((c) => _ConnectionRow(
+                              connection: c,
+                              nodes: widget.nodes,
+                              isOutgoing: false,
+                              onDelete: () =>
+                                  widget.onDeleteConnection(c.id),
+                            )),
+                      ],
+                    ],
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Connection Row ─────────────────────────────────────────────────────────────
+
+class _ConnectionRow extends StatelessWidget {
+  final WorkflowConnection connection;
+  final List<WorkflowNode> nodes;
+  final bool isOutgoing;
+  final VoidCallback onDelete;
+
+  const _ConnectionRow({
+    required this.connection,
+    required this.nodes,
+    required this.isOutgoing,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final otherId =
+        isOutgoing ? connection.toNodeId : connection.fromNodeId;
+    final other = nodes.cast<WorkflowNode?>().firstWhere(
+        (n) => n?.id == otherId,
+        orElse: () => null);
+    final otherLabel = other?.label ?? otherId;
+
+    final connColor = switch (connection.type) {
+      ConnectionType.success => const Color(0xFF10B981),
+      ConnectionType.failure => const Color(0xFFEF4444),
+      ConnectionType.always => cs.primary,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(
+            isOutgoing ? Icons.arrow_forward : Icons.arrow_back,
+            size: 12,
+            color: connColor,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              otherLabel,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(fontWeight: FontWeight.w500),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (connection.label != null) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: connColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(connection.label!,
+                  style: TextStyle(
+                      fontSize: 9,
+                      color: connColor,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ],
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onDelete,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Icon(Icons.close,
+                  size: 13, color: cs.onSurface.withOpacity(0.4)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tutorial Section (used in help dialog) ────────────────────────────────────
+
+class _TutorialSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _TutorialSection(
+      {required this.icon, required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 17, color: cs.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 3),
+                Text(body,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withOpacity(0.7))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

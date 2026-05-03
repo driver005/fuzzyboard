@@ -8,6 +8,7 @@ import '../../models/cms_category.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
+import '../../app.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -18,14 +19,14 @@ class CategoriesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Categories'),
+        title: Text(context.l10n.categoriesTitle),
         actions: [
-          AppButton(label: 'New Category', icon: const Icon(Icons.add), size: AppButtonSize.sm, onPressed: () => _showDialog(context)),
+          AppButton(label: context.l10n.newCategoryButton, icon: const Icon(Icons.add), size: AppButtonSize.sm, onPressed: () => show_dialog(context)),
           const SizedBox(width: 12),
         ],
       ),
       body: cms.categories.isEmpty
-          ? const Center(child: Text('No categories yet'))
+          ? Center(child: Text(context.l10n.noCategoriesEmpty))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: cms.categories.length,
@@ -45,10 +46,10 @@ class CategoriesPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(color: cat.color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-                        child: Text('${cat.entryCount} entries', style: TextStyle(fontSize: 11, color: cat.color, fontWeight: FontWeight.w600)),
+                        child: Text(context.l10n.categoryEntriesCount(cat.entryCount), style: TextStyle(fontSize: 11, color: cat.color, fontWeight: FontWeight.w600)),
                       ),
                       const SizedBox(width: 4),
-                      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _showDialog(context, cat)),
+                      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => show_dialog(context, cat)),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
                         onPressed: () => cms.deleteCategory(cat.id),
@@ -61,7 +62,7 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 
-  void _showDialog(BuildContext context, [CmsCategory? cat]) {
+  void show_dialog(BuildContext context, [CmsCategory? cat]) {
     showDialog(context: context, builder: (_) => _CategoryDialog(existing: cat));
   }
 }
@@ -151,16 +152,16 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(widget.existing != null ? 'Edit Category' : 'New Category', style: Theme.of(context).textTheme.titleLarge),
+            Text(widget.existing != null ? context.l10n.editCategoryTitle : context.l10n.newCategoryTitle, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            AppInput(label: 'Name', controller: nameController, hint: 'Tutorials'),
+            AppInput(label: context.l10n.categoryNameLabel, controller: nameController, hint: context.l10n.categoryNameHint),
             const SizedBox(height: 12),
-            AppInput(label: 'Slug', controller: slugController, hint: 'tutorials'),
+            AppInput(label: context.l10n.categorySlugLabel, controller: slugController, hint: context.l10n.categorySlugHint),
             const SizedBox(height: 12),
             AppInput(label: 'Description', controller: descController, maxLines: 2),
             const SizedBox(height: 12),
             Row(children: [
-              Text('Color', style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
+              Text(context.l10n.categoryColorLabel, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(width: 12),
               GestureDetector(
                 onTap: pickColor,
@@ -174,9 +175,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
             ]),
             const SizedBox(height: 20),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancelButton)),
               const SizedBox(width: 8),
-              AppButton(label: widget.existing != null ? 'Update' : 'Create', onPressed: save),
+              AppButton(label: widget.existing != null ? 'Update' : context.l10n.createButton, onPressed: save),
             ]),
           ]),
         ),

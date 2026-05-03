@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../app.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_input.dart';
@@ -33,7 +34,7 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> handleSignup() async {
     setState(() => errorMessage = null);
     if (passwordCtrl.text != confirmPasswordCtrl.text) {
-      setState(() => errorMessage = 'Passwords do not match');
+      setState(() => errorMessage = context.l10n.passwordsMismatch);
       return;
     }
     final auth = context.read<AuthProvider>();
@@ -100,7 +101,7 @@ class _SignupPageState extends State<SignupPage> {
         ),
         const SizedBox(height: 16),
         Text(
-          'FuzzyBoard',
+          context.l10n.appTitle,
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
@@ -108,7 +109,7 @@ class _SignupPageState extends State<SignupPage> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Create your account',
+          context.l10n.signupSubtitle,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: cs.onSurface.withOpacity(0.55),
           ),
@@ -141,35 +142,35 @@ class _SignupPageState extends State<SignupPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Get started',
+            context.l10n.signupGetStarted,
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            'Create your FuzzyBoard workspace',
+            context.l10n.signupWorkspaceHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurface.withOpacity(0.55),
             ),
           ),
           const SizedBox(height: 24),
           AppInput(
-            label: 'Full Name',
-            hint: 'Jane Doe',
+            label: context.l10n.fullNameLabel,
+            hint: context.l10n.fullNameHint,
             controller: nameCtrl,
             prefix: Icon(Icons.person_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
           ),
           const SizedBox(height: 16),
           AppInput(
-            label: 'Email',
-            hint: 'you@example.com',
+            label: context.l10n.emailLabel,
+            hint: context.l10n.emailHint,
             controller: emailCtrl,
             keyboardType: TextInputType.emailAddress,
             prefix: Icon(Icons.email_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
           ),
           const SizedBox(height: 16),
           AppInput(
-            label: 'Password',
-            hint: '••••••••',
+            label: context.l10n.passwordLabel,
+            hint: context.l10n.passwordHint,
             controller: passwordCtrl,
             obscureText: obscurePassword,
             prefix: Icon(Icons.lock_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
@@ -184,8 +185,8 @@ class _SignupPageState extends State<SignupPage> {
           ),
           const SizedBox(height: 16),
           AppInput(
-            label: 'Confirm Password',
-            hint: '••••••••',
+            label: context.l10n.confirmPasswordLabel,
+            hint: context.l10n.passwordHint,
             controller: confirmPasswordCtrl,
             obscureText: obscureConfirm,
             prefix: Icon(Icons.lock_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
@@ -223,7 +224,7 @@ class _SignupPageState extends State<SignupPage> {
           ],
           const SizedBox(height: 24),
           AppButton(
-            label: 'Create Account',
+            label: context.l10n.createAccountButton,
             loading: auth.isLoading,
             fullWidth: true,
             size: AppButtonSize.lg,
@@ -234,7 +235,7 @@ class _SignupPageState extends State<SignupPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Already have an account? ',
+                '${context.l10n.hasAccountPrompt} ',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onSurface.withOpacity(0.55),
                 ),
@@ -242,7 +243,7 @@ class _SignupPageState extends State<SignupPage> {
               GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Text(
-                  'Sign in',
+                  context.l10n.signInLink,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.primary,
                     fontWeight: FontWeight.w600,

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/worker.dart';
 import '../../models/plugin.dart';
@@ -24,7 +25,7 @@ class _ConfigGraphPageState extends State<ConfigGraphPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('System Configuration'),
+        title: Text(context.l10n.configTitle),
         elevation: 0,
         backgroundColor: isDark ? const Color(0xFF16162A) : Colors.white,
         foregroundColor: cs.onSurface,
@@ -184,14 +185,14 @@ class _GraphPanel extends StatelessWidget {
                 ? Border.all(color: Colors.white, width: 2.5)
                 : null,
           ),
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.blur_on, color: Colors.white, size: 20),
-              SizedBox(height: 2),
+              const Icon(Icons.blur_on, color: Colors.white, size: 20),
+              const SizedBox(height: 2),
               Text(
-                'App',
-                style: TextStyle(
+                context.l10n.configAppNode,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -385,14 +386,14 @@ class _DetailPanel extends StatelessWidget {
               Icon(Icons.touch_app_outlined, size: 40, color: cs.onSurface.withOpacity(0.25)),
               const SizedBox(height: 12),
               Text(
-                'Select a node',
+                context.l10n.configSelectNode,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: cs.onSurface.withOpacity(0.4),
                     ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Tap any node to view\nand edit its configuration',
+                context.l10n.configSelectNodeHint,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: cs.onSurface.withOpacity(0.3),
@@ -470,8 +471,8 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
     provider.updateAppConfig('apiBaseUrl', apiBaseUrlCtrl.text);
     provider.updateAppConfig('timezone', timezoneCtrl.text);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('App config saved'), duration: Duration(seconds: 2)),
+      SnackBar(
+          content: Text(context.l10n.configAppSaved), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -490,15 +491,15 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
             _PanelHeader(
               icon: Icons.blur_on,
               iconColor: cs.primary,
-              title: 'App Configuration',
-              subtitle: 'Global application settings',
+              title: context.l10n.configAppConfiguration,
+              subtitle: context.l10n.configGlobalSettings,
             ),
             const SizedBox(height: 20),
             AppInput(
-              label: 'Max Concurrency',
+              label: context.l10n.configMaxConcurrency,
               controller: maxConcurrencyCtrl,
               keyboardType: TextInputType.number,
-              hint: '10',
+              hint: context.l10n.configMaxConcurrencyHint,
             ),
             const SizedBox(height: 16),
             _LogLevelDropdown(
@@ -507,20 +508,20 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
             ),
             const SizedBox(height: 16),
             AppInput(
-              label: 'API Base URL',
+              label: context.l10n.configApiBaseUrl,
               controller: apiBaseUrlCtrl,
               hint: 'https://api.example.com',
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 16),
             AppInput(
-              label: 'Timezone',
+              label: context.l10n.configTimezone,
               controller: timezoneCtrl,
-              hint: 'UTC',
+              hint: context.l10n.configTimezoneHint,
             ),
             const SizedBox(height: 24),
             AppButton(
-              label: 'Save Changes',
+              label: context.l10n.configSaveChanges,
               fullWidth: true,
               onPressed: save,
               icon: const Icon(Icons.save_outlined),
@@ -548,7 +549,7 @@ class _LogLevelDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Log Level',
+          context.l10n.configLogLevel,
           style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
@@ -636,8 +637,8 @@ class _WorkerConfigPanelState extends State<_WorkerConfigPanel> {
     );
     context.read<AppProvider>().updateWorker(updated);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Worker saved'), duration: Duration(seconds: 2)),
+      SnackBar(
+          content: Text(context.l10n.configWorkerSaved), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -707,30 +708,30 @@ class _WorkerConfigPanelState extends State<_WorkerConfigPanel> {
               ),
             ),
             const SizedBox(height: 16),
-            AppInput(label: 'Name', controller: nameCtrl),
+            AppInput(label: context.l10n.configWorkerName, controller: nameCtrl),
             const SizedBox(height: 12),
-            AppInput(label: 'Description', controller: descCtrl, maxLines: 2),
+            AppInput(label: context.l10n.descriptionLabel, controller: descCtrl, maxLines: 2),
             const SizedBox(height: 12),
             AppInput(
-              label: 'Concurrency',
+              label: context.l10n.configWorkerConcurrency,
               controller: concurrencyCtrl,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
             AppInput(
-              label: 'Max Retries',
+              label: context.l10n.configWorkerMaxRetries,
               controller: maxRetriesCtrl,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
             AppInput(
-              label: 'Timeout (seconds)',
+              label: context.l10n.configWorkerTimeout,
               controller: timeoutCtrl,
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
             AppInput(
-              label: 'Endpoint',
+              label: context.l10n.configWorkerEndpoint,
               controller: endpointCtrl,
               hint: 'https://...',
               keyboardType: TextInputType.url,
@@ -740,14 +741,14 @@ class _WorkerConfigPanelState extends State<_WorkerConfigPanel> {
               children: [
                 Expanded(
                   child: AppButton(
-                    label: 'Save',
+                    label: context.l10n.saveButton,
                     onPressed: save,
                     icon: const Icon(Icons.save_outlined),
                   ),
                 ),
                 const SizedBox(width: 8),
                 AppButton(
-                  label: status == WorkerStatus.running ? 'Stop' : 'Start',
+                  label: status == WorkerStatus.running ? context.l10n.configWorkerStop : context.l10n.configWorkerStart,
                   variant: status == WorkerStatus.running
                       ? AppButtonVariant.danger
                       : AppButtonVariant.secondary,
@@ -818,7 +819,7 @@ class _PluginInfoPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    plugin.isInstalled ? 'Installed' : 'Not Installed',
+                    plugin.isInstalled ? context.l10n.installedBadge : context.l10n.configPluginNotInstalled,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: statusColor,
                       fontWeight: FontWeight.w600,
@@ -835,23 +836,23 @@ class _PluginInfoPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _InfoRow(label: 'Author', value: plugin.author),
+            _InfoRow(label: context.l10n.configPluginAuthor, value: plugin.author),
             const SizedBox(height: 8),
-            _InfoRow(label: 'Version', value: 'v${plugin.version}'),
+            _InfoRow(label: context.l10n.versionLabel, value: 'v${plugin.version}'),
             if (plugin.rating != null) ...[
               const SizedBox(height: 8),
               _InfoRow(
-                  label: 'Rating', value: '⭐ ${plugin.rating!.toStringAsFixed(1)}'),
+                  label: context.l10n.configPluginRating, value: '⭐ ${plugin.rating!.toStringAsFixed(1)}'),
             ],
             if (plugin.downloadCount != null) ...[
               const SizedBox(height: 8),
               _InfoRow(
-                  label: 'Downloads',
-                  value: '${plugin.downloadCount!.toString()} installs'),
+                  label: context.l10n.configPluginDownloads,
+                  value: context.l10n.configPluginDownloadsValue(plugin.downloadCount!.toString())),
             ],
             const SizedBox(height: 24),
             AppButton(
-              label: plugin.isInstalled ? 'Uninstall' : 'Install',
+              label: plugin.isInstalled ? context.l10n.configPluginUninstall : context.l10n.installButton,
               variant:
                   plugin.isInstalled ? AppButtonVariant.danger : AppButtonVariant.primary,
               fullWidth: true,

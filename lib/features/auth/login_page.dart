@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../app.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_input.dart';
@@ -101,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 16),
         Text(
-          'FuzzyBoard',
+          context.l10n.appTitle,
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
@@ -109,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Sign in to your workspace',
+          context.l10n.loginSubtitle,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: cs.onSurface.withOpacity(0.55),
           ),
@@ -142,28 +143,28 @@ class _LoginPageState extends State<LoginPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Welcome back',
+            context.l10n.loginWelcomeBack,
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            'Enter your credentials to continue',
+            context.l10n.loginCredentialsHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurface.withOpacity(0.55),
             ),
           ),
           const SizedBox(height: 24),
           AppInput(
-            label: 'Email',
-            hint: 'you@example.com',
+            label: context.l10n.emailLabel,
+            hint: context.l10n.emailHint,
             controller: emailCtrl,
             keyboardType: TextInputType.emailAddress,
             prefix: Icon(Icons.email_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
           ),
           const SizedBox(height: 16),
           AppInput(
-            label: 'Password',
-            hint: '••••••••',
+            label: context.l10n.passwordLabel,
+            hint: context.l10n.passwordHint,
             controller: passwordCtrl,
             obscureText: obscurePassword,
             prefix: Icon(Icons.lock_outlined, size: 18, color: cs.onSurface.withOpacity(0.4)),
@@ -201,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
           ],
           const SizedBox(height: 24),
           AppButton(
-            label: 'Sign In',
+            label: context.l10n.signInButton,
             loading: auth.isLoading,
             fullWidth: true,
             size: AppButtonSize.lg,
@@ -212,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Don't have an account? ",
+                '${context.l10n.noAccountPrompt} ',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onSurface.withOpacity(0.55),
                 ),
@@ -222,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
                   MaterialPageRoute(builder: (_) => const SignupPage()),
                 ),
                 child: Text(
-                  'Sign up',
+                  context.l10n.signUpLink,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.primary,
                     fontWeight: FontWeight.w600,

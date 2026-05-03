@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
 
 const double _sidebarWidth = 240;
@@ -115,6 +116,12 @@ const _dataNavItems = <_SidebarEntry>[
     icon: Icons.bug_report_outlined,
     activeIcon: Icons.bug_report,
     route: '/dev',
+  ),
+  _NavItem(
+    label: 'Config Graph',
+    icon: Icons.device_hub_outlined,
+    activeIcon: Icons.device_hub,
+    route: '/config',
   ),
   _NavItem(
     label: 'Settings',
@@ -322,6 +329,13 @@ class _AppSidebarState extends State<AppSidebar> {
                         ? ThemeMode.light
                         : ThemeMode.dark,
                   ),
+                ),
+                const SizedBox(height: 4),
+                _SidebarAction(
+                  icon: Icons.logout_outlined,
+                  label: 'Logout',
+                  collapsed: widget.collapsed,
+                  onTap: () => context.read<AuthProvider>().logout(),
                 ),
               ],
             ),

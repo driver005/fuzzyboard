@@ -165,9 +165,9 @@ class _StatusLaneState extends State<_StatusLane> {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: isDragOver ? widget.status.color.withValues(alpha: 0.05) : Colors.transparent,
+            color: isDragOver ? widget.status.color.withOpacity(0.05) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: isDragOver ? Border.all(color: widget.status.color.withValues(alpha: 0.3), width: 1.5) : null,
+            border: isDragOver ? Border.all(color: widget.status.color.withOpacity(0.3), width: 1.5) : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +182,7 @@ class _StatusLaneState extends State<_StatusLane> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: widget.status.color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: widget.status.color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
                       child: Text('${widget.tasks.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: widget.status.color)),
                     ),
                   ],
@@ -191,7 +191,7 @@ class _StatusLaneState extends State<_StatusLane> {
               if (widget.tasks.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16, left: 18),
-                  child: Text('No tasks', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
+                  child: Text('No tasks', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.4))),
                 )
               else
                 ...widget.tasks.asMap().entries.map((e) {

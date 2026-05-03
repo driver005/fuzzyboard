@@ -42,7 +42,7 @@ void main() {
 
     test('WorkflowNode has correct color for type', () {
       final color = WorkflowNode.colorForType(NodeType.trigger);
-      expect(color.a, greaterThan(0));
+      expect(color.alpha, greaterThan(0));
     });
   });
 

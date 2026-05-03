@@ -364,7 +364,7 @@ class _RecentActivity extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                       ),
-                      Text(_relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
+                      Text(_relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 );

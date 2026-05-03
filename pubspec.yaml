@@ -28,7 +28,7 @@ dependencies:
   shared_preferences: ^2.2.3
 
   # Typography
-  google_fonts: ^6.2.1
+  google_fonts: 6.2.1
 
   # Unique IDs
   uuid: ^4.4.0

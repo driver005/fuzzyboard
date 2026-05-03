@@ -8,6 +8,7 @@ import 'core/providers/theme_provider.dart';
 import 'core/providers/user_provider.dart';
 import 'core/providers/screen_registry.dart';
 import 'core/providers/cms_provider.dart';
+import 'core/providers/gamification_provider.dart';
 import 'core/routing/app_router.dart';
 import 'l10n/app_localizations.dart';
 
@@ -46,6 +47,7 @@ class _FuzzyBoardAppState extends State<FuzzyBoardApp> {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ScreenRegistryProvider()),
         ChangeNotifierProvider(create: (_) => CmsProvider()),
+        ChangeNotifierProvider(create: (_) => GamificationProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp.router(

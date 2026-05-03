@@ -6,9 +6,30 @@ import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../app.dart';
+import '../config/config_graph_page.dart';
+import 'plugin_config_modal.dart';
 
-class PluginsPage extends StatelessWidget {
+class PluginsPage extends StatefulWidget {
   const PluginsPage({super.key});
+
+  @override
+  State<PluginsPage> createState() => _PluginsPageState();
+}
+
+class _PluginsPageState extends State<PluginsPage> with SingleTickerProviderStateMixin {
+  late TabController tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,27 +37,44 @@ class PluginsPage extends StatelessWidget {
     final installed = app.installedPlugins;
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.pluginsTitle)),
-      body: installed.isEmpty
-          ? const _EmptyPlugins()
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _SectionHeader(
-                    title: context.l10n.installedPluginsHeader,
-                    count: installed.length),
-                const SizedBox(height: 12),
-                ...installed.asMap().entries.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _PluginCard(plugin: e.value)
-                            .animate()
-                            .fadeIn(delay: (e.key * 60).ms)
-                            .slideX(begin: 0.1),
-                      ),
-                    ),
-              ],
-            ),
+      appBar: AppBar(
+        title: Text(context.l10n.pluginsTitle),
+        bottom: TabBar(
+          controller: tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.extension, size: 18), text: 'Installed'),
+            Tab(icon: Icon(Icons.device_hub, size: 18), text: 'Config Graph'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          // Tab 1: Installed plugins
+          installed.isEmpty
+              ? const _EmptyPlugins()
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _SectionHeader(
+                        title: context.l10n.installedPluginsHeader,
+                        count: installed.length),
+                    const SizedBox(height: 12),
+                    ...installed.asMap().entries.map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _PluginCard(plugin: e.value)
+                                .animate()
+                                .fadeIn(delay: (e.key * 60).ms)
+                                .slideX(begin: 0.1),
+                          ),
+                        ),
+                  ],
+                ),
+          // Tab 2: Config Graph
+          const ConfigGraphWidget(),
+        ],
+      ),
     );
   }
 }
@@ -81,6 +119,11 @@ class _PluginCard extends StatelessWidget {
     final app = context.read<AppProvider>();
 
     return AppCard(
+      onTap: () => showDialog(
+        context: context,
+        useSafeArea: false,
+        builder: (_) => PluginConfigModal(plugin: plugin),
+      ),
       child: Row(
         children: [
           // Icon

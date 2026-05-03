@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/gamification_provider.dart';
 import '../../models/task.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
@@ -121,13 +123,23 @@ class _TasksPageState extends State<TasksPage> {
   void showTaskDialog(BuildContext context, [Task? task]) {
     showDialog(
       context: context,
-      builder: (ctx) => _TaskDialog(
+      useSafeArea: false,
+      builder: (ctx) => _TaskFullModal(
         task: task,
         onSave: (t) {
           if (task == null) {
             context.read<AppProvider>().addTask(t);
+            // Award XP when a task is marked done on creation
+            if (t.status == TaskStatus.done) {
+              context.read<GamificationProvider>().onTaskCompleted();
+            }
           } else {
+            final wasDone = task.status == TaskStatus.done;
+            final isDone = t.status == TaskStatus.done;
             context.read<AppProvider>().updateTask(t);
+            if (!wasDone && isDone) {
+              context.read<GamificationProvider>().onTaskCompleted();
+            }
           }
         },
       ),
@@ -325,9 +337,17 @@ class _TaskCard extends StatelessWidget {
   void showTaskDialog(BuildContext context, Task task) {
     showDialog(
       context: context,
-      builder: (ctx) => _TaskDialog(
+      useSafeArea: false,
+      builder: (ctx) => _TaskFullModal(
         task: task,
-        onSave: (t) => context.read<AppProvider>().updateTask(t),
+        onSave: (t) {
+          final wasDone = task.status == TaskStatus.done;
+          final isDone = t.status == TaskStatus.done;
+          context.read<AppProvider>().updateTask(t);
+          if (!wasDone && isDone) {
+            context.read<GamificationProvider>().onTaskCompleted();
+          }
+        },
       ),
     );
   }
@@ -381,17 +401,17 @@ class _StatusFilter extends StatelessWidget {
   }
 }
 
-class _TaskDialog extends StatefulWidget {
+class _TaskFullModal extends StatefulWidget {
   final Task? task;
   final void Function(Task) onSave;
 
-  const _TaskDialog({this.task, required this.onSave});
+  const _TaskFullModal({this.task, required this.onSave});
 
   @override
-  State<_TaskDialog> createState() => _TaskDialogState();
+  State<_TaskFullModal> createState() => _TaskFullModalState();
 }
 
-class _TaskDialogState extends State<_TaskDialog> {
+class _TaskFullModalState extends State<_TaskFullModal> {
   late TextEditingController name;
   late TextEditingController desc;
   late TextEditingController tags;
@@ -399,14 +419,14 @@ class _TaskDialogState extends State<_TaskDialog> {
   late TaskStatus status;
   late TaskPriority priority;
   DateTime? dueDate;
+  bool useYaml = false;
 
   @override
   void initState() {
     super.initState();
     name = TextEditingController(text: widget.task?.name ?? '');
     desc = TextEditingController(text: widget.task?.description ?? '');
-    tags = TextEditingController(
-        text: widget.task?.tags.join(', ') ?? '');
+    tags = TextEditingController(text: widget.task?.tags.join(', ') ?? '');
     assigneeController = TextEditingController(text: widget.task?.config['assignee'] as String? ?? '');
     status = widget.task?.status ?? TaskStatus.todo;
     priority = widget.task?.priority ?? TaskPriority.medium;
@@ -422,131 +442,440 @@ class _TaskDialogState extends State<_TaskDialog> {
     super.dispose();
   }
 
+  Map<String, dynamic> get configPreview => {
+    'name': name.text.trim().isEmpty ? '(untitled)' : name.text.trim(),
+    'description': desc.text.trim(),
+    'status': status.name,
+    'priority': priority.name,
+    'tags': tags.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList(),
+    'assignee': assigneeController.text.trim(),
+    if (dueDate != null)
+      'dueDate': '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}',
+    'config': {
+      'assignee': assigneeController.text.trim(),
+    },
+  };
+
+  String get jsonPreview {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(configPreview);
+  }
+
+  String get yamlPreview {
+    return _toYaml(configPreview, 0);
+  }
+
+  String _toYaml(dynamic value, int indent) {
+    final pad = '  ' * indent;
+    if (value is Map) {
+      if (value.isEmpty) return '{}';
+      final buf = StringBuffer();
+      for (final entry in value.entries) {
+        final v = entry.value;
+        if (v is Map || v is List) {
+          buf.writeln('$pad${entry.key}:');
+          buf.write(_toYaml(v, indent + 1));
+        } else {
+          buf.writeln('$pad${entry.key}: ${_yamlScalar(v)}');
+        }
+      }
+      return buf.toString();
+    } else if (value is List) {
+      if (value.isEmpty) return '$pad[]\n';
+      final buf = StringBuffer();
+      for (final item in value) {
+        if (item is Map || item is List) {
+          buf.write('$pad-\n');
+          buf.write(_toYaml(item, indent + 1));
+        } else {
+          buf.writeln('$pad- ${_yamlScalar(item)}');
+        }
+      }
+      return buf.toString();
+    }
+    return '$pad${_yamlScalar(value)}\n';
+  }
+
+  String _yamlScalar(dynamic v) {
+    if (v == null) return 'null';
+    if (v is bool) return v ? 'true' : 'false';
+    if (v is num) return '$v';
+    final s = '$v';
+    if (s.contains(':') || s.contains('#') || s.startsWith('{') || s.isEmpty) {
+      return '"$s"';
+    }
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isNew = widget.task == null;
-    return AlertDialog(
-      title: Text(isNew ? context.l10n.newTaskDialog : context.l10n.editTaskDialog),
-      content: SizedBox(
-        width: 400,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppInput(
-                  label: context.l10n.taskNameLabel,
-                  hint: context.l10n.taskNameHint,
-                  controller: name),
-              const SizedBox(height: 12),
-              AppInput(
-                  label: context.l10n.descriptionLabel,
-                  hint: context.l10n.descriptionHint,
-                  controller: desc,
-                  maxLines: 3),
-              const SizedBox(height: 12),
-              AppSelect<TaskStatus>(
-                label: context.l10n.statusLabel,
-                value: status,
-                onChanged: (v) => setState(() => status = v ?? status),
-                items: TaskStatus.values
-                    .map((s) => DropdownMenuItem(
-                        value: s, child: Text(s.label)))
-                    .toList(),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+    final isWide = size.width > 800;
+
+    return Dialog(
+      insetPadding: EdgeInsets.zero,
+      shape: const RoundedRectangleBorder(),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: isDark ? const Color(0xFF12121E) : cs.surface,
+        child: Column(
+          children: [
+            // Header bar
+            Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF16162A) : Colors.white,
+                border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
               ),
-              const SizedBox(height: 12),
-              AppSelect<TaskPriority>(
-                label: context.l10n.priorityLabel,
-                value: priority,
-                onChanged: (v) =>
-                    setState(() => priority = v ?? priority),
-                items: TaskPriority.values
-                    .map((p) => DropdownMenuItem(
-                        value: p, child: Text(p.label)))
-                    .toList(),
-              ),
-              const SizedBox(height: 12),
-              AppInput(
-                  label: context.l10n.tagsLabel,
-                  hint: context.l10n.tagsHint,
-                  controller: tags),
-              const SizedBox(height: 12),
-              AppInput(label: context.l10n.assigneeLabel, hint: context.l10n.assigneeHint, controller: assigneeController),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(context.l10n.dueDateLabel, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Expanded(
-                      child: Text(
-                        dueDate != null
-                            ? '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}'
-                            : context.l10n.noDueDate,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'Close',
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isNew ? context.l10n.newTaskDialog : context.l10n.editTaskDialog,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const Spacer(),
+                  // Preview toggle
+                  _PreviewToggle(useYaml: useYaml, onToggle: (v) => setState(() => useYaml = v)),
+                  const SizedBox(width: 12),
+                  AppButton(
+                    label: isNew ? context.l10n.createButton : context.l10n.saveButton,
+                    onPressed: () {
+                      if (name.text.trim().isEmpty) return;
+                      final tagList = tags.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+                      final t = widget.task?.copyWith(
+                            name: name.text.trim(),
+                            description: desc.text.trim(),
+                            status: status,
+                            priority: priority,
+                            tags: tagList,
+                            dueDate: dueDate,
+                            config: {...(widget.task?.config ?? {}), 'assignee': assigneeController.text.trim()},
+                          ) ??
+                          Task(
+                            id: const Uuid().v4(),
+                            name: name.text.trim(),
+                            description: desc.text.trim(),
+                            status: status,
+                            priority: priority,
+                            tags: tagList,
+                            dueDate: dueDate,
+                            config: {'assignee': assigneeController.text.trim()},
+                          );
+                      widget.onSave(t);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+            // Body: split or single column
+            Expanded(
+              child: isWide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left: config preview
+                        Expanded(
+                          flex: 1,
+                          child: _ConfigPreviewPane(
+                            content: useYaml ? yamlPreview : jsonPreview,
+                            useYaml: useYaml,
+                            onToggle: (v) => setState(() => useYaml = v),
+                          ),
+                        ),
+                        VerticalDivider(width: 1, color: cs.outline.withOpacity(0.15)),
+                        // Right: fields
+                        Expanded(
+                          flex: 1,
+                          child: _TaskFormPane(
+                            name: name,
+                            desc: desc,
+                            tags: tags,
+                            assigneeController: assigneeController,
+                            status: status,
+                            priority: priority,
+                            dueDate: dueDate,
+                            onStatusChanged: (v) => setState(() => status = v ?? status),
+                            onPriorityChanged: (v) => setState(() => priority = v ?? priority),
+                            onDueDateChanged: (v) => setState(() => dueDate = v),
+                            onFieldChanged: () => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _ConfigPreviewPane(
+                            content: useYaml ? yamlPreview : jsonPreview,
+                            useYaml: useYaml,
+                            onToggle: (v) => setState(() => useYaml = v),
+                          ),
+                          const SizedBox(height: 16),
+                          _TaskFormPane(
+                            name: name,
+                            desc: desc,
+                            tags: tags,
+                            assigneeController: assigneeController,
+                            status: status,
+                            priority: priority,
+                            dueDate: dueDate,
+                            onStatusChanged: (v) => setState(() => status = v ?? status),
+                            onPriorityChanged: (v) => setState(() => priority = v ?? priority),
+                            onDueDateChanged: (v) => setState(() => dueDate = v),
+                            onFieldChanged: () => setState(() {}),
+                          ),
+                        ],
                       ),
                     ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(dueDate == null ? context.l10n.setDateButton : context.l10n.changeButton),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: dueDate ?? DateTime.now().add(const Duration(days: 1)),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
-                        );
-                        if (picked != null) setState(() => dueDate = picked);
-                      },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewToggle extends StatelessWidget {
+  final bool useYaml;
+  final ValueChanged<bool> onToggle;
+  const _PreviewToggle({required this.useYaml, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ToggleChip(label: 'JSON', selected: !useYaml, onTap: () => onToggle(false), cs: cs),
+        const SizedBox(width: 4),
+        _ToggleChip(label: 'YAML', selected: useYaml, onTap: () => onToggle(true), cs: cs),
+      ],
+    );
+  }
+}
+
+class _ToggleChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+  const _ToggleChip({required this.label, required this.selected, required this.onTap, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary : cs.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : cs.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfigPreviewPane extends StatelessWidget {
+  final String content;
+  final bool useYaml;
+  final ValueChanged<bool> onToggle;
+  const _ConfigPreviewPane({required this.content, required this.useYaml, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.colorScheme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+
+    return Container(
+      color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F5FF),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                Icon(Icons.data_object, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
+                Text(
+                  useYaml ? 'YAML Preview' : 'JSON Preview',
+                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
+                ),
+                const Spacer(),
+                _PreviewToggle(useYaml: useYaml, onToggle: onToggle),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: cs.outline.withOpacity(0.1)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                content,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12.5,
+                  height: 1.6,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskFormPane extends StatelessWidget {
+  final TextEditingController name;
+  final TextEditingController desc;
+  final TextEditingController tags;
+  final TextEditingController assigneeController;
+  final TaskStatus status;
+  final TaskPriority priority;
+  final DateTime? dueDate;
+  final ValueChanged<TaskStatus?> onStatusChanged;
+  final ValueChanged<TaskPriority?> onPriorityChanged;
+  final ValueChanged<DateTime?> onDueDateChanged;
+  final VoidCallback onFieldChanged;
+
+  const _TaskFormPane({
+    required this.name,
+    required this.desc,
+    required this.tags,
+    required this.assigneeController,
+    required this.status,
+    required this.priority,
+    required this.dueDate,
+    required this.onStatusChanged,
+    required this.onPriorityChanged,
+    required this.onDueDateChanged,
+    required this.onFieldChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Task Details', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          AppInput(
+            label: context.l10n.taskNameLabel,
+            hint: context.l10n.taskNameHint,
+            controller: name,
+            onChanged: (_) => onFieldChanged(),
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.descriptionLabel,
+            hint: context.l10n.descriptionHint,
+            controller: desc,
+            maxLines: 3,
+            onChanged: (_) => onFieldChanged(),
+          ),
+          const SizedBox(height: 12),
+          AppSelect<TaskStatus>(
+            label: context.l10n.statusLabel,
+            value: status,
+            onChanged: onStatusChanged,
+            items: TaskStatus.values
+                .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          AppSelect<TaskPriority>(
+            label: context.l10n.priorityLabel,
+            value: priority,
+            onChanged: onPriorityChanged,
+            items: TaskPriority.values
+                .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.tagsLabel,
+            hint: context.l10n.tagsHint,
+            controller: tags,
+            onChanged: (_) => onFieldChanged(),
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.assigneeLabel,
+            hint: context.l10n.assigneeHint,
+            controller: assigneeController,
+            onChanged: (_) => onFieldChanged(),
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.l10n.dueDateLabel,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      dueDate != null
+                          ? '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}'
+                          : context.l10n.noDueDate,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    if (dueDate != null)
-                      IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => setState(() => dueDate = null)),
-                  ]),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    label: Text(dueDate == null ? context.l10n.setDateButton : context.l10n.changeButton),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dueDate ?? DateTime.now().add(const Duration(days: 1)),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (picked != null) onDueDateChanged(picked);
+                    },
+                  ),
+                  if (dueDate != null)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () => onDueDateChanged(null),
+                    ),
                 ],
               ),
             ],
           ),
-        ),
+        ],
       ),
-      actions: [
-        AppButton(
-          label: context.l10n.cancelButton,
-          variant: AppButtonVariant.ghost,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        AppButton(
-          label: isNew ? context.l10n.createButton : context.l10n.saveButton,
-          onPressed: () {
-            if (name.text.trim().isEmpty) return;
-            final tagList = tags.text
-                .split(',')
-                .map((t) => t.trim())
-                .where((t) => t.isNotEmpty)
-                .toList();
-            final t = widget.task?.copyWith(
-                  name: name.text.trim(),
-                  description: desc.text.trim(),
-                  status: status,
-                  priority: priority,
-                  tags: tagList,
-                  dueDate: dueDate,
-                  config: {...(widget.task?.config ?? {}), 'assignee': assigneeController.text.trim()},
-                ) ??
-                Task(
-                  id: const Uuid().v4(),
-                  name: name.text.trim(),
-                  description: desc.text.trim(),
-                  status: status,
-                  priority: priority,
-                  tags: tagList,
-                  dueDate: dueDate,
-                  config: {'assignee': assigneeController.text.trim()},
-                );
-            widget.onSave(t);
-            Navigator.of(context).pop();
-          },
-        ),
-      ],
     );
   }
 }

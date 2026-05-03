@@ -137,6 +137,40 @@ List<Plugin> buildSeedPlugins() => [
         rating: 4.8,
         downloadCount: 12400,
         iconEmoji: '🌐',
+        readme: '''# HTTP Request Plugin
+
+Make HTTP requests to any REST endpoint directly from your workflows.
+
+## Features
+- Supports GET, POST, PUT, PATCH, DELETE
+- Custom headers and body
+- JSON & form-data support
+- Response mapping to workflow variables
+
+## Configuration
+
+| Field | Type | Description |
+|-------|------|-------------|
+| url | string | Target URL |
+| method | string | HTTP method |
+| timeout | number | Timeout in seconds |
+
+## Example
+```json
+{
+  "url": "https://api.example.com/data",
+  "method": "POST",
+  "timeout": 30
+}
+```
+''',
+        configSchema: [
+          PluginConfigField(key: 'baseUrl', label: 'Base URL', type: PluginConfigFieldType.string, defaultValue: 'https://api.example.com', description: 'Base URL for all requests'),
+          PluginConfigField(key: 'timeout', label: 'Timeout (s)', type: PluginConfigFieldType.number, defaultValue: 30, description: 'Request timeout in seconds'),
+          PluginConfigField(key: 'apiKey', label: 'API Key', type: PluginConfigFieldType.secret, description: 'Authorization API key'),
+          PluginConfigField(key: 'followRedirects', label: 'Follow Redirects', type: PluginConfigFieldType.boolean, defaultValue: true),
+        ],
+        configValues: {'baseUrl': 'https://api.example.com', 'timeout': 30, 'followRedirects': true},
       ),
       Plugin(
         id: 'pg-2',
@@ -150,6 +184,37 @@ List<Plugin> buildSeedPlugins() => [
         rating: 4.9,
         downloadCount: 9800,
         iconEmoji: '⏰',
+        readme: '''# Cron Trigger Plugin 🕐
+
+Schedule your workflows to run automatically using standard cron expressions.
+
+## Features
+- Standard 5-field cron syntax
+- Timezone support
+- Run history tracking
+- Missed run recovery
+
+## Cron Syntax
+```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of week (0 - 6)
+│ │ │ │ │
+* * * * *
+```
+
+## Examples
+- `0 9 * * 1-5` — Weekdays at 9am
+- `*/15 * * * *` — Every 15 minutes
+''',
+        configSchema: [
+          PluginConfigField(key: 'expression', label: 'Cron Expression', type: PluginConfigFieldType.string, defaultValue: '0 * * * *', description: 'Standard cron expression'),
+          PluginConfigField(key: 'timezone', label: 'Timezone', type: PluginConfigFieldType.string, defaultValue: 'UTC', description: 'IANA timezone name'),
+          PluginConfigField(key: 'enabled', label: 'Enabled', type: PluginConfigFieldType.boolean, defaultValue: true),
+        ],
+        configValues: {'expression': '0 9 * * 1-5', 'timezone': 'UTC', 'enabled': true},
       ),
       Plugin(
         id: 'pg-3',
@@ -162,6 +227,29 @@ List<Plugin> buildSeedPlugins() => [
         rating: 4.5,
         downloadCount: 7200,
         iconEmoji: '💬',
+        readme: '''# Slack Notifier Plugin 💬
+
+Send rich Slack messages directly from your workflow nodes.
+
+## Features
+- Send to any channel or DM
+- Rich Block Kit message support
+- Attachment support
+- Mention users/groups
+
+## Setup
+1. Create a Slack App in your workspace
+2. Add `chat:write` OAuth scope
+3. Copy the Bot Token below
+
+## Installation
+This plugin requires **Dev Mode** to install.
+''',
+        configSchema: [
+          PluginConfigField(key: 'botToken', label: 'Bot Token', type: PluginConfigFieldType.secret, description: 'Slack Bot OAuth token (xoxb-...)'),
+          PluginConfigField(key: 'defaultChannel', label: 'Default Channel', type: PluginConfigFieldType.string, defaultValue: '#general'),
+          PluginConfigField(key: 'username', label: 'Bot Username', type: PluginConfigFieldType.string, defaultValue: 'FuzzyBoard'),
+        ],
       ),
       Plugin(
         id: 'pg-4',
@@ -175,6 +263,30 @@ List<Plugin> buildSeedPlugins() => [
         rating: 4.7,
         downloadCount: 15300,
         iconEmoji: '🐘',
+        readme: '''# PostgreSQL Plugin 🐘
+
+Connect your workflows to PostgreSQL databases for reads and writes.
+
+## Features
+- Connection pooling
+- Parameterized queries (SQL injection safe)
+- Transaction support
+- Streaming large result sets
+
+## Connection String Format
+```
+postgresql://user:password@host:5432/database
+```
+''',
+        configSchema: [
+          PluginConfigField(key: 'host', label: 'Host', type: PluginConfigFieldType.string, defaultValue: 'localhost'),
+          PluginConfigField(key: 'port', label: 'Port', type: PluginConfigFieldType.number, defaultValue: 5432),
+          PluginConfigField(key: 'database', label: 'Database', type: PluginConfigFieldType.string, defaultValue: 'mydb'),
+          PluginConfigField(key: 'username', label: 'Username', type: PluginConfigFieldType.string, defaultValue: 'postgres'),
+          PluginConfigField(key: 'password', label: 'Password', type: PluginConfigFieldType.secret),
+          PluginConfigField(key: 'ssl', label: 'Use SSL', type: PluginConfigFieldType.boolean, defaultValue: false),
+        ],
+        configValues: {'host': 'db.example.com', 'port': 5432, 'database': 'fuzzyboard', 'username': 'admin', 'ssl': true},
       ),
       Plugin(
         id: 'pg-5',
@@ -187,6 +299,29 @@ List<Plugin> buildSeedPlugins() => [
         rating: 4.3,
         downloadCount: 6100,
         iconEmoji: '📧',
+        readme: '''# Email Sender Plugin 📧
+
+Send transactional and batch emails from your workflows.
+
+## Supported Providers
+- SMTP (any provider)
+- SendGrid
+- Mailgun
+- AWS SES
+
+## Features
+- HTML & plain text
+- CC / BCC support
+- File attachments
+- Template variables
+''',
+        configSchema: [
+          PluginConfigField(key: 'provider', label: 'Provider', type: PluginConfigFieldType.string, defaultValue: 'smtp', description: 'smtp | sendgrid | mailgun | ses'),
+          PluginConfigField(key: 'from', label: 'From Address', type: PluginConfigFieldType.string, defaultValue: 'no-reply@example.com'),
+          PluginConfigField(key: 'apiKey', label: 'API Key / Password', type: PluginConfigFieldType.secret),
+          PluginConfigField(key: 'smtpHost', label: 'SMTP Host', type: PluginConfigFieldType.string, defaultValue: 'smtp.example.com'),
+          PluginConfigField(key: 'smtpPort', label: 'SMTP Port', type: PluginConfigFieldType.number, defaultValue: 587),
+        ],
       ),
     ];
 

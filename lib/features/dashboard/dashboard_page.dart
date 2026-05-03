@@ -12,6 +12,7 @@ import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/avatar_widget.dart';
+import '../../shared/widgets/space_xp_bar.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -45,6 +46,8 @@ class DashboardPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          const SpaceXpBar(),
+          const SizedBox(height: 16),
           _WelcomeBanner(isAdmin: userProvider.isAdmin),
           const SizedBox(height: 20),
           // Stat cards

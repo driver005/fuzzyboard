@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/providers/app_provider.dart';
@@ -24,6 +25,8 @@ class SettingsPage extends StatelessWidget {
           _AppearanceSection(),
           SizedBox(height: 20),
           _EngineSection(),
+          SizedBox(height: 20),
+          _MarketplaceSection(),
           SizedBox(height: 20),
           _AboutSection(),
         ],
@@ -235,6 +238,63 @@ class _AppearanceSection extends StatelessWidget {
               subtitle: context.l10n.compactSidebarDesc,
               value: themeProvider.compactSidebar,
               onChanged: (v) => themeProvider.setCompactSidebar(v)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarketplaceSection extends StatelessWidget {
+  const _MarketplaceSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppProvider>();
+
+    return AppCard(
+      title: 'Plugin Marketplace',
+      subtitle: 'Browse and install plugins (Dev Mode required to install)',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${context.watch<AppProvider>().plugins.length} plugins available · ${context.watch<AppProvider>().installedPlugins.length} installed',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                    ),
+                    if (!app.devMode)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline, size: 13, color: const Color(0xFFF59E0B)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Enable Dev Mode below to install plugins',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: const Color(0xFFF59E0B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              AppButton(
+                label: 'Open Marketplace',
+                icon: const Icon(Icons.store_outlined),
+                variant: AppButtonVariant.outline,
+                size: AppButtonSize.sm,
+                onPressed: () => context.go('/marketplace'),
+              ),
+            ],
+          ),
         ],
       ),
     );

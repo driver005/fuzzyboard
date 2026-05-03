@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/task.dart';
 import '../../shared/widgets/app_button.dart';
@@ -37,13 +38,13 @@ class _TasksPageState extends State<TasksPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: Text(context.l10n.tasksTitle),
         actions: [
           AppButton(
-            label: 'New Task',
+            label: context.l10n.newTaskButton,
             icon: const Icon(Icons.add),
             size: AppButtonSize.sm,
-            onPressed: () => _showTaskDialog(context),
+            onPressed: () => show_task_dialog(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -68,7 +69,7 @@ class _TasksPageState extends State<TasksPage> {
               children: [
                 Expanded(
                   child: AppInput(
-                    hint: 'Search tasks...',
+                    hint: context.l10n.searchTasksHint,
                     prefix: const Icon(Icons.search, size: 18),
                     onChanged: (v) => setState(() => _search = v),
                   ),
@@ -90,7 +91,7 @@ class _TasksPageState extends State<TasksPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
-                    label: const Text('All'),
+                    label: Text(context.l10n.allChip),
                     selected: filterPriority == null,
                     onSelected: (_) => setState(() => filterPriority = null),
                   ),
@@ -117,7 +118,7 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-  void _showTaskDialog(BuildContext context, [Task? task]) {
+  void show_task_dialog(BuildContext context, [Task? task]) {
     showDialog(
       context: context,
       builder: (ctx) => _TaskDialog(
@@ -203,7 +204,7 @@ class _StatusLaneState extends State<_StatusLane> {
               if (widget.tasks.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16, left: 18),
-                  child: Text('No tasks', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
+                  child: Text(context.l10n.noTasksEmpty, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
                 )
               else
                 ...widget.tasks.asMap().entries.map((e) {
@@ -234,16 +235,16 @@ class _TaskCard extends StatelessWidget {
   final Task task;
   const _TaskCard({required this.task});
 
-  bool _isOverdue(Task t) => t.dueDate != null && t.dueDate!.isBefore(DateTime.now()) && t.status != TaskStatus.done;
+  bool is_overdue(Task t) => t.dueDate != null && t.dueDate!.isBefore(DateTime.now()) && t.status != TaskStatus.done;
 
-  String _formatDue(DateTime d) {
+  String format_due(DateTime d, BuildContext context) {
     final now = DateTime.now();
     final diff = d.difference(now);
-    if (diff.inDays == 0) return 'Due today';
-    if (diff.inDays == 1) return 'Due tomorrow';
-    if (diff.inDays == -1) return 'Overdue 1d';
-    if (diff.inDays < 0) return 'Overdue ${(-diff.inDays)}d';
-    return 'Due in ${diff.inDays}d';
+    if (diff.inDays == 0) return context.l10n.dueToday;
+    if (diff.inDays == 1) return context.l10n.dueTomorrow;
+    if (diff.inDays == -1) return context.l10n.overdueFormat(1);
+    if (diff.inDays < 0) return context.l10n.overdueFormat(-diff.inDays);
+    return context.l10n.dueInFormat(diff.inDays);
   }
 
   @override
@@ -254,7 +255,7 @@ class _TaskCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
-        onTap: () => _showTaskDialog(context, task),
+        onTap: () => show_task_dialog(context, task),
         child: Row(
           children: [
             // Priority indicator
@@ -292,8 +293,8 @@ class _TaskCard extends StatelessWidget {
                           )),
                       if (task.dueDate != null) ...[
                         _Chip(
-                          label: _formatDue(task.dueDate!),
-                          color: _isOverdue(task) ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                          label: format_due(task.dueDate!, context),
+                          color: is_overdue(task) ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
                         ),
                       ],
                     ],
@@ -305,14 +306,14 @@ class _TaskCard extends StatelessWidget {
               icon: const Icon(Icons.more_vert, size: 18),
               onSelected: (v) {
                 if (v == 'edit') {
-                  _showTaskDialog(context, task);
+                  show_task_dialog(context, task);
                 } else if (v == 'delete') {
                   app.deleteTask(task.id);
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                PopupMenuItem(value: 'edit', child: Text(context.l10n.editAction)),
+                PopupMenuItem(value: 'delete', child: Text(context.l10n.deleteAction)),
               ],
             ),
           ],
@@ -321,7 +322,7 @@ class _TaskCard extends StatelessWidget {
     );
   }
 
-  void _showTaskDialog(BuildContext context, Task task) {
+  void show_task_dialog(BuildContext context, Task task) {
     showDialog(
       context: context,
       builder: (ctx) => _TaskDialog(
@@ -366,13 +367,13 @@ class _StatusFilter extends StatelessWidget {
         children: [
           Icon(Icons.filter_list, size: 18, color: cs.onSurface.withOpacity(0.6)),
           const SizedBox(width: 4),
-          Text(value?.label ?? 'All',
+          Text(value?.label ?? context.l10n.allChip,
               style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
       onSelected: onChanged,
       itemBuilder: (_) => [
-        const PopupMenuItem(value: null, child: Text('All')),
+        PopupMenuItem(value: null, child: Text(context.l10n.allChip)),
         ...TaskStatus.values
             .map((s) => PopupMenuItem(value: s, child: Text(s.label))),
       ],
@@ -425,7 +426,7 @@ class _TaskDialogState extends State<_TaskDialog> {
   Widget build(BuildContext context) {
     final isNew = widget.task == null;
     return AlertDialog(
-      title: Text(isNew ? 'New Task' : 'Edit Task'),
+      title: Text(isNew ? context.l10n.newTaskDialog : context.l10n.editTaskDialog),
       content: SizedBox(
         width: 400,
         child: SingleChildScrollView(
@@ -433,18 +434,18 @@ class _TaskDialogState extends State<_TaskDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               AppInput(
-                  label: 'Name',
-                  hint: 'Task name',
+                  label: context.l10n.taskNameLabel,
+                  hint: context.l10n.taskNameHint,
                   controller: _name),
               const SizedBox(height: 12),
               AppInput(
-                  label: 'Description',
-                  hint: 'What does this task do?',
+                  label: context.l10n.descriptionLabel,
+                  hint: context.l10n.descriptionHint,
                   controller: _desc,
                   maxLines: 3),
               const SizedBox(height: 12),
               AppSelect<TaskStatus>(
-                label: 'Status',
+                label: context.l10n.statusLabel,
                 value: _status,
                 onChanged: (v) => setState(() => _status = v ?? _status),
                 items: TaskStatus.values
@@ -454,7 +455,7 @@ class _TaskDialogState extends State<_TaskDialog> {
               ),
               const SizedBox(height: 12),
               AppSelect<TaskPriority>(
-                label: 'Priority',
+                label: context.l10n.priorityLabel,
                 value: _priority,
                 onChanged: (v) =>
                     setState(() => _priority = v ?? _priority),
@@ -465,29 +466,29 @@ class _TaskDialogState extends State<_TaskDialog> {
               ),
               const SizedBox(height: 12),
               AppInput(
-                  label: 'Tags',
-                  hint: 'email, crm, api',
+                  label: context.l10n.tagsLabel,
+                  hint: context.l10n.tagsHint,
                   controller: _tags),
               const SizedBox(height: 12),
-              AppInput(label: 'Assignee', hint: 'username or email', controller: assigneeController),
+              AppInput(label: context.l10n.assigneeLabel, hint: context.l10n.assigneeHint, controller: assigneeController),
               const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Due Date', style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(context.l10n.dueDateLabel, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
                   Row(children: [
                     Expanded(
                       child: Text(
                         dueDate != null
                             ? '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}'
-                            : 'No due date',
+                            : context.l10n.noDueDate,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                     TextButton.icon(
                       icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(dueDate == null ? 'Set date' : 'Change'),
+                      label: Text(dueDate == null ? context.l10n.setDateButton : context.l10n.changeButton),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
@@ -509,12 +510,12 @@ class _TaskDialogState extends State<_TaskDialog> {
       ),
       actions: [
         AppButton(
-          label: 'Cancel',
+          label: context.l10n.cancelButton,
           variant: AppButtonVariant.ghost,
           onPressed: () => Navigator.of(context).pop(),
         ),
         AppButton(
-          label: isNew ? 'Create' : 'Save',
+          label: isNew ? context.l10n.createButton : context.l10n.saveButton,
           onPressed: () {
             if (_name.text.trim().isEmpty) return;
             final tags = _tags.text

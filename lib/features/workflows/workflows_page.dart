@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/workflow.dart';
 import '../../shared/widgets/app_button.dart';
@@ -17,13 +18,13 @@ class WorkflowsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workflows'),
+        title: Text(context.l10n.workflowsTitle),
         actions: [
           AppButton(
-            label: 'New Workflow',
+            label: context.l10n.newWorkflowButton,
             icon: const Icon(Icons.add),
             size: AppButtonSize.sm,
-            onPressed: () => _newWorkflow(context),
+            onPressed: () => new_workflow(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -60,7 +61,7 @@ class WorkflowsPage extends StatelessWidget {
     );
   }
 
-  void _newWorkflow(BuildContext context) {
+  void new_workflow(BuildContext context) {
     final app = context.read<AppProvider>();
     final wf = Workflow(
       id: app.generateId(),
@@ -68,10 +69,10 @@ class WorkflowsPage extends StatelessWidget {
       description: '',
     );
     app.addWorkflow(wf);
-    _openCanvas(context, wf);
+    open_canvas(context, wf);
   }
 
-  void _openCanvas(BuildContext context, Workflow wf) {
+  void open_canvas(BuildContext context, Workflow wf) {
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -131,23 +132,23 @@ class _WorkflowCard extends StatelessWidget {
             children: [
               _InfoChip(
                   icon: Icons.play_circle_outline,
-                  label: '${workflow.runCount} runs'),
+                  label: context.l10n.runsCount(workflow.runCount)),
               const SizedBox(width: 8),
               _InfoChip(
                   icon: Icons.device_hub,
-                  label: '${workflow.nodes.length} nodes'),
+                  label: context.l10n.nodesCount(workflow.nodes.length)),
               const SizedBox(width: 8),
               _InfoChip(
                   icon: workflow.isActive
                       ? Icons.check_circle
                       : Icons.pause_circle,
-                  label: workflow.isActive ? 'Active' : 'Inactive',
+                  label: workflow.isActive ? context.l10n.activeStatus : context.l10n.inactiveStatus,
                   color: workflow.isActive
                       ? const Color(0xFF10B981)
                       : cs.onSurface.withOpacity(0.4)),
               const Spacer(),
               AppButton(
-                label: 'Edit Canvas',
+                label: context.l10n.editCanvasButton,
                 icon: const Icon(Icons.edit),
                 variant: AppButtonVariant.outline,
                 size: AppButtonSize.sm,
@@ -163,7 +164,7 @@ class _WorkflowCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 color: Colors.red.shade400,
-                onPressed: () => _confirmDelete(context),
+                onPressed: () => confirm_delete(context),
               ),
             ],
           ),
@@ -172,20 +173,20 @@ class _WorkflowCard extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context) {
+  void confirm_delete(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Workflow?'),
-        content: Text('Are you sure you want to delete "${workflow.name}"?'),
+        title: Text(context.l10n.deleteWorkflowConfirm),
+        content: Text(context.l10n.deleteWorkflowMessage(workflow.name)),
         actions: [
           AppButton(
-            label: 'Cancel',
+            label: context.l10n.cancelButton,
             variant: AppButtonVariant.ghost,
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           AppButton(
-            label: 'Delete',
+            label: context.l10n.deleteAction,
             variant: AppButtonVariant.danger,
             onPressed: () {
               context.read<AppProvider>().deleteWorkflow(workflow.id);
@@ -237,14 +238,14 @@ class _EmptyState extends StatelessWidget {
               color:
                   Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
           const SizedBox(height: 16),
-          Text('No workflows yet',
+          Text(context.l10n.noWorkflowsYet,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
                       .onSurface
                       .withOpacity(0.5))),
           const SizedBox(height: 8),
-          Text('Create your first workflow to get started.',
+          Text(context.l10n.createFirstWorkflow,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context)
                       .colorScheme

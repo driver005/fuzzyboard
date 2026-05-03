@@ -19,6 +19,21 @@ List<Task> buildSeedTasks() => [
         description: 'Trigger a welcome email when a user signs up.',
         priority: TaskPriority.high,
         tags: ['email', 'onboarding'],
+        ownerEmail: 'platform@example.com',
+        timeoutSeconds: 60,
+        retryCount: 3,
+        retryPolicy: TaskRetryPolicy.fixed,
+        retryDelaySeconds: 10,
+        responseTimeoutSeconds: 30,
+        pluginId: 'pg-5',
+        inputKeys: {
+          'userId': 'string — ID of the newly registered user',
+          'email': 'string — destination email address',
+        },
+        outputKeys: {
+          'messageId': 'string — provider message ID',
+          'status': 'string — sent | failed',
+        },
       ),
       Task(
         id: 'task-2',
@@ -26,6 +41,22 @@ List<Task> buildSeedTasks() => [
         description: 'Validate and process payment via Stripe.',
         priority: TaskPriority.critical,
         tags: ['payment', 'stripe'],
+        ownerEmail: 'payments@example.com',
+        timeoutSeconds: 30,
+        retryCount: 1,
+        retryPolicy: TaskRetryPolicy.fixed,
+        retryDelaySeconds: 5,
+        responseTimeoutSeconds: 20,
+        concurrentExecLimit: 10,
+        inputKeys: {
+          'amount': 'number — amount in cents',
+          'currency': 'string — ISO 4217 currency code',
+          'token': 'string — Stripe payment token',
+        },
+        outputKeys: {
+          'chargeId': 'string — Stripe charge ID',
+          'status': 'string — succeeded | failed',
+        },
       ),
       Task(
         id: 'task-3',
@@ -33,6 +64,21 @@ List<Task> buildSeedTasks() => [
         description: 'Compile weekly analytics report from DB.',
         priority: TaskPriority.medium,
         tags: ['analytics'],
+        ownerEmail: 'data@example.com',
+        timeoutSeconds: 3600,
+        retryCount: 2,
+        retryPolicy: TaskRetryPolicy.exponentialBackoff,
+        retryDelaySeconds: 60,
+        responseTimeoutSeconds: 300,
+        pluginId: 'pg-4',
+        inputKeys: {
+          'startDate': 'string — ISO-8601 start date',
+          'endDate': 'string — ISO-8601 end date',
+        },
+        outputKeys: {
+          'reportUrl': 'string — URL to the generated PDF',
+          'rowCount': 'number — number of rows processed',
+        },
       ),
       Task(
         id: 'task-4',
@@ -40,6 +86,19 @@ List<Task> buildSeedTasks() => [
         description: 'Synchronize customer data to external CRM.',
         priority: TaskPriority.low,
         tags: ['crm', 'sync'],
+        ownerEmail: 'ops@example.com',
+        timeoutSeconds: 1800,
+        retryCount: 3,
+        retryPolicy: TaskRetryPolicy.linearBackoff,
+        retryDelaySeconds: 30,
+        responseTimeoutSeconds: 120,
+        inputKeys: {
+          'customerId': 'string — internal customer UUID',
+        },
+        outputKeys: {
+          'crmId': 'string — external CRM record ID',
+          'syncedAt': 'string — ISO-8601 timestamp',
+        },
       ),
     ];
 

@@ -4,6 +4,8 @@ enum TaskStatus { todo, inProgress, done, blocked }
 
 enum TaskPriority { low, medium, high, critical }
 
+enum TaskRetryPolicy { fixed, exponentialBackoff, linearBackoff }
+
 extension TaskPriorityExt on TaskPriority {
   String get label => switch (this) {
         TaskPriority.low => 'Low',
@@ -20,6 +22,14 @@ extension TaskPriorityExt on TaskPriority {
       };
 }
 
+extension TaskRetryPolicyExt on TaskRetryPolicy {
+  String get label => switch (this) {
+        TaskRetryPolicy.fixed => 'FIXED',
+        TaskRetryPolicy.exponentialBackoff => 'EXPONENTIAL_BACKOFF',
+        TaskRetryPolicy.linearBackoff => 'LINEAR_BACKOFF',
+      };
+}
+
 class Task {
   final String id;
   String name;
@@ -31,6 +41,21 @@ class Task {
   DateTime? dueDate;
   Map<String, dynamic> config;
 
+  // Conductor-inspired fields
+  int timeoutSeconds;
+  int retryCount;
+  TaskRetryPolicy retryPolicy;
+  int retryDelaySeconds;
+  int responseTimeoutSeconds;
+  String ownerEmail;
+  String? pluginId;
+  /// Input parameter definitions: key → type/description
+  Map<String, String> inputKeys;
+  /// Output parameter definitions: key → type/description
+  Map<String, String> outputKeys;
+  /// Concurrency limit (0 = unlimited)
+  int concurrentExecLimit;
+
   Task({
     required this.id,
     required this.name,
@@ -41,8 +66,34 @@ class Task {
     DateTime? createdAt,
     this.dueDate,
     Map<String, dynamic>? config,
+    this.timeoutSeconds = 3600,
+    this.retryCount = 3,
+    this.retryPolicy = TaskRetryPolicy.fixed,
+    this.retryDelaySeconds = 60,
+    this.responseTimeoutSeconds = 600,
+    this.ownerEmail = '',
+    this.pluginId,
+    Map<String, String>? inputKeys,
+    Map<String, String>? outputKeys,
+    this.concurrentExecLimit = 0,
   })  : createdAt = createdAt ?? DateTime.now(),
-        config = config ?? {};
+        config = config ?? {},
+        inputKeys = inputKeys ?? {},
+        outputKeys = outputKeys ?? {};
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'description': description,
+        'ownerEmail': ownerEmail,
+        'retryCount': retryCount,
+        'retryPolicy': retryPolicy.label,
+        'retryDelaySeconds': retryDelaySeconds,
+        'timeoutSeconds': timeoutSeconds,
+        'responseTimeoutSeconds': responseTimeoutSeconds,
+        'concurrentExecLimit': concurrentExecLimit,
+        'inputKeys': inputKeys,
+        'outputKeys': outputKeys,
+      };
 
   Task copyWith({
     String? name,
@@ -52,6 +103,16 @@ class Task {
     List<String>? tags,
     DateTime? dueDate,
     Map<String, dynamic>? config,
+    int? timeoutSeconds,
+    int? retryCount,
+    TaskRetryPolicy? retryPolicy,
+    int? retryDelaySeconds,
+    int? responseTimeoutSeconds,
+    String? ownerEmail,
+    String? pluginId,
+    Map<String, String>? inputKeys,
+    Map<String, String>? outputKeys,
+    int? concurrentExecLimit,
   }) =>
       Task(
         id: id,
@@ -63,5 +124,15 @@ class Task {
         createdAt: createdAt,
         dueDate: dueDate ?? this.dueDate,
         config: config ?? this.config,
+        timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
+        retryCount: retryCount ?? this.retryCount,
+        retryPolicy: retryPolicy ?? this.retryPolicy,
+        retryDelaySeconds: retryDelaySeconds ?? this.retryDelaySeconds,
+        responseTimeoutSeconds: responseTimeoutSeconds ?? this.responseTimeoutSeconds,
+        ownerEmail: ownerEmail ?? this.ownerEmail,
+        pluginId: pluginId ?? this.pluginId,
+        inputKeys: inputKeys ?? Map.of(this.inputKeys),
+        outputKeys: outputKeys ?? Map.of(this.outputKeys),
+        concurrentExecLimit: concurrentExecLimit ?? this.concurrentExecLimit,
       );
 }

@@ -641,7 +641,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                             isConnecting: connecting,
                             readOnly: readOnly,
                             isRunning: nodeRunning,
-                            onTap: readOnly ? () {} : () => onNodeTap(node.id),
+                            onTap: readOnly ? null : () => onNodeTap(node.id),
                             onDrag: readOnly
                                 ? null
                                 : (delta) {
@@ -652,12 +652,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                                       );
                                     });
                                   },
-                            onConnect: readOnly
-                                ? () {}
-                                : () => startConnect(node.id),
-                            onDelete: readOnly
-                                ? () {}
-                                : () => deleteNode(node.id),
+                            onConnect: readOnly ? null : () => startConnect(node.id),
+                            onDelete: readOnly ? null : () => deleteNode(node.id),
                           ),
                         );
                       }),
@@ -904,19 +900,19 @@ class _NodeWidget extends StatelessWidget {
   /// When true a running-state indicator is shown on the node.
   final bool isRunning;
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final ValueChanged<Offset>? onDrag;
-  final VoidCallback onConnect;
-  final VoidCallback onDelete;
+  final VoidCallback? onConnect;
+  final VoidCallback? onDelete;
 
   const _NodeWidget({
     required this.node,
     required this.isSelected,
     required this.isConnectSource,
     required this.isConnecting,
-    required this.onTap,
-    required this.onConnect,
-    required this.onDelete,
+    this.onTap,
+    this.onConnect,
+    this.onDelete,
     this.onDrag,
     this.readOnly = false,
     this.isRunning = false,

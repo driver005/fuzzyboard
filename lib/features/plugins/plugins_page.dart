@@ -5,6 +5,7 @@ import '../../core/providers/app_provider.dart';
 import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../app.dart';
 
 class PluginsPage extends StatelessWidget {
   const PluginsPage({super.key});
@@ -15,14 +16,14 @@ class PluginsPage extends StatelessWidget {
     final installed = app.installedPlugins;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Plugins')),
+      appBar: AppBar(title: Text(context.l10n.pluginsTitle)),
       body: installed.isEmpty
           ? const _EmptyPlugins()
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _SectionHeader(
-                    title: 'Installed Plugins',
+                    title: context.l10n.installedPluginsHeader,
                     count: installed.length),
                 const SizedBox(height: 12),
                 ...installed.asMap().entries.map(
@@ -151,7 +152,7 @@ class _PluginCard extends StatelessWidget {
               _StatusBadge(status: plugin.status),
               const SizedBox(height: 8),
               AppButton(
-                label: 'Remove',
+                label: context.l10n.removeButton,
                 variant: AppButtonVariant.outline,
                 size: AppButtonSize.sm,
                 onPressed: () => app.uninstallPlugin(plugin.id),
@@ -172,9 +173,9 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (status == null) return const SizedBox.shrink();
     final (color, label) = switch (status!) {
-      PluginStatus.active => (const Color(0xFF10B981), 'Active'),
-      PluginStatus.inactive => (const Color(0xFF6B7280), 'Inactive'),
-      PluginStatus.error => (const Color(0xFFEF4444), 'Error'),
+      PluginStatus.active => (const Color(0xFF10B981), context.l10n.pluginStatusActive),
+      PluginStatus.inactive => (const Color(0xFF6B7280), context.l10n.pluginStatusInactive),
+      PluginStatus.error => (const Color(0xFFEF4444), context.l10n.pluginStatusError),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -210,14 +211,14 @@ class _EmptyPlugins extends StatelessWidget {
         children: [
           const Text('🔌', style: TextStyle(fontSize: 64)),
           const SizedBox(height: 16),
-          Text('No plugins installed',
+          Text(context.l10n.noPluginsInstalled,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
                       .onSurface
                       .withOpacity(0.5))),
           const SizedBox(height: 8),
-          Text('Visit the Marketplace to install plugins.',
+          Text(context.l10n.noPluginsInstalledSubtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context)
                       .colorScheme

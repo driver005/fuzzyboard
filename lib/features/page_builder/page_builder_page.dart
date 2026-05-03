@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../app.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/page_widget.dart';
 import '../../shared/widgets/app_button.dart';
@@ -16,14 +18,14 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
   final uuid = const Uuid();
   String? selectedId;
 
-  static const paletteItems = [
-    (type: 'Text', icon: Icons.text_fields, label: 'Text'),
-    (type: 'Button', icon: Icons.smart_button, label: 'Button'),
-    (type: 'Image', icon: Icons.image_outlined, label: 'Image'),
-    (type: 'Card', icon: Icons.dashboard_outlined, label: 'Card'),
-    (type: 'Row', icon: Icons.table_rows_outlined, label: 'Row'),
-    (type: 'Column', icon: Icons.view_column_outlined, label: 'Column'),
-    (type: 'Divider', icon: Icons.horizontal_rule, label: 'Divider'),
+  List<({String type, IconData icon, String label})> _getPaletteItems(AppLocalizations l10n) => [
+    (type: 'Text', icon: Icons.text_fields, label: l10n.textPaletteItem),
+    (type: 'Button', icon: Icons.smart_button, label: l10n.buttonPaletteItem),
+    (type: 'Image', icon: Icons.image_outlined, label: l10n.imagePaletteItem),
+    (type: 'Card', icon: Icons.dashboard_outlined, label: l10n.cardPaletteItem),
+    (type: 'Row', icon: Icons.table_rows_outlined, label: l10n.rowPaletteItem),
+    (type: 'Column', icon: Icons.view_column_outlined, label: l10n.columnPaletteItem),
+    (type: 'Divider', icon: Icons.horizontal_rule, label: l10n.dividerPaletteItem),
   ];
 
   @override
@@ -35,14 +37,15 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
+    final items = _getPaletteItems(context.l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Page Builder'),
+        title: Text(context.l10n.pageBuilderTitle),
         actions: [
           if (app.pageWidgets.isNotEmpty)
             AppButton(
-              label: 'Clear',
+              label: context.l10n.clearButton,
               icon: const Icon(Icons.delete_outline),
               variant: AppButtonVariant.danger,
               size: AppButtonSize.sm,
@@ -62,13 +65,13 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
           child: Column(children: [
             Padding(
               padding: const EdgeInsets.all(8),
-              child: Text('Palette', style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
+              child: Text(context.l10n.paletteLabel, style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
             ),
             const Divider(height: 1),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(8),
-                children: paletteItems.map((item) => Draggable<String>(
+                children: items.map((item) => Draggable<String>(
                   data: item.type,
                   feedback: Material(
                     elevation: 4, borderRadius: BorderRadius.circular(8),
@@ -107,7 +110,7 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
                     ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Icon(Icons.dashboard_customize_outlined, size: 64, color: cs.onSurface.withOpacity(0.2)),
                         const SizedBox(height: 12),
-                        Text('Drag widgets here', style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface.withOpacity(0.4))),
+                        Text(context.l10n.dragWidgetsHere, style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                       ]))
                     : ListView(
                         padding: const EdgeInsets.all(16),
@@ -137,7 +140,7 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
               ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.tune, size: 36, color: cs.onSurface.withOpacity(0.2)),
                   const SizedBox(height: 8),
-                  Text('Select a widget\nto edit its properties', textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
+                  Text(context.l10n.selectWidgetProperty, textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                 ])
               : _PropertiesPanel(
                   widget: selected,
@@ -163,14 +166,14 @@ class _CanvasWidgetPreview extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(children: [
-        Icon(_iconForType(widget.type), size: 16, color: cs.primary),
+        Icon(icon_for_type(widget.type), size: 16, color: cs.primary),
         const SizedBox(width: 8),
         Text('${widget.type}: ${widget.label}', style: Theme.of(context).textTheme.bodySmall),
       ]),
     );
   }
 
-  IconData _iconForType(String type) => switch (type) {
+  IconData icon_for_type(String type) => switch (type) {
     'Text' => Icons.text_fields,
     'Button' => Icons.smart_button,
     'Image' => Icons.image_outlined,
@@ -218,12 +221,12 @@ class _PropertiesPanelState extends State<_PropertiesPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Properties', style: Theme.of(context).textTheme.titleSmall),
+      Text(context.l10n.propertiesLabel, style: Theme.of(context).textTheme.titleSmall),
       const SizedBox(height: 12),
-      Text('Type: ${widget.widget.type}', style: Theme.of(context).textTheme.bodySmall),
+      Text('${context.l10n.typeLabel}: ${widget.widget.type}', style: Theme.of(context).textTheme.bodySmall),
       const SizedBox(height: 12),
       AppInput(
-        label: 'Label',
+        label: context.l10n.labelLabel,
         controller: labelController,
         onChanged: (v) {
           widget.widget.label = v;
@@ -231,7 +234,7 @@ class _PropertiesPanelState extends State<_PropertiesPanel> {
         },
       ),
       const SizedBox(height: 16),
-      AppButton(label: 'Remove', icon: const Icon(Icons.delete_outline), variant: AppButtonVariant.danger, size: AppButtonSize.sm, fullWidth: true, onPressed: widget.onDelete),
+      AppButton(label: context.l10n.removeButton, icon: const Icon(Icons.delete_outline), variant: AppButtonVariant.danger, size: AppButtonSize.sm, fullWidth: true, onPressed: widget.onDelete),
     ]);
   }
 }

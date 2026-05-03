@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import '../../app.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../models/task.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/app_input.dart';
+import '../../shared/widgets/tutorial_banner.dart';
 
 /// Visual SQL Query Builder
 class SqlBuilderPage extends StatefulWidget {
@@ -31,7 +38,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     'tasks': ['id', 'name', 'status', 'priority', 'due_date'],
   };
 
-  String _buildQuery() {
+  String build_query() {
     final cols = _selectedColumns.isEmpty
         ? '*'
         : _selectedColumns.map((c) => c.name).join(', ');
@@ -52,7 +59,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     return q;
   }
 
-  void _toggleColumn(String col) {
+  void toggle_column(String col) {
     setState(() {
       final idx = _selectedColumns.indexWhere((c) => c.name == col);
       if (idx >= 0) {
@@ -63,7 +70,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     });
   }
 
-  void _addWhereClause() {
+  void add_where_clause() {
     final cols = _tableColumns[_selectedTable] ?? [];
     setState(() {
       _whereClauses.add(_WhereClause(
@@ -74,29 +81,108 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     });
   }
 
+  void show_save_as_task_dialog(BuildContext context) {
+    final nameController = TextEditingController(
+        text: 'Query $_selectedTable');
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.l10n.saveTaskTitle),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                ctx.l10n.saveTaskMessage,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6)),
+              ),
+              const SizedBox(height: 16),
+              AppInput(
+                label: ctx.l10n.taskNameInputLabel,
+                hint: ctx.l10n.sqlTaskNamePlaceholder,
+                controller: nameController,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          AppButton(
+            label: ctx.l10n.cancelButton,
+            variant: AppButtonVariant.ghost,
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          AppButton(
+            label: ctx.l10n.createTaskButton,
+            icon: const Icon(Icons.add_task),
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+              final task = Task(
+                id: const Uuid().v4(),
+                name: name,
+                description: build_query(),
+                status: TaskStatus.todo,
+                priority: TaskPriority.medium,
+                tags: ['sql', _selectedTable],
+                config: {
+                  'source': 'sql_builder',
+                  'table': _selectedTable,
+                },
+              );
+              context.read<AppProvider>().addTask(task);
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(context.l10n.taskCreatedSnackbar(name)),
+                  action: SnackBarAction(
+                    label: context.l10n.viewTasksAction,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    ).then((_) => nameController.dispose());
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
     final availableCols = _tableColumns[_selectedTable] ?? [];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SQL Visual Builder'),
+        title: Text(context.l10n.sqlBuilderTitle),
         actions: [
           AppButton(
-            label: 'Copy SQL',
+            label: context.l10n.copySqlButton,
             icon: const Icon(Icons.copy),
             size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
             onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _buildQuery()));
+              await Clipboard.setData(ClipboardData(text: build_query()));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('SQL copied to clipboard!')),
+                  SnackBar(content: Text(context.l10n.sqlCopiedSnackbar)),
                 );
               }
             },
+          ),
+          const SizedBox(width: 8),
+          AppButton(
+            label: context.l10n.saveAsTaskButton,
+            icon: const Icon(Icons.add_task),
+            size: AppButtonSize.sm,
+            onPressed: () => show_save_as_task_dialog(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -107,25 +193,52 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
           return wide
               ? Row(
                   children: [
-                    Expanded(flex: 3, child: _buildLeftPanel(availableCols)),
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          const TutorialBanner(
+                            title: 'SQL Visual Builder',
+                            emoji: '🗄️',
+                            steps: [
+                              'Pick a table in the FROM section — columns will update automatically.',
+                              'Toggle the columns you want in SELECT. No selection means SELECT *.',
+                              'Add WHERE conditions to filter rows by column value.',
+                              'Optionally set ORDER BY and LIMIT to sort and cap results.',
+                              'The generated SQL updates live. Copy it or save it directly as a Task.',
+                            ],
+                          ),
+                          Expanded(child: build_left_panel(availableCols)),
+                        ],
+                      ),
+                    ),
                     VerticalDivider(
                         width: 1,
                         color: cs.outline.withOpacity(0.2)),
-                    Expanded(flex: 2, child: _buildQueryPanel()),
+                    Expanded(flex: 2, child: build_query_panel()),
                   ],
                 )
               : DefaultTabController(
                   length: 2,
                   child: Column(
                     children: [
+                      const TutorialBanner(
+                        title: 'SQL Visual Builder',
+                        emoji: '🗄️',
+                        steps: [
+                          'Pick a table in FROM, toggle SELECT columns, add WHERE conditions.',
+                          'Set ORDER BY and LIMIT. The Query tab shows the generated SQL.',
+                          'Use "Save as Task" to create a task from the current query.',
+                        ],
+                      ),
                       TabBar(tabs: const [
                         Tab(text: 'Builder'),
                         Tab(text: 'Query'),
                       ]),
                       Expanded(
                         child: TabBarView(children: [
-                          _buildLeftPanel(availableCols),
-                          _buildQueryPanel(),
+                          build_left_panel(availableCols),
+                          build_query_panel(),
                         ]),
                       ),
                     ],
@@ -136,13 +249,13 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     );
   }
 
-  Widget _buildLeftPanel(List<String> cols) {
+  Widget build_left_panel(List<String> cols) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // FROM table
         AppCard(
-          title: '📋 FROM Table',
+          title: context.l10n.fromTableSection,
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -163,7 +276,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
         const SizedBox(height: 12),
         // SELECT columns
         AppCard(
-          title: '📌 SELECT Columns',
+          title: context.l10n.selectColumnsSection,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -175,13 +288,13 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                           label: c,
                           selected:
                               _selectedColumns.any((sc) => sc.name == c),
-                          onTap: () => _toggleColumn(c),
+                          onTap: () => toggle_column(c),
                         ))
                     .toList(),
               ),
               const SizedBox(height: 8),
               if (_selectedColumns.isEmpty)
-                Text('All columns selected (*)',
+                Text(context.l10n.allColumnsSelected,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -193,11 +306,11 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
         const SizedBox(height: 12),
         // WHERE clauses
         AppCard(
-          title: '🔍 WHERE Clauses',
+          title: context.l10n.whereClausesSection,
           actions: [
             IconButton(
               icon: const Icon(Icons.add_circle_outline, size: 20),
-              onPressed: _addWhereClause,
+              onPressed: add_where_clause,
               visualDensity: VisualDensity.compact,
             ),
           ],
@@ -229,17 +342,17 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
         const SizedBox(height: 12),
         // ORDER BY
         AppCard(
-          title: '⬇️ ORDER BY',
+          title: context.l10n.orderBySection,
           child: Row(
             children: [
               Expanded(
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _orderByColumn,
-                    hint: const Text('Choose column'),
+                    hint: Text(context.l10n.chooseColumnDropdown),
                     items: [
-                      const DropdownMenuItem<String>(
-                          value: null, child: Text('None')),
+                      DropdownMenuItem<String>(
+                          value: null, child: Text(context.l10n.noneOption)),
                       ...cols.map((c) =>
                           DropdownMenuItem(value: c, child: Text(c))),
                     ],
@@ -271,7 +384,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
         const SizedBox(height: 12),
         // LIMIT
         AppCard(
-          title: '🔢 LIMIT',
+          title: context.l10n.limitSection,
           child: Row(
             children: [
               Expanded(
@@ -281,8 +394,8 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                   max: 1000,
                   divisions: 20,
                   label: _limit == null || _limit == 0
-                      ? 'No limit'
-                      : '$_limit rows',
+                      ? context.l10n.noLimitLabel
+                      : context.l10n.limitRowsLabel(_limit!),
                   onChanged: (v) => setState(
                       () => _limit = v == 0 ? null : v.toInt()),
                 ),
@@ -302,7 +415,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     );
   }
 
-  Widget _buildQueryPanel() {
+  Widget build_query_panel() {
     final isDark =
         Theme.of(context).colorScheme.brightness == Brightness.dark;
     return Column(
@@ -312,7 +425,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             children: [
-              Text('Generated SQL',
+              Text(context.l10n.generatedSqlLabel,
                   style: Theme.of(context).textTheme.titleSmall),
               const Spacer(),
               Container(
@@ -322,8 +435,8 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                   color: const Color(0xFF10B981).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('PREVIEW',
-                    style: TextStyle(
+                child: Text(context.l10n.previewBadge,
+                    style: const TextStyle(
                         fontSize: 10,
                         color: Color(0xFF10B981),
                         fontWeight: FontWeight.w700)),
@@ -340,7 +453,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: SelectableText(
-              _buildQuery(),
+              build_query(),
               style: AppTypography.mono.copyWith(
                 color: const Color(0xFF10B981),
                 fontSize: 13,

@@ -22,10 +22,10 @@ class ScreenRegistryProvider extends ChangeNotifier {
   final List<ScreenDef> screens = [];
 
   ScreenRegistryProvider() {
-    _seedBuiltIns();
+    seed_built_ins();
   }
 
-  void _seedBuiltIns() {
+  void seed_built_ins() {
     screens.addAll([
       ScreenDef(id: 'dashboard', label: 'Dashboard', icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, route: '/', builder: (_) => const Placeholder()),
       ScreenDef(id: 'tasks', label: 'Tasks', icon: Icons.task_outlined, activeIcon: Icons.task, route: '/tasks', builder: (_) => const Placeholder()),

@@ -83,7 +83,7 @@ class AppButton extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       child: Material(
         color: bgColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: side == BorderSide.none ? BorderRadius.circular(10) : null,
         shape: side == BorderSide.none
             ? null
             : RoundedRectangleBorder(

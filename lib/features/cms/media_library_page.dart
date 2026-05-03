@@ -6,6 +6,7 @@ import '../../core/providers/cms_provider.dart';
 import '../../models/cms_media.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../app.dart';
 
 class MediaLibraryPage extends StatefulWidget {
   const MediaLibraryPage({super.key});
@@ -31,13 +32,13 @@ class _MediaLibraryPageState extends State<MediaLibraryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Media Library'),
+        title: Text(context.l10n.mediaLibraryTitle),
         actions: [
           AppButton(
-            label: 'Upload',
+            label: context.l10n.uploadButton,
             icon: const Icon(Icons.upload),
             size: AppButtonSize.sm,
-            onPressed: () => _simulateUpload(context),
+            onPressed: () => simulate_upload(context),
           ),
           const SizedBox(width: 8),
           IconButton(
@@ -75,7 +76,7 @@ class _MediaLibraryPageState extends State<MediaLibraryPage> {
             const SizedBox(height: 8),
             Expanded(
               child: filtered.isEmpty
-                  ? const Center(child: Text('No media files yet'))
+                  ? Center(child: Text(context.l10n.noMediaFiles))
                   : gridView
                       ? _MediaGrid(items: filtered, selectedId: selectedId, onSelect: (id) => setState(() => selectedId = selectedId == id ? null : id))
                       : _MediaList(items: filtered, selectedId: selectedId, onSelect: (id) => setState(() => selectedId = selectedId == id ? null : id)),
@@ -97,7 +98,7 @@ class _MediaLibraryPageState extends State<MediaLibraryPage> {
     );
   }
 
-  void _simulateUpload(BuildContext context) {
+  void simulate_upload(BuildContext context) {
     final names = ['new-image.jpg', 'screenshot.png', 'photo.jpg', 'graphic.png'];
     final name = names[DateTime.now().second % names.length];
     final id = uuid.v4();
@@ -141,7 +142,7 @@ class _MediaGrid extends StatelessWidget {
               if (m.type == CmsMediaType.image && m.url.isNotEmpty)
                 Positioned.fill(child: Image.network(m.url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: cs.surface, child: const Icon(Icons.broken_image_outlined))))
               else
-                Container(color: cs.surface, child: Center(child: Icon(_iconForType(m.type), size: 36, color: cs.onSurface.withOpacity(0.3)))),
+                Container(color: cs.surface, child: Center(child: Icon(icon_for_type(m.type), size: 36, color: cs.onSurface.withOpacity(0.3)))),
               Positioned(
                 bottom: 0, left: 0, right: 0,
                 child: Container(
@@ -159,7 +160,7 @@ class _MediaGrid extends StatelessWidget {
     );
   }
 
-  IconData _iconForType(CmsMediaType t) => switch (t) {
+  IconData icon_for_type(CmsMediaType t) => switch (t) {
     CmsMediaType.image => Icons.image_outlined,
     CmsMediaType.video => Icons.videocam_outlined,
     CmsMediaType.document => Icons.description_outlined,
@@ -213,7 +214,7 @@ class _MediaDetails extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Details', style: Theme.of(context).textTheme.titleSmall),
+          Text(context.l10n.mediaDetailsTitle, style: Theme.of(context).textTheme.titleSmall),
           IconButton(icon: const Icon(Icons.close, size: 18), onPressed: onClose),
         ]),
         const SizedBox(height: 12),
@@ -224,19 +225,19 @@ class _MediaDetails extends StatelessWidget {
               errorBuilder: (_, __, ___) => Container(height: 140, color: Theme.of(context).colorScheme.surface, child: const Center(child: Icon(Icons.broken_image_outlined)))),
           ),
         const SizedBox(height: 12),
-        _detail(context, 'Name', media.name),
-        _detail(context, 'Size', media.formattedSize),
-        _detail(context, 'Type', media.mimeType),
-        if (media.width != null) _detail(context, 'Dimensions', '${media.width}×${media.height}'),
-        _detail(context, 'Uploaded', '${media.uploadedAt.year}-${media.uploadedAt.month.toString().padLeft(2, '0')}-${media.uploadedAt.day.toString().padLeft(2, '0')}'),
-        _detail(context, 'By', media.uploadedBy),
+        detail(context, 'Name', media.name),
+        detail(context, 'Size', media.formattedSize),
+        detail(context, 'Type', media.mimeType),
+        if (media.width != null) detail(context, 'Dimensions', '${media.width}×${media.height}'),
+        detail(context, 'Uploaded', '${media.uploadedAt.year}-${media.uploadedAt.month.toString().padLeft(2, '0')}-${media.uploadedAt.day.toString().padLeft(2, '0')}'),
+        detail(context, 'By', media.uploadedBy),
         const Spacer(),
-        AppButton(label: 'Delete', icon: const Icon(Icons.delete_outline), variant: AppButtonVariant.danger, size: AppButtonSize.sm, fullWidth: true, onPressed: onDelete),
+        AppButton(label: context.l10n.deleteFileButton, icon: const Icon(Icons.delete_outline), variant: AppButtonVariant.danger, size: AppButtonSize.sm, fullWidth: true, onPressed: onDelete),
       ]),
     );
   }
 
-  Widget _detail(BuildContext context, String label, String value) {
+  Widget detail(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

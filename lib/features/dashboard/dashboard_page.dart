@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../models/task.dart';
@@ -23,10 +24,10 @@ class DashboardPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(context.l10n.dashboardTitle),
         actions: [
           AppButton(
-            label: userProvider.isAdmin ? 'Admin View' : 'User View',
+            label: userProvider.isAdmin ? context.l10n.adminViewButton : context.l10n.userViewButton,
             icon: const Icon(Icons.switch_account),
             size: AppButtonSize.sm,
             variant: AppButtonVariant.outline,
@@ -55,15 +56,15 @@ class DashboardPage extends StatelessWidget {
             runSpacing: 12,
             children: [
               StatCard(
-                title: 'Total Tasks',
+                title: context.l10n.totalTasksCard,
                 value: '${app.tasks.length}',
-                change: '+2 today',
+                change: context.l10n.todayChange,
                 icon: Icons.task_alt,
                 iconColor: const Color(0xFF6C63FF),
                 onTap: () => context.go('/tasks'),
               ),
               StatCard(
-                title: 'Active Workflows',
+                title: context.l10n.activeWorkflowsCard,
                 value: '${app.workflows.where((w) => w.isActive).length}',
                 change: 'of ${app.workflows.length} total',
                 icon: Icons.account_tree,
@@ -71,17 +72,17 @@ class DashboardPage extends StatelessWidget {
                 onTap: () => context.go('/workflows'),
               ),
               StatCard(
-                title: 'Plugins',
+                title: context.l10n.pluginsCard,
                 value: '${app.installedPlugins.length}',
-                change: 'installed',
+                change: context.l10n.installedLabel,
                 icon: Icons.extension,
                 iconColor: const Color(0xFF3B82F6),
                 onTap: () => context.go('/plugins'),
               ),
               StatCard(
-                title: 'Runs Today',
+                title: context.l10n.runsTodayCard,
                 value: '${app.workflows.fold(0, (s, w) => s + w.runCount)}',
-                change: '↑ 12%',
+                change: context.l10n.upChangePercent,
                 icon: Icons.play_circle,
                 iconColor: const Color(0xFFF59E0B),
                 onTap: () => context.go('/workflows'),
@@ -134,13 +135,13 @@ class _WelcomeBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome back! 👋',
+                  context.l10n.welcomeBanner,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Your workflow engine is running smoothly.',
+                  context.l10n.workflowRunningSmooth,
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -154,12 +155,12 @@ class _WelcomeBanner extends StatelessWidget {
                       color: Colors.white.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
-                        SizedBox(width: 4),
-                        Text('Admin Dashboard', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                        const Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(context.l10n.adminDashboard, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -188,12 +189,12 @@ class _TaskStatusChart extends StatelessWidget {
     final total = tasks.length;
 
     return AppCard(
-      title: 'Task Status',
+      title: context.l10n.taskStatusChart,
       child: total == 0
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('No tasks yet'),
+                padding: const EdgeInsets.all(24),
+                child: Text(context.l10n.noTasksEmpty),
               ),
             )
           : SizedBox(
@@ -264,7 +265,7 @@ class _WorkflowRunsChart extends StatelessWidget {
       return FlSpot(i.toDouble(), (base * variance).clamp(0.0, base * 2.0));
     });
     return AppCard(
-      title: 'Runs (Last 7 days)',
+      title: context.l10n.runsLastSevenDays,
       child: SizedBox(
         height: 200,
         child: LineChart(
@@ -313,7 +314,7 @@ class _RecentActivity extends StatelessWidget {
   final List<String> logs;
   const _RecentActivity({required this.logs});
 
-  String _relativeTime(String logEntry) {
+  String relativeTime(String logEntry) {
     try {
       final match = RegExp(r'\[(\d{4}-\d{2}-\d{2}T[\d:.]+)\]').firstMatch(logEntry);
       if (match != null) {
@@ -335,12 +336,12 @@ class _RecentActivity extends StatelessWidget {
     final recent = logs.take(5).toList();
 
     return AppCard(
-      title: 'Recent Activity',
+      title: context.l10n.recentActivityTitle,
       child: recent.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No activity yet'),
+                padding: const EdgeInsets.all(16),
+                child: Text(context.l10n.noActivityYet),
               ),
             )
           : Column(
@@ -364,7 +365,7 @@ class _RecentActivity extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                       ),
-                      Text(_relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
+                      Text(relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 );

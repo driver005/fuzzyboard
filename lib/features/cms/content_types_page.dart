@@ -7,6 +7,7 @@ import '../../models/cms_content_type.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
+import '../../app.dart';
 
 class ContentTypesPage extends StatelessWidget {
   const ContentTypesPage({super.key});
@@ -17,19 +18,19 @@ class ContentTypesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Content Types'),
+        title: Text(context.l10n.contentTypesTitle),
         actions: [
           AppButton(
-            label: 'New Type',
+            label: context.l10n.newTypeButton,
             icon: const Icon(Icons.add),
             size: AppButtonSize.sm,
-            onPressed: () => _showTypeDialog(context),
+            onPressed: () => show_type_dialog(context),
           ),
           const SizedBox(width: 12),
         ],
       ),
       body: cms.contentTypes.isEmpty
-          ? const Center(child: Text('No content types yet. Create your first schema.'))
+          ? Center(child: Text(context.l10n.noContentTypes))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: cms.contentTypes.length,
@@ -46,10 +47,10 @@ class ContentTypesPage extends StatelessWidget {
                     title: ct.name,
                     subtitle: '${ct.fields.length} fields • ${ct.entryCount} entries • API: ${ct.apiId}',
                     actions: [
-                      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _showTypeDialog(context, ct)),
+                      IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => show_type_dialog(context, ct)),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
-                        onPressed: () => _confirmDelete(context, ct),
+                        onPressed: () => confirm_delete(context, ct),
                       ),
                     ],
                     child: ct.fields.isEmpty
@@ -66,27 +67,27 @@ class ContentTypesPage extends StatelessWidget {
     );
   }
 
-  void _showTypeDialog(BuildContext context, [CmsContentType? existing]) {
+  void show_type_dialog(BuildContext context, [CmsContentType? existing]) {
     showDialog(
       context: context,
       builder: (ctx) => _ContentTypeDialog(existing: existing),
     );
   }
 
-  void _confirmDelete(BuildContext context, CmsContentType ct) {
+  void confirm_delete(BuildContext context, CmsContentType ct) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Content Type'),
-        content: Text('Delete "${ct.name}"? All entries will also be deleted.'),
+        title: Text(ctx.l10n.deleteContentTypeTitle),
+        content: Text(ctx.l10n.deleteContentTypeConfirm(ct.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(ctx.l10n.cancelButton)),
           TextButton(
             onPressed: () {
               context.read<CmsProvider>().deleteContentType(ct.id);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+            child: Text(ctx.l10n.deleteAction, style: const TextStyle(color: Color(0xFFEF4444))),
           ),
         ],
       ),
@@ -186,18 +187,18 @@ class _ContentTypeDialogState extends State<_ContentTypeDialog> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(children: [
-            Text(widget.existing != null ? 'Edit Content Type' : 'New Content Type',
+            Text(widget.existing != null ? context.l10n.editContentTypeTitle : context.l10n.newContentTypeTitle,
               style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            AppInput(label: 'Display Name', controller: nameController, hint: 'Blog Post'),
+            AppInput(label: context.l10n.displayNameLabel, controller: nameController, hint: context.l10n.displayNameHint),
             const SizedBox(height: 12),
-            AppInput(label: 'API ID', controller: apiIdController, hint: 'blog-post'),
+            AppInput(label: context.l10n.apiIdLabel, controller: apiIdController, hint: context.l10n.apiIdHint),
             const SizedBox(height: 12),
             AppInput(label: 'Description', controller: descController, maxLines: 2),
             const SizedBox(height: 16),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Fields', style: Theme.of(context).textTheme.titleSmall),
-              TextButton.icon(onPressed: addField, icon: const Icon(Icons.add, size: 16), label: const Text('Add Field')),
+              Text(context.l10n.fieldsLabel, style: Theme.of(context).textTheme.titleSmall),
+              TextButton.icon(onPressed: addField, icon: const Icon(Icons.add, size: 16), label: Text(context.l10n.addFieldButton)),
             ]),
             Expanded(
               child: ListView.builder(
@@ -218,9 +219,9 @@ class _ContentTypeDialogState extends State<_ContentTypeDialog> {
             ),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancelButton)),
               const SizedBox(width: 8),
-              AppButton(label: 'Save', onPressed: save),
+              AppButton(label: context.l10n.saveButton, onPressed: save),
             ]),
           ]),
         ),

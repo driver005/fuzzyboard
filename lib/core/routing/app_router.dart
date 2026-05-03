@@ -38,7 +38,9 @@ GoRouter createRouter(AuthProvider auth) {
       final loc = state.uri.toString();
       final onAuthPage = loc == '/login' || loc == '/signup';
 
-      // While loading initial auth state, show login page
+      // While the AuthProvider is restoring session from SharedPreferences,
+      // keep the user on an auth page (or redirect to login). Once loading
+      // completes, the GoRouter will re-evaluate via refreshListenable.
       if (auth.isLoading) {
         return onAuthPage ? null : '/login';
       }

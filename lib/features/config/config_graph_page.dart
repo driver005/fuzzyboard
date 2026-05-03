@@ -351,7 +351,16 @@ class _ConnectionPainter extends CustomPainter {
   bool shouldRepaint(_ConnectionPainter old) =>
       old.center != center ||
       old.positions.length != positions.length ||
-      old.lineColor != lineColor;
+      old.lineColor != lineColor ||
+      !_positionsEqual(old.positions, positions);
+
+  bool _positionsEqual(List<Offset> a, List<Offset> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 // ── Detail Panel ───────────────────────────────────────────────────────────────
@@ -417,8 +426,6 @@ class _DetailPanel extends StatelessWidget {
 
 // ── App Config Panel ───────────────────────────────────────────────────────────
 
-const int _defaultMaxConcurrency = 10;
-
 class _AppConfigPanel extends StatefulWidget {
   const _AppConfigPanel({super.key});
 
@@ -427,6 +434,8 @@ class _AppConfigPanel extends StatefulWidget {
 }
 
 class _AppConfigPanelState extends State<_AppConfigPanel> {
+  static const int defaultMaxConcurrency = 10;
+
   late TextEditingController maxConcurrencyCtrl;
   late TextEditingController apiBaseUrlCtrl;
   late TextEditingController timezoneCtrl;
@@ -437,7 +446,7 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
     super.initState();
     final config = context.read<AppProvider>().appConfig;
     maxConcurrencyCtrl = TextEditingController(
-        text: config['maxConcurrency']?.toString() ?? '$_defaultMaxConcurrency');
+        text: config['maxConcurrency']?.toString() ?? '$defaultMaxConcurrency');
     apiBaseUrlCtrl =
         TextEditingController(text: config['apiBaseUrl']?.toString() ?? '');
     timezoneCtrl =
@@ -456,7 +465,7 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
   void save() {
     final provider = context.read<AppProvider>();
     provider.updateAppConfig(
-        'maxConcurrency', int.tryParse(maxConcurrencyCtrl.text) ?? _defaultMaxConcurrency);
+        'maxConcurrency', int.tryParse(maxConcurrencyCtrl.text) ?? defaultMaxConcurrency);
     provider.updateAppConfig('logLevel', logLevel);
     provider.updateAppConfig('apiBaseUrl', apiBaseUrlCtrl.text);
     provider.updateAppConfig('timezone', timezoneCtrl.text);

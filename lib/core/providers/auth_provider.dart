@@ -24,9 +24,15 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  static const _emailRegex =
+      r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$';
+
   Future<String?> signup(String name, String email, String password) async {
     if (name.trim().isEmpty) return 'Name is required';
     if (email.trim().isEmpty) return 'Email is required';
+    if (!RegExp(_emailRegex).hasMatch(email.trim())) {
+      return 'Please enter a valid email address';
+    }
     if (password.length < 6) return 'Password must be at least 6 characters';
 
     isLoading = true;
@@ -47,8 +53,14 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Signs in the user with the given credentials.
+  /// NOTE: This is a local demo implementation — no backend validation is
+  /// performed. In production, credentials should be verified server-side.
   Future<String?> login(String email, String password) async {
     if (email.trim().isEmpty) return 'Email is required';
+    if (!RegExp(_emailRegex).hasMatch(email.trim())) {
+      return 'Please enter a valid email address';
+    }
     if (password.isEmpty) return 'Password is required';
 
     isLoading = true;

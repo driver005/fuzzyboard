@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fuzzyboard/models/task.dart';
 import 'package:fuzzyboard/models/workflow.dart';
 import 'package:fuzzyboard/models/plugin.dart';
@@ -65,6 +66,8 @@ void main() {
     late AppProvider provider;
 
     setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
       provider = AppProvider();
     });
 

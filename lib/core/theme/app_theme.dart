@@ -54,7 +54,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: cs.onSurface),
       ),
       // ── Card ──────────────────────────────────────────────────────────
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: cs.brightness == Brightness.light

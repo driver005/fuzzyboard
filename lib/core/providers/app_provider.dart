@@ -7,13 +7,14 @@ import '../../models/plugin.dart';
 import '../../models/chat_message.dart';
 import '../../models/page_widget.dart';
 import '../../models/workflow_run.dart';
+import '../../models/worker.dart';
 
 /// Top-level application state provider.
 class AppProvider extends ChangeNotifier {
-  final _uuid = const Uuid();
+  final uuid = const Uuid();
 
   AppProvider() {
-    load_settings();
+    loadSettings();
   }
 
   // ── Settings flags ────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ class AppProvider extends ChangeNotifier {
   bool get verboseLogging => _verboseLogging;
   bool get autoSave => _autoSave;
 
-  Future<void> load_settings() async {
+  Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _showAvatar = prefs.getBool('showAvatar') ?? true;
     _reducedMotion = prefs.getBool('reducedMotion') ?? false;
@@ -152,7 +153,7 @@ class AppProvider extends ChangeNotifier {
     emitEvent('task_deleted');
   }
 
-  String generateId() => _uuid.v4();
+  String generateId() => uuid.v4();
 
   // ── Workflows ─────────────────────────────────────────────────────────────
   final List<Workflow> _workflows = [
@@ -258,7 +259,7 @@ class AppProvider extends ChangeNotifier {
           'Workflow ${_workflows[idx].name} ${_workflows[idx].isActive ? 'activated' : 'deactivated'}');
       emitEvent('workflow_toggled');
       if (_workflows[idx].isActive) {
-        final runId = _uuid.v4();
+        final runId = uuid.v4();
         addWorkflowRun(WorkflowRun(
           id: runId,
           workflowId: id,
@@ -425,6 +426,91 @@ class AppProvider extends ChangeNotifier {
   void reorderPageWidget(int oldIndex, int newIndex) {
     final widget = pageWidgets.removeAt(oldIndex);
     pageWidgets.insert(newIndex, widget);
+    notifyListeners();
+  }
+
+  // ── Workers ───────────────────────────────────────────────────────────────
+  final List<Worker> _workers = [
+    Worker(
+      id: 'wk-1',
+      name: 'HTTP Processor',
+      description: 'Handles incoming HTTP requests and dispatches responses.',
+      type: WorkerType.httpWorker,
+      status: WorkerStatus.running,
+      concurrency: 4,
+      maxRetries: 3,
+      timeoutSeconds: 30,
+      endpoint: 'https://api.example.com/process',
+      runCount: 342,
+    ),
+    Worker(
+      id: 'wk-2',
+      name: 'Daily Report Cron',
+      description: 'Generates daily analytics reports at midnight.',
+      type: WorkerType.cronWorker,
+      status: WorkerStatus.running,
+      concurrency: 1,
+      maxRetries: 2,
+      timeoutSeconds: 120,
+      runCount: 89,
+    ),
+    Worker(
+      id: 'wk-3',
+      name: 'DB Sync Worker',
+      description: 'Synchronizes data across primary and replica databases.',
+      type: WorkerType.dbWorker,
+      status: WorkerStatus.stopped,
+      concurrency: 2,
+      maxRetries: 5,
+      timeoutSeconds: 60,
+      runCount: 156,
+    ),
+  ];
+
+  List<Worker> get workers => List.unmodifiable(_workers);
+
+  void addWorker(Worker w) {
+    _workers.add(w);
+    addLog('Worker added: ${w.name}');
+    notifyListeners();
+  }
+
+  void updateWorker(Worker w) {
+    final idx = _workers.indexWhere((worker) => worker.id == w.id);
+    if (idx != -1) {
+      _workers[idx] = w;
+      notifyListeners();
+    }
+  }
+
+  void deleteWorker(String id) {
+    _workers.removeWhere((w) => w.id == id);
+    addLog('Worker deleted: $id');
+    notifyListeners();
+  }
+
+  void toggleWorker(String id) {
+    final idx = _workers.indexWhere((w) => w.id == id);
+    if (idx != -1) {
+      final w = _workers[idx];
+      w.status = w.status == WorkerStatus.running
+          ? WorkerStatus.stopped
+          : WorkerStatus.running;
+      addLog('Worker ${w.name} ${w.status.label}');
+      notifyListeners();
+    }
+  }
+
+  // ── App Config ────────────────────────────────────────────────────────────
+  Map<String, dynamic> appConfig = {
+    'maxConcurrency': 10,
+    'logLevel': 'info',
+    'apiBaseUrl': 'https://api.fuzzyboard.io',
+    'timezone': 'UTC',
+  };
+
+  void updateAppConfig(String key, dynamic value) {
+    appConfig[key] = value;
     notifyListeners();
   }
 

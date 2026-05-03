@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../features/auth/login_page.dart';
+import '../../features/auth/signup_page.dart';
+import '../../features/config/config_graph_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/tasks/tasks_page.dart';
 import '../../features/workflows/workflows_page.dart';
@@ -26,35 +30,56 @@ import '../../shared/widgets/sidebar.dart';
 import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/avatar_widget.dart';
 
-final appRouter = GoRouter(
-  initialLocation: '/',
-  routes: [
-    ShellRoute(
-      builder: (context, state, child) => _AppShell(child: child),
-      routes: [
-        GoRoute(path: '/', builder: (_, __) => const DashboardPage()),
-        GoRoute(path: '/tasks', builder: (_, __) => const TasksPage()),
-        GoRoute(path: '/workflows', builder: (_, __) => const WorkflowsPage()),
-        GoRoute(path: '/plugins', builder: (_, __) => const PluginsPage()),
-        GoRoute(path: '/marketplace', builder: (_, __) => const MarketplacePage()),
-        GoRoute(path: '/sql', builder: (_, __) => const SqlBuilderPage()),
-        GoRoute(path: '/lua', builder: (_, __) => const LuaBuilderPage()),
-        GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
-        GoRoute(path: '/chat', builder: (_, __) => const ChatPage()),
-        GoRoute(path: '/voice', builder: (_, __) => const VoiceModePage()),
-        GoRoute(path: '/builder', builder: (_, __) => const PageBuilderPage()),
-        GoRoute(path: '/cms', builder: (_, __) => const CmsOverviewPage()),
-        GoRoute(path: '/cms/types', builder: (_, __) => const ContentTypesPage()),
-        GoRoute(path: '/cms/entries', builder: (_, __) => const ContentEntriesPage()),
-        GoRoute(path: '/cms/media', builder: (_, __) => const MediaLibraryPage()),
-        GoRoute(path: '/cms/pages', builder: (_, __) => const PagesManagerPage()),
-        GoRoute(path: '/cms/categories', builder: (_, __) => const CategoriesPage()),
-        GoRoute(path: '/dev', builder: (_, __) => const DevModePage()),
-        GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
-      ],
-    ),
-  ],
-);
+GoRouter createRouter(AuthProvider auth) {
+  return GoRouter(
+    initialLocation: '/',
+    refreshListenable: auth,
+    redirect: (context, state) {
+      final loc = state.uri.toString();
+      final onAuthPage = loc == '/login' || loc == '/signup';
+
+      // While the AuthProvider is restoring session from SharedPreferences,
+      // keep the user on an auth page (or redirect to login). Once loading
+      // completes, the GoRouter will re-evaluate via refreshListenable.
+      if (auth.isLoading) {
+        return onAuthPage ? null : '/login';
+      }
+
+      if (!auth.isAuthenticated && !onAuthPage) return '/login';
+      if (auth.isAuthenticated && onAuthPage) return '/';
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(path: '/signup', builder: (_, __) => const SignupPage()),
+      ShellRoute(
+        builder: (context, state, child) => _AppShell(child: child),
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const DashboardPage()),
+          GoRoute(path: '/tasks', builder: (_, __) => const TasksPage()),
+          GoRoute(path: '/workflows', builder: (_, __) => const WorkflowsPage()),
+          GoRoute(path: '/plugins', builder: (_, __) => const PluginsPage()),
+          GoRoute(path: '/marketplace', builder: (_, __) => const MarketplacePage()),
+          GoRoute(path: '/sql', builder: (_, __) => const SqlBuilderPage()),
+          GoRoute(path: '/lua', builder: (_, __) => const LuaBuilderPage()),
+          GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
+          GoRoute(path: '/chat', builder: (_, __) => const ChatPage()),
+          GoRoute(path: '/voice', builder: (_, __) => const VoiceModePage()),
+          GoRoute(path: '/builder', builder: (_, __) => const PageBuilderPage()),
+          GoRoute(path: '/cms', builder: (_, __) => const CmsOverviewPage()),
+          GoRoute(path: '/cms/types', builder: (_, __) => const ContentTypesPage()),
+          GoRoute(path: '/cms/entries', builder: (_, __) => const ContentEntriesPage()),
+          GoRoute(path: '/cms/media', builder: (_, __) => const MediaLibraryPage()),
+          GoRoute(path: '/cms/pages', builder: (_, __) => const PagesManagerPage()),
+          GoRoute(path: '/cms/categories', builder: (_, __) => const CategoriesPage()),
+          GoRoute(path: '/dev', builder: (_, __) => const DevModePage()),
+          GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+          GoRoute(path: '/config', builder: (_, __) => const ConfigGraphPage()),
+        ],
+      ),
+    ],
+  );
+}
 
 /// Determine the active header tab based on the current route.
 AppHeaderTab _tabFromRoute(String loc) {

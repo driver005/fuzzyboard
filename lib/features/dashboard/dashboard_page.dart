@@ -314,7 +314,7 @@ class _RecentActivity extends StatelessWidget {
   final List<String> logs;
   const _RecentActivity({required this.logs});
 
-  String relative_time(String logEntry) {
+  String relativeTime(String logEntry) {
     try {
       final match = RegExp(r'\[(\d{4}-\d{2}-\d{2}T[\d:.]+)\]').firstMatch(logEntry);
       if (match != null) {
@@ -365,7 +365,7 @@ class _RecentActivity extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                       ),
-                      Text(relative_time(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
+                      Text(relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 );

@@ -18,20 +18,20 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  String _search = '';
-  TaskStatus? _filterStatus;
+  String search = '';
+  TaskStatus? filterStatus;
   TaskPriority? filterPriority;
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
     final tasks = app.tasks.where((t) {
-      if (_search.isNotEmpty &&
-          !t.name.toLowerCase().contains(_search.toLowerCase()) &&
-          !t.description.toLowerCase().contains(_search.toLowerCase())) {
+      if (search.isNotEmpty &&
+          !t.name.toLowerCase().contains(search.toLowerCase()) &&
+          !t.description.toLowerCase().contains(search.toLowerCase())) {
         return false;
       }
-      if (_filterStatus != null && t.status != _filterStatus) return false;
+      if (filterStatus != null && t.status != filterStatus) return false;
       if (filterPriority != null && t.priority != filterPriority) return false;
       return true;
     }).toList();
@@ -44,7 +44,7 @@ class _TasksPageState extends State<TasksPage> {
             label: context.l10n.newTaskButton,
             icon: const Icon(Icons.add),
             size: AppButtonSize.sm,
-            onPressed: () => show_task_dialog(context),
+            onPressed: () => showTaskDialog(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -71,13 +71,13 @@ class _TasksPageState extends State<TasksPage> {
                   child: AppInput(
                     hint: context.l10n.searchTasksHint,
                     prefix: const Icon(Icons.search, size: 18),
-                    onChanged: (v) => setState(() => _search = v),
+                    onChanged: (v) => setState(() => search = v),
                   ),
                 ),
                 const SizedBox(width: 12),
                 _StatusFilter(
-                  value: _filterStatus,
-                  onChanged: (s) => setState(() => _filterStatus = s),
+                  value: filterStatus,
+                  onChanged: (s) => setState(() => filterStatus = s),
                 ),
               ],
             ),
@@ -118,7 +118,7 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-  void show_task_dialog(BuildContext context, [Task? task]) {
+  void showTaskDialog(BuildContext context, [Task? task]) {
     showDialog(
       context: context,
       builder: (ctx) => _TaskDialog(
@@ -178,9 +178,9 @@ class _StatusLaneState extends State<_StatusLane> {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: isDragOver ? widget.status.color.withValues(alpha: 0.05) : Colors.transparent,
+            color: isDragOver ? widget.status.color.withOpacity(0.05) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: isDragOver ? Border.all(color: widget.status.color.withValues(alpha: 0.3), width: 1.5) : null,
+            border: isDragOver ? Border.all(color: widget.status.color.withOpacity(0.3), width: 1.5) : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +195,7 @@ class _StatusLaneState extends State<_StatusLane> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: widget.status.color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: widget.status.color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
                       child: Text('${widget.tasks.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: widget.status.color)),
                     ),
                   ],
@@ -204,7 +204,7 @@ class _StatusLaneState extends State<_StatusLane> {
               if (widget.tasks.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16, left: 18),
-                  child: Text(context.l10n.noTasksEmpty, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
+                  child: Text(context.l10n.noTasksEmpty, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.4))),
                 )
               else
                 ...widget.tasks.asMap().entries.map((e) {
@@ -235,9 +235,9 @@ class _TaskCard extends StatelessWidget {
   final Task task;
   const _TaskCard({required this.task});
 
-  bool is_overdue(Task t) => t.dueDate != null && t.dueDate!.isBefore(DateTime.now()) && t.status != TaskStatus.done;
+  bool isOverdue(Task t) => t.dueDate != null && t.dueDate!.isBefore(DateTime.now()) && t.status != TaskStatus.done;
 
-  String format_due(DateTime d, BuildContext context) {
+  String formatDue(DateTime d, BuildContext context) {
     final now = DateTime.now();
     final diff = d.difference(now);
     if (diff.inDays == 0) return context.l10n.dueToday;
@@ -255,7 +255,7 @@ class _TaskCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
-        onTap: () => show_task_dialog(context, task),
+        onTap: () => showTaskDialog(context, task),
         child: Row(
           children: [
             // Priority indicator
@@ -293,8 +293,8 @@ class _TaskCard extends StatelessWidget {
                           )),
                       if (task.dueDate != null) ...[
                         _Chip(
-                          label: format_due(task.dueDate!, context),
-                          color: is_overdue(task) ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                          label: formatDue(task.dueDate!, context),
+                          color: isOverdue(task) ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
                         ),
                       ],
                     ],
@@ -306,7 +306,7 @@ class _TaskCard extends StatelessWidget {
               icon: const Icon(Icons.more_vert, size: 18),
               onSelected: (v) {
                 if (v == 'edit') {
-                  show_task_dialog(context, task);
+                  showTaskDialog(context, task);
                 } else if (v == 'delete') {
                   app.deleteTask(task.id);
                 }
@@ -322,7 +322,7 @@ class _TaskCard extends StatelessWidget {
     );
   }
 
-  void show_task_dialog(BuildContext context, Task task) {
+  void showTaskDialog(BuildContext context, Task task) {
     showDialog(
       context: context,
       builder: (ctx) => _TaskDialog(
@@ -392,32 +392,32 @@ class _TaskDialog extends StatefulWidget {
 }
 
 class _TaskDialogState extends State<_TaskDialog> {
-  late TextEditingController _name;
-  late TextEditingController _desc;
-  late TextEditingController _tags;
+  late TextEditingController name;
+  late TextEditingController desc;
+  late TextEditingController tags;
   late TextEditingController assigneeController;
-  late TaskStatus _status;
-  late TaskPriority _priority;
+  late TaskStatus status;
+  late TaskPriority priority;
   DateTime? dueDate;
 
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.task?.name ?? '');
-    _desc = TextEditingController(text: widget.task?.description ?? '');
-    _tags = TextEditingController(
+    name = TextEditingController(text: widget.task?.name ?? '');
+    desc = TextEditingController(text: widget.task?.description ?? '');
+    tags = TextEditingController(
         text: widget.task?.tags.join(', ') ?? '');
     assigneeController = TextEditingController(text: widget.task?.config['assignee'] as String? ?? '');
-    _status = widget.task?.status ?? TaskStatus.todo;
-    _priority = widget.task?.priority ?? TaskPriority.medium;
+    status = widget.task?.status ?? TaskStatus.todo;
+    priority = widget.task?.priority ?? TaskPriority.medium;
     dueDate = widget.task?.dueDate;
   }
 
   @override
   void dispose() {
-    _name.dispose();
-    _desc.dispose();
-    _tags.dispose();
+    name.dispose();
+    desc.dispose();
+    tags.dispose();
     assigneeController.dispose();
     super.dispose();
   }
@@ -436,18 +436,18 @@ class _TaskDialogState extends State<_TaskDialog> {
               AppInput(
                   label: context.l10n.taskNameLabel,
                   hint: context.l10n.taskNameHint,
-                  controller: _name),
+                  controller: name),
               const SizedBox(height: 12),
               AppInput(
                   label: context.l10n.descriptionLabel,
                   hint: context.l10n.descriptionHint,
-                  controller: _desc,
+                  controller: desc,
                   maxLines: 3),
               const SizedBox(height: 12),
               AppSelect<TaskStatus>(
                 label: context.l10n.statusLabel,
-                value: _status,
-                onChanged: (v) => setState(() => _status = v ?? _status),
+                value: status,
+                onChanged: (v) => setState(() => status = v ?? status),
                 items: TaskStatus.values
                     .map((s) => DropdownMenuItem(
                         value: s, child: Text(s.label)))
@@ -456,9 +456,9 @@ class _TaskDialogState extends State<_TaskDialog> {
               const SizedBox(height: 12),
               AppSelect<TaskPriority>(
                 label: context.l10n.priorityLabel,
-                value: _priority,
+                value: priority,
                 onChanged: (v) =>
-                    setState(() => _priority = v ?? _priority),
+                    setState(() => priority = v ?? priority),
                 items: TaskPriority.values
                     .map((p) => DropdownMenuItem(
                         value: p, child: Text(p.label)))
@@ -468,7 +468,7 @@ class _TaskDialogState extends State<_TaskDialog> {
               AppInput(
                   label: context.l10n.tagsLabel,
                   hint: context.l10n.tagsHint,
-                  controller: _tags),
+                  controller: tags),
               const SizedBox(height: 12),
               AppInput(label: context.l10n.assigneeLabel, hint: context.l10n.assigneeHint, controller: assigneeController),
               const SizedBox(height: 12),
@@ -517,28 +517,28 @@ class _TaskDialogState extends State<_TaskDialog> {
         AppButton(
           label: isNew ? context.l10n.createButton : context.l10n.saveButton,
           onPressed: () {
-            if (_name.text.trim().isEmpty) return;
-            final tags = _tags.text
+            if (name.text.trim().isEmpty) return;
+            final tagList = tags.text
                 .split(',')
                 .map((t) => t.trim())
                 .where((t) => t.isNotEmpty)
                 .toList();
             final t = widget.task?.copyWith(
-                  name: _name.text.trim(),
-                  description: _desc.text.trim(),
-                  status: _status,
-                  priority: _priority,
-                  tags: tags,
+                  name: name.text.trim(),
+                  description: desc.text.trim(),
+                  status: status,
+                  priority: priority,
+                  tags: tagList,
                   dueDate: dueDate,
                   config: {...(widget.task?.config ?? {}), 'assignee': assigneeController.text.trim()},
                 ) ??
                 Task(
                   id: const Uuid().v4(),
-                  name: _name.text.trim(),
-                  description: _desc.text.trim(),
-                  status: _status,
-                  priority: _priority,
-                  tags: tags,
+                  name: name.text.trim(),
+                  description: desc.text.trim(),
+                  status: status,
+                  priority: priority,
+                  tags: tagList,
                   dueDate: dueDate,
                   config: {'assignee': assigneeController.text.trim()},
                 );

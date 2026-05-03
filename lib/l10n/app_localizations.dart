@@ -7,8 +7,6 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 
-// ignore_for_file: type=lint
-
 /// Callers can lookup localized strings with an instance of AppLocalizations
 /// returned by `AppLocalizations.of(context)`.
 ///
@@ -61,8 +59,7 @@ import 'app_localizations_en.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,8 +67,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -83,8 +79,7 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -92,7 +87,9 @@ abstract class AppLocalizations {
   ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en')
+  ];
 
   /// No description provided for @appTitle.
   ///
@@ -2157,10 +2154,297 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Categories'**
   String get sidebarCategories;
+
+  /// No description provided for @loginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your workspace'**
+  String get loginSubtitle;
+
+  /// No description provided for @loginWelcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get loginWelcomeBack;
+
+  /// No description provided for @loginCredentialsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your credentials to continue'**
+  String get loginCredentialsHint;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'you@example.com'**
+  String get emailHint;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'••••••••'**
+  String get passwordHint;
+
+  /// No description provided for @signInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get signInButton;
+
+  /// No description provided for @noAccountPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get noAccountPrompt;
+
+  /// No description provided for @signUpLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get signUpLink;
+
+  /// No description provided for @signupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account'**
+  String get signupSubtitle;
+
+  /// No description provided for @signupGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get signupGetStarted;
+
+  /// No description provided for @signupWorkspaceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your FuzzyBoard workspace'**
+  String get signupWorkspaceHint;
+
+  /// No description provided for @fullNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get fullNameLabel;
+
+  /// No description provided for @fullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Jane Doe'**
+  String get fullNameHint;
+
+  /// No description provided for @confirmPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPasswordLabel;
+
+  /// No description provided for @passwordsMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsMismatch;
+
+  /// No description provided for @createAccountButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get createAccountButton;
+
+  /// No description provided for @hasAccountPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get hasAccountPrompt;
+
+  /// No description provided for @signInLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signInLink;
+
+  /// No description provided for @configTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System Configuration'**
+  String get configTitle;
+
+  /// No description provided for @configAppNode.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get configAppNode;
+
+  /// No description provided for @configSelectNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a node'**
+  String get configSelectNode;
+
+  /// No description provided for @configSelectNodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any node to view\nand edit its configuration'**
+  String get configSelectNodeHint;
+
+  /// No description provided for @configAppSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'App config saved'**
+  String get configAppSaved;
+
+  /// No description provided for @configAppConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'App Configuration'**
+  String get configAppConfiguration;
+
+  /// No description provided for @configGlobalSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Global application settings'**
+  String get configGlobalSettings;
+
+  /// No description provided for @configMaxConcurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Concurrency'**
+  String get configMaxConcurrency;
+
+  /// No description provided for @configMaxConcurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'10'**
+  String get configMaxConcurrencyHint;
+
+  /// No description provided for @configApiBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'API Base URL'**
+  String get configApiBaseUrl;
+
+  /// No description provided for @configTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Timezone'**
+  String get configTimezone;
+
+  /// No description provided for @configTimezoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'UTC'**
+  String get configTimezoneHint;
+
+  /// No description provided for @configSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get configSaveChanges;
+
+  /// No description provided for @configLogLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Level'**
+  String get configLogLevel;
+
+  /// No description provided for @configWorkerSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker saved'**
+  String get configWorkerSaved;
+
+  /// No description provided for @configWorkerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get configWorkerName;
+
+  /// No description provided for @configWorkerConcurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrency'**
+  String get configWorkerConcurrency;
+
+  /// No description provided for @configWorkerMaxRetries.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Retries'**
+  String get configWorkerMaxRetries;
+
+  /// No description provided for @configWorkerTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeout (seconds)'**
+  String get configWorkerTimeout;
+
+  /// No description provided for @configWorkerEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint'**
+  String get configWorkerEndpoint;
+
+  /// No description provided for @configWorkerStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get configWorkerStop;
+
+  /// No description provided for @configWorkerStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get configWorkerStart;
+
+  /// No description provided for @configPluginNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Installed'**
+  String get configPluginNotInstalled;
+
+  /// No description provided for @configPluginAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Author'**
+  String get configPluginAuthor;
+
+  /// No description provided for @configPluginRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get configPluginRating;
+
+  /// No description provided for @configPluginDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get configPluginDownloads;
+
+  /// No description provided for @configPluginDownloadsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} installs'**
+  String configPluginDownloadsValue(String count);
+
+  /// No description provided for @configPluginUninstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall'**
+  String get configPluginUninstall;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2169,23 +2453,24 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en':
-      return AppLocalizationsEn();
+    case 'en': return AppLocalizationsEn();
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.'
+  );
 }

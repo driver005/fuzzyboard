@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fuzzyboard/models/task.dart';
 import 'package:fuzzyboard/models/workflow.dart';
 import 'package:fuzzyboard/models/plugin.dart';
@@ -42,7 +43,7 @@ void main() {
 
     test('WorkflowNode has correct color for type', () {
       final color = WorkflowNode.colorForType(NodeType.trigger);
-      expect(color.a, greaterThan(0));
+      expect(color.alpha, greaterThan(0));
     });
   });
 
@@ -65,6 +66,8 @@ void main() {
     late AppProvider provider;
 
     setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
       provider = AppProvider();
     });
 

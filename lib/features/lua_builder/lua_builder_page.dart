@@ -89,7 +89,6 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
                 id: const Uuid().v4(),
                 name: name,
                 description: luaScript,
-                status: TaskStatus.todo,
                 priority: TaskPriority.medium,
                 tags: ['lua', 'expression'],
                 config: {

@@ -9,7 +9,6 @@ void main() {
   group('Task model', () {
     test('creates task with defaults', () {
       final task = Task(id: '1', name: 'Test Task');
-      expect(task.status, TaskStatus.todo);
       expect(task.priority, TaskPriority.medium);
       expect(task.tags, isEmpty);
     });
@@ -27,9 +26,9 @@ void main() {
       expect(updated.tags, ['a', 'b']);
     });
 
-    test('TaskStatus extensions return correct labels and colors', () {
-      expect(TaskStatus.done.label, 'Done');
-      expect(TaskStatus.inProgress.label, 'In Progress');
+    test('TaskPriority extensions return correct labels', () {
+      expect(TaskPriority.high.label, 'High');
+      expect(TaskPriority.low.label, 'Low');
     });
   });
 

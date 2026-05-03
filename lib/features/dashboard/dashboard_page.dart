@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/user_provider.dart';
-import '../../models/task.dart';
+import '../../models/task_run.dart';
 import '../../models/workflow.dart';
 import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/app_button.dart';
@@ -101,7 +101,7 @@ class DashboardPage extends StatelessWidget {
             spacing: 16,
             runSpacing: 16,
             children: [
-              _TaskStatusChart(tasks: app.tasks),
+              _TaskStatusChart(runs: app.taskRuns),
               _WorkflowRunsChart(workflows: app.workflows),
             ],
           ),
@@ -179,17 +179,17 @@ class _WelcomeBanner extends StatelessWidget {
 }
 
 class _TaskStatusChart extends StatelessWidget {
-  final List<Task> tasks;
-  const _TaskStatusChart({required this.tasks});
+  final List<TaskRun> runs;
+  const _TaskStatusChart({required this.runs});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final Map<TaskStatus, int> counts = {
-      for (final s in TaskStatus.values)
-        s: tasks.where((t) => t.status == s).length,
+    final Map<TaskRunStatus, int> counts = {
+      for (final s in TaskRunStatus.values)
+        s: runs.where((r) => r.status == s).length,
     };
-    final total = tasks.length;
+    final total = runs.length;
 
     return AppCard(
       title: context.l10n.taskStatusChart,
@@ -209,7 +209,7 @@ class _TaskStatusChart extends StatelessWidget {
                       PieChartData(
                         sectionsSpace: 3,
                         centerSpaceRadius: 40,
-                        sections: TaskStatus.values.map((s) {
+                        sections: TaskRunStatus.values.map((s) {
                           final val = counts[s] ?? 0;
                           return PieChartSectionData(
                             value: val.toDouble(),
@@ -229,7 +229,7 @@ class _TaskStatusChart extends StatelessWidget {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: TaskStatus.values.map((s) {
+                    children: TaskRunStatus.values.map((s) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Row(

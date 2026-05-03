@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../models/plugin.dart';
 import '../models/task.dart';
+import '../models/task_run.dart';
 import '../models/worker.dart';
 import '../models/workflow.dart';
 
@@ -16,7 +17,6 @@ List<Task> buildSeedTasks() => [
         id: 'task-1',
         name: 'Send Welcome Email',
         description: 'Trigger a welcome email when a user signs up.',
-        status: TaskStatus.done,
         priority: TaskPriority.high,
         tags: ['email', 'onboarding'],
       ),
@@ -24,7 +24,6 @@ List<Task> buildSeedTasks() => [
         id: 'task-2',
         name: 'Process Payment',
         description: 'Validate and process payment via Stripe.',
-        status: TaskStatus.inProgress,
         priority: TaskPriority.critical,
         tags: ['payment', 'stripe'],
       ),
@@ -32,7 +31,6 @@ List<Task> buildSeedTasks() => [
         id: 'task-3',
         name: 'Generate Report',
         description: 'Compile weekly analytics report from DB.',
-        status: TaskStatus.todo,
         priority: TaskPriority.medium,
         tags: ['analytics'],
       ),
@@ -40,9 +38,46 @@ List<Task> buildSeedTasks() => [
         id: 'task-4',
         name: 'Sync CRM Data',
         description: 'Synchronize customer data to external CRM.',
-        status: TaskStatus.todo,
         priority: TaskPriority.low,
         tags: ['crm', 'sync'],
+      ),
+    ];
+
+List<TaskRun> buildSeedTaskRuns() => [
+      TaskRun(
+        id: 'tr-1',
+        taskId: 'task-1',
+        taskName: 'Send Welcome Email',
+        status: TaskRunStatus.done,
+        startedAt: DateTime.now().subtract(const Duration(hours: 2)),
+        finishedAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 55)),
+      ),
+      TaskRun(
+        id: 'tr-2',
+        taskId: 'task-2',
+        taskName: 'Process Payment',
+        status: TaskRunStatus.running,
+        startedAt: DateTime.now().subtract(const Duration(minutes: 10)),
+      ),
+      TaskRun(
+        id: 'tr-3',
+        taskId: 'task-3',
+        taskName: 'Generate Report',
+        status: TaskRunStatus.failed,
+        startedAt: DateTime.now().subtract(const Duration(days: 1)),
+        finishedAt: DateTime.now()
+            .subtract(const Duration(days: 1))
+            .add(const Duration(minutes: 2)),
+      ),
+      TaskRun(
+        id: 'tr-4',
+        taskId: 'task-1',
+        taskName: 'Send Welcome Email',
+        status: TaskRunStatus.done,
+        startedAt: DateTime.now().subtract(const Duration(days: 2)),
+        finishedAt: DateTime.now()
+            .subtract(const Duration(days: 2))
+            .add(const Duration(minutes: 3)),
       ),
     ];
 

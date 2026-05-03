@@ -7,13 +7,19 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/workflow.dart';
+import '../../models/workflow_run.dart';
 import '../../app.dart';
 import '../../shared/widgets/app_button.dart';
 
 /// Full-screen workflow visual canvas builder.
 class WorkflowCanvas extends StatefulWidget {
   final String workflowId;
-  const WorkflowCanvas({super.key, required this.workflowId});
+
+  /// When true the canvas is displayed in view-only mode: nodes cannot be
+  /// moved, connected, added, or deleted, and no edits are saved.
+  final bool readOnly;
+
+  const WorkflowCanvas({super.key, required this.workflowId, this.readOnly = false});
 
   @override
   State<WorkflowCanvas> createState() => _WorkflowCanvasState();
@@ -391,11 +397,18 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
+    final readOnly = widget.readOnly;
+
+    // Determine live running state so we can show a banner and highlight nodes.
+    final app = context.watch<AppProvider>();
+    final runs = app.runsForWorkflow(workflow.id);
+    final isRunning = runs.isNotEmpty && runs.first.status == WorkflowRunStatus.running;
 
     return KeyboardListener(
       focusNode: keyboardFocus,
       autofocus: true,
       onKeyEvent: (event) {
+        if (readOnly) return;
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.escape && connecting) {
             cancelConnect();
@@ -408,13 +421,71 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(workflow.name),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(workflow.name),
+              if (readOnly) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isRunning
+                        ? const Color(0xFF3B82F6).withOpacity(0.15)
+                        : cs.onSurface.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isRunning
+                          ? const Color(0xFF3B82F6).withOpacity(0.4)
+                          : cs.outline.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isRunning) ...[
+                        SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: const Color(0xFF3B82F6),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Running — View Only',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF3B82F6),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ] else ...[
+                        Icon(Icons.visibility_outlined,
+                            size: 11, color: cs.onSurface.withOpacity(0.5)),
+                        const SizedBox(width: 5),
+                        Text(
+                          'View Only',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurface.withOpacity(0.5),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
-            if (connecting)
+            if (!readOnly && connecting)
               Chip(
                 avatar: const Icon(Icons.link, size: 16),
                 label: const Text('Click target node — ESC to cancel'),
@@ -422,17 +493,19 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                 deleteIcon: const Icon(Icons.close, size: 16),
                 onDeleted: cancelConnect,
               ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.undo),
-              tooltip: 'Undo',
-              onPressed: undoStack.isEmpty ? null : undo,
-            ),
-            IconButton(
-              icon: const Icon(Icons.redo),
-              tooltip: 'Redo',
-              onPressed: redoStack.isEmpty ? null : redo,
-            ),
+            if (!readOnly) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: 'Undo',
+                onPressed: undoStack.isEmpty ? null : undo,
+              ),
+              IconButton(
+                icon: const Icon(Icons.redo),
+                tooltip: 'Redo',
+                onPressed: redoStack.isEmpty ? null : redo,
+              ),
+            ],
             const SizedBox(width: 8),
             AppButton(
               label: context.l10n.canvasExportButton,
@@ -441,35 +514,37 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               variant: AppButtonVariant.outline,
               onPressed: exportJson,
             ),
-            const SizedBox(width: 8),
-            AppButton(
-              label: context.l10n.importButton,
-              icon: const Icon(Icons.download_outlined),
-              size: AppButtonSize.sm,
-              variant: AppButtonVariant.outline,
-              onPressed: showImportDialog,
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.help_outline),
-              tooltip: 'How to use',
-              onPressed: showTutorial,
-            ),
-            const SizedBox(width: 8),
-            AppButton(
-              label: 'Add Node',
-              icon: const Icon(Icons.add_circle_outline),
-              size: AppButtonSize.sm,
-              variant: AppButtonVariant.outline,
-              onPressed: showQuickMenu,
-            ),
-            const SizedBox(width: 8),
-            AppButton(
-              label: 'Save',
-              icon: const Icon(Icons.save),
-              size: AppButtonSize.sm,
-              onPressed: save,
-            ),
+            if (!readOnly) ...[
+              const SizedBox(width: 8),
+              AppButton(
+                label: context.l10n.importButton,
+                icon: const Icon(Icons.download_outlined),
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+                onPressed: showImportDialog,
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.help_outline),
+                tooltip: 'How to use',
+                onPressed: showTutorial,
+              ),
+              const SizedBox(width: 8),
+              AppButton(
+                label: 'Add Node',
+                icon: const Icon(Icons.add_circle_outline),
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+                onPressed: showQuickMenu,
+              ),
+              const SizedBox(width: 8),
+              AppButton(
+                label: 'Save',
+                icon: const Icon(Icons.save),
+                size: AppButtonSize.sm,
+                onPressed: save,
+              ),
+            ],
             const SizedBox(width: 12),
           ],
         ),
@@ -502,22 +577,26 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             Listener(
               behavior: HitTestBehavior.translucent,
               onPointerDown: (e) => pointerDownPos = e.localPosition,
-              onPointerUp: (e) {
-                final moved = (e.localPosition - pointerDownPos).distance > 10;
-                if (!moved && connecting) {
-                  // Convert viewport coordinates to canvas (scene) coordinates.
-                  final canvasPos = transform.toScene(e.localPosition);
-                  final hitNode = workflow.nodes.any((n) =>
-                      Rect.fromLTWH(n.position.dx, n.position.dy, 160, 100)
-                          .contains(canvasPos));
-                  if (!hitNode) {
-                    showQuickMenu(
-                      screenPosition: e.position,
-                      canvasPosition: canvasPos,
-                    );
-                  }
-                }
-              },
+              onPointerUp: readOnly
+                  ? null
+                  : (e) {
+                      final moved =
+                          (e.localPosition - pointerDownPos).distance > 10;
+                      if (!moved && connecting) {
+                        // Convert viewport coordinates to canvas (scene) coordinates.
+                        final canvasPos = transform.toScene(e.localPosition);
+                        final hitNode = workflow.nodes.any((n) =>
+                            Rect.fromLTWH(
+                                    n.position.dx, n.position.dy, 160, 100)
+                                .contains(canvasPos));
+                        if (!hitNode) {
+                          showQuickMenu(
+                            screenPosition: e.position,
+                            canvasPosition: canvasPos,
+                          );
+                        }
+                      }
+                    },
               child: InteractiveViewer(
                 transformationController: transform,
                 // Unlimited panning in all directions.
@@ -546,7 +625,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                           ),
                         ),
                       ),
-                      ...workflow.nodes.map((node) {
+                      ...workflow.nodes.asMap().entries.map((entry) {
+                        final node = entry.value;
+                        // In view-only mode the first node is highlighted
+                        // while the workflow is running.
+                        final nodeRunning =
+                            readOnly && isRunning && entry.key == 0;
                         return Positioned(
                           left: node.position.dx,
                           top: node.position.dy,
@@ -555,17 +639,21 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                             isSelected: selectedNodeId == node.id,
                             isConnectSource: connectFromId == node.id,
                             isConnecting: connecting,
-                            onTap: () => onNodeTap(node.id),
-                            onDrag: (delta) {
-                              setState(() {
-                                node.position = Offset(
-                                  node.position.dx + delta.dx,
-                                  node.position.dy + delta.dy,
-                                );
-                              });
-                            },
-                            onConnect: () => startConnect(node.id),
-                            onDelete: () => deleteNode(node.id),
+                            readOnly: readOnly,
+                            isRunning: nodeRunning,
+                            onTap: readOnly ? null : () => onNodeTap(node.id),
+                            onDrag: readOnly
+                                ? null
+                                : (delta) {
+                                    setState(() {
+                                      node.position = Offset(
+                                        node.position.dx + delta.dx,
+                                        node.position.dy + delta.dy,
+                                      );
+                                    });
+                                  },
+                            onConnect: readOnly ? null : () => startConnect(node.id),
+                            onDelete: readOnly ? null : () => deleteNode(node.id),
                           ),
                         );
                       }),
@@ -606,8 +694,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                   ),
                 ),
               ),
-            // Selected node config panel
-            if (selectedNodeId != null)
+            // Selected node config panel (edit mode only)
+            if (!readOnly && selectedNodeId != null)
               Positioned(
                 right: 0,
                 top: 0,
@@ -805,20 +893,29 @@ class _NodeWidget extends StatelessWidget {
   final bool isSelected;
   final bool isConnectSource;
   final bool isConnecting;
-  final VoidCallback onTap;
-  final ValueChanged<Offset> onDrag;
-  final VoidCallback onConnect;
-  final VoidCallback onDelete;
+
+  /// When true the node is displayed in view-only mode (no drag, no actions).
+  final bool readOnly;
+
+  /// When true a running-state indicator is shown on the node.
+  final bool isRunning;
+
+  final VoidCallback? onTap;
+  final ValueChanged<Offset>? onDrag;
+  final VoidCallback? onConnect;
+  final VoidCallback? onDelete;
 
   const _NodeWidget({
     required this.node,
     required this.isSelected,
     required this.isConnectSource,
     required this.isConnecting,
-    required this.onTap,
-    required this.onDrag,
-    required this.onConnect,
-    required this.onDelete,
+    this.onTap,
+    this.onConnect,
+    this.onDelete,
+    this.onDrag,
+    this.readOnly = false,
+    this.isRunning = false,
   });
 
   @override
@@ -828,10 +925,11 @@ class _NodeWidget extends StatelessWidget {
     final isDark = theme.colorScheme.brightness == Brightness.dark;
     // When in connect mode and this is NOT the source, show it as a target candidate
     final isTarget = isConnecting && !isConnectSource;
+    final runningColor = const Color(0xFF3B82F6);
 
     return GestureDetector(
       onTap: onTap,
-      onPanUpdate: (details) => onDrag(details.delta),
+      onPanUpdate: readOnly ? null : (details) => onDrag!(details.delta),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: 160,
@@ -839,20 +937,28 @@ class _NodeWidget extends StatelessWidget {
           color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isConnectSource
-                ? Colors.orange
-                : isTarget
-                    ? color
-                    : isSelected
+            color: isRunning
+                ? runningColor
+                : isConnectSource
+                    ? Colors.orange
+                    : isTarget
                         ? color
-                        : color.withOpacity(0.3),
-            width: isConnectSource || isSelected ? 2.5 : isTarget ? 2 : 1.5,
+                        : isSelected
+                            ? color
+                            : color.withOpacity(0.3),
+            width: isRunning || isConnectSource || isSelected
+                ? 2.5
+                : isTarget
+                    ? 2
+                    : 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(isTarget ? 0.35 : 0.2),
+              color: isRunning
+                  ? runningColor.withOpacity(0.35)
+                  : color.withOpacity(isTarget ? 0.35 : 0.2),
               blurRadius: 12,
-              spreadRadius: isSelected || isTarget ? 3 : 0,
+              spreadRadius: isRunning || isSelected || isTarget ? 3 : 0,
             ),
           ],
         ),
@@ -862,26 +968,37 @@ class _NodeWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: isRunning
+                    ? runningColor.withOpacity(0.15)
+                    : color.withOpacity(0.15),
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(11)),
               ),
               child: Row(
                 children: [
                   Icon(WorkflowNode.iconForType(node.type),
-                      color: color, size: 16),
+                      color: isRunning ? runningColor : color, size: 16),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       node.type.name.toUpperCase(),
                       style: TextStyle(
                           fontSize: 9,
-                          color: color,
+                          color: isRunning ? runningColor : color,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5),
                     ),
                   ),
-                  if (isConnectSource)
+                  if (isRunning)
+                    SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: runningColor,
+                      ),
+                    )
+                  else if (isConnectSource)
                     const Icon(Icons.radio_button_checked,
                         size: 10, color: Colors.orange),
                 ],
@@ -897,7 +1014,7 @@ class _NodeWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (!isConnecting)
+            if (!readOnly && !isConnecting)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
                 child: Row(

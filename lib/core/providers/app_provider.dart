@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/seed_data.dart';
 import '../../models/task.dart';
+import '../../models/task_run.dart';
 import '../../models/workflow.dart';
 import '../../models/plugin.dart';
 import '../../models/chat_message.dart';
@@ -120,6 +121,28 @@ class AppProvider extends ChangeNotifier {
     addLog('Task deleted: $id');
     emitEvent('task_deleted');
   }
+
+  // ── Task Runs ─────────────────────────────────────────────────────────────
+  final List<TaskRun> _taskRuns = buildSeedTaskRuns();
+
+  List<TaskRun> get taskRuns => List.unmodifiable(_taskRuns);
+
+  void addTaskRun(TaskRun run) {
+    _taskRuns.insert(0, run);
+    addLog('Task run started: ${run.taskName}');
+    notifyListeners();
+  }
+
+  void updateTaskRun(TaskRun run) {
+    final idx = _taskRuns.indexWhere((r) => r.id == run.id);
+    if (idx != -1) {
+      _taskRuns[idx] = run;
+      notifyListeners();
+    }
+  }
+
+  List<TaskRun> runsForTask(String taskId) =>
+      _taskRuns.where((r) => r.taskId == taskId).toList();
 
   String generateId() => uuid.v4();
 

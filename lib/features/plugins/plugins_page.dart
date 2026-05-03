@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/plugin.dart';
-import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../app.dart';
 import '../config/config_graph_page.dart';
@@ -116,14 +116,16 @@ class _PluginCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final app = context.read<AppProvider>();
 
     return AppCard(
-      onTap: () => showDialog(
-        context: context,
-        useSafeArea: false,
-        builder: (_) => PluginConfigModal(plugin: plugin),
-      ),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        showDialog(
+          context: context,
+          useSafeArea: false,
+          builder: (_) => PluginConfigModal(plugin: plugin),
+        );
+      },
       child: Row(
         children: [
           // Icon
@@ -193,13 +195,6 @@ class _PluginCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _StatusBadge(status: plugin.status),
-              const SizedBox(height: 8),
-              AppButton(
-                label: context.l10n.removeButton,
-                variant: AppButtonVariant.outline,
-                size: AppButtonSize.sm,
-                onPressed: () => app.uninstallPlugin(plugin.id),
-              ),
             ],
           ),
         ],

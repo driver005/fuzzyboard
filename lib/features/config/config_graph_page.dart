@@ -921,6 +921,75 @@ class _PluginInfoPanel extends StatelessWidget {
                   label: context.l10n.configPluginDownloads,
                   value: context.l10n.configPluginDownloadsValue(plugin.downloadCount!.toString())),
             ],
+            if (plugin.configSchema.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text('Configuration',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ...plugin.configSchema.map((field) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border:
+                            Border.all(color: cs.outline.withOpacity(0.12)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(field.label,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w600)),
+                                if (field.description != null)
+                                  Text(field.description!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                          color: cs.onSurface.withOpacity(0.5))),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: cs.outline.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(field.type.name,
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: cs.onSurface.withOpacity(0.5),
+                                    fontFamily: 'monospace')),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+            ],
+            if (plugin.readme != null) ...[
+              const SizedBox(height: 20),
+              Text('README',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.outline.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: cs.outline.withOpacity(0.12)),
+                ),
+                child: Text(plugin.readme!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withOpacity(0.7))),
+              ),
+            ],
             const SizedBox(height: 24),
             AppButton(
               label: plugin.isInstalled ? context.l10n.configPluginUninstall : context.l10n.installButton,

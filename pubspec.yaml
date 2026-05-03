@@ -16,19 +16,19 @@ dependencies:
   provider: ^6.1.2
 
   # Routing
-  go_router: ^14.0.0
+  go_router: ^17.2.3
 
   # Animations
   flutter_animate: ^4.5.0
 
   # Charts
-  fl_chart: ^0.68.0
+  fl_chart: ^1.2.0
 
   # Persistence
   shared_preferences: ^2.2.3
 
   # Typography
-  google_fonts: 6.2.1
+  google_fonts: ^8.1.0
 
   # Unique IDs
   uuid: ^4.4.0
@@ -45,7 +45,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

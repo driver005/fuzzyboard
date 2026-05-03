@@ -442,19 +442,22 @@ class _TaskFullModalState extends State<_TaskFullModal> {
     super.dispose();
   }
 
-  Map<String, dynamic> get configPreview => {
-    'name': name.text.trim().isEmpty ? '(untitled)' : name.text.trim(),
-    'description': desc.text.trim(),
-    'status': status.name,
-    'priority': priority.name,
-    'tags': tags.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList(),
-    'assignee': assigneeController.text.trim(),
-    if (dueDate != null)
-      'dueDate': '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}',
-    'config': {
+  Map<String, dynamic> get configPreview {
+    final trimmedName = name.text.trim();
+    return {
+      'name': trimmedName.isEmpty ? '(untitled)' : trimmedName,
+      'description': desc.text.trim(),
+      'status': status.name,
+      'priority': priority.name,
+      'tags': tags.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList(),
       'assignee': assigneeController.text.trim(),
-    },
-  };
+      if (dueDate != null)
+        'dueDate': '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}',
+      'config': {
+        'assignee': assigneeController.text.trim(),
+      },
+    };
+  }
 
   String get jsonPreview {
     const encoder = JsonEncoder.withIndent('  ');

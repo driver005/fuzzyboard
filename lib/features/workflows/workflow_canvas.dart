@@ -30,6 +30,11 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   final List<Map<String, dynamic>> undoStack = [];
   final List<Map<String, dynamic>> redoStack = [];
 
+  // Position where the next node will be placed (canvas coordinates).
+  Offset pendingNodePosition = const Offset(400, 300);
+  // Tracks pointer-down position so we can distinguish a tap from a pan.
+  Offset pointerDownPos = Offset.zero;
+
   @override
   void initState() {
     super.initState();
@@ -54,10 +59,64 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       id: uuid.v4(),
       label: labelForType(type),
       type: type,
-      position: const Offset(300, 300),
+      position: pendingNodePosition,
     );
     pushUndo();
     setState(() => workflow.nodes.add(node));
+  }
+
+  /// Adds a node at [pendingNodePosition] and, if currently in connect mode,
+  /// immediately creates a connection from the source node to the new node.
+  void _addNodeAndMaybeConnect(NodeType type) {
+    final node = WorkflowNode(
+      id: uuid.v4(),
+      label: labelForType(type),
+      type: type,
+      position: pendingNodePosition,
+    );
+    pushUndo();
+    setState(() {
+      workflow.nodes.add(node);
+      if (connecting && connectFromId != null) {
+        workflow.connections.add(WorkflowConnection(
+          id: uuid.v4(),
+          fromNodeId: connectFromId!,
+          toNodeId: node.id,
+        ));
+        connecting = false;
+        connectFromId = null;
+      }
+    });
+  }
+
+  /// Shows the Quick Menu overlay, optionally anchored to a screen position.
+  /// When [canvasPosition] is provided it is stored as [pendingNodePosition]
+  /// so newly added nodes land at the tapped spot on the canvas.
+  void showQuickMenu({Offset? screenPosition, Offset? canvasPosition}) {
+    final size = MediaQuery.of(context).size;
+    if (canvasPosition != null) {
+      pendingNodePosition = canvasPosition;
+    } else {
+      // Default: place node near the current viewport centre.
+      pendingNodePosition = transform.toScene(Offset(size.width / 2, size.height / 2));
+    }
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'quick-menu',
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 120),
+      pageBuilder: (ctx, _, __) => _QuickMenuOverlay(
+        screenPosition: screenPosition,
+        screenSize: size,
+        onSelect: (type) {
+          Navigator.of(ctx).pop();
+          _addNodeAndMaybeConnect(type);
+        },
+      ),
+      transitionBuilder: (ctx, anim, _, child) =>
+          FadeTransition(opacity: anim, child: child),
+    );
   }
 
   String labelForType(NodeType type) => switch (type) {
@@ -187,7 +246,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                   icon: Icons.add_box_outlined,
                   title: ctx.l10n.addingNodesSection,
                   body:
-                      'Click any node type in the left palette to place it on the canvas.',
+                      'Press Ctrl+Space (or ⌘+Space on Mac) to open the Quick Menu. Search for a node type and click to place it. You can also use the "Add Node" button in the toolbar.',
                 ),
                 _TutorialSection(
                   icon: Icons.drag_indicator,
@@ -199,7 +258,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                   icon: Icons.link,
                   title: ctx.l10n.connectingNodesSection,
                   body:
-                      'Click the 🔗 icon on a node to enter connect mode, then click the target node to draw an arrow. Press ESC or tap the × chip in the toolbar to cancel.',
+                      'Click the 🔗 icon on a node to enter connect mode, then click a target node to draw an arrow. If you click empty canvas space, the Quick Menu opens so you can add a new node and auto-connect it in one step. Press ESC or tap the × chip to cancel.',
                 ),
                 _TutorialSection(
                   icon: Icons.settings_outlined,
@@ -337,10 +396,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       focusNode: keyboardFocus,
       autofocus: true,
       onKeyEvent: (event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            connecting) {
-          cancelConnect();
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.escape && connecting) {
+            cancelConnect();
+          } else if (event.logicalKey == LogicalKeyboardKey.space &&
+              (HardwareKeyboard.instance.isControlPressed ||
+                  HardwareKeyboard.instance.isMetaPressed)) {
+            showQuickMenu();
+          }
         }
       },
       child: Scaffold(
@@ -394,6 +457,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             ),
             const SizedBox(width: 8),
             AppButton(
+              label: 'Add Node',
+              icon: const Icon(Icons.add_circle_outline),
+              size: AppButtonSize.sm,
+              variant: AppButtonVariant.outline,
+              onPressed: showQuickMenu,
+            ),
+            const SizedBox(width: 8),
+            AppButton(
               label: 'Save',
               icon: const Icon(Icons.save),
               size: AppButtonSize.sm,
@@ -402,175 +473,177 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             const SizedBox(width: 12),
           ],
         ),
-        body: Row(
+        body: Stack(
           children: [
-            _NodePalette(onAdd: addNode),
-            Expanded(
-              child: Stack(
-                children: [
-                  // Grid background
-                  Container(
+            // Grid background
+            Container(
+              color: isDark
+                  ? const Color(0xFF0F0F1A)
+                  : const Color(0xFFF8F9FF),
+              child: CustomPaint(
+                painter: _GridPainter(
                     color: isDark
-                        ? const Color(0xFF0F0F1A)
-                        : const Color(0xFFF8F9FF),
-                    child: CustomPaint(
-                      painter: _GridPainter(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.black.withOpacity(0.04)),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                  // Interactive view
-                  InteractiveViewer(
-                    transformationController: transform,
-                    boundaryMargin: const EdgeInsets.all(800),
-                    minScale: 0.3,
-                    maxScale: 2.5,
-                    child: SizedBox(
-                      width: 2000,
-                      height: 1500,
-                      child: Stack(
-                        children: [
-                          // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _ConnectionsPainter(
-                                nodes: workflow.nodes,
-                                connections: workflow.connections,
-                                primaryColor: cs.primary,
-                              ),
-                            ),
+                        ? Colors.white.withOpacity(0.04)
+                        : Colors.black.withOpacity(0.04)),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            // Interactive view — wrapped in a Listener so we can detect
+            // taps on empty canvas space while still letting InteractiveViewer
+            // handle panning / zooming.
+            Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (e) => pointerDownPos = e.localPosition,
+              onPointerUp: (e) {
+                final moved = (e.localPosition - pointerDownPos).distance > 10;
+                if (!moved && connecting) {
+                  // Convert viewport coordinates to canvas (scene) coordinates.
+                  final canvasPos = transform.toScene(e.localPosition);
+                  final hitNode = workflow.nodes.any((n) =>
+                      Rect.fromLTWH(n.position.dx, n.position.dy, 160, 100)
+                          .contains(canvasPos));
+                  if (!hitNode) {
+                    showQuickMenu(
+                      screenPosition: e.position,
+                      canvasPosition: canvasPos,
+                    );
+                  }
+                }
+              },
+              child: InteractiveViewer(
+                transformationController: transform,
+                // Unlimited panning — child boundary has no hard edges.
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                minScale: 0.1,
+                maxScale: 4.0,
+                child: SizedBox(
+                  width: 8000,
+                  height: 6000,
+                  child: Stack(
+                    children: [
+                      // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _ConnectionsPainter(
+                            nodes: workflow.nodes,
+                            connections: workflow.connections,
+                            primaryColor: cs.primary,
                           ),
-                          ...workflow.nodes.map((node) {
-                            return Positioned(
-                              left: node.position.dx,
-                              top: node.position.dy,
-                              child: _NodeWidget(
-                                node: node,
-                                isSelected: selectedNodeId == node.id,
-                                isConnectSource: connectFromId == node.id,
-                                isConnecting: connecting,
-                                onTap: () => onNodeTap(node.id),
-                                onDrag: (delta) {
-                                  setState(() {
-                                    node.position = Offset(
-                                      node.position.dx + delta.dx,
-                                      node.position.dy + delta.dy,
-                                    );
-                                  });
-                                },
-                                onConnect: () => startConnect(node.id),
-                                onDelete: () => deleteNode(node.id),
-                              ),
-                            );
-                          }),
+                        ),
+                      ),
+                      ...workflow.nodes.map((node) {
+                        return Positioned(
+                          left: node.position.dx,
+                          top: node.position.dy,
+                          child: _NodeWidget(
+                            node: node,
+                            isSelected: selectedNodeId == node.id,
+                            isConnectSource: connectFromId == node.id,
+                            isConnecting: connecting,
+                            onTap: () => onNodeTap(node.id),
+                            onDrag: (delta) {
+                              setState(() {
+                                node.position = Offset(
+                                  node.position.dx + delta.dx,
+                                  node.position.dy + delta.dy,
+                                );
+                              });
+                            },
+                            onConnect: () => startConnect(node.id),
+                            onDelete: () => deleteNode(node.id),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Connect-mode overlay hint
+            if (connecting)
+              Positioned(
+                bottom: 16,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Material(
+                    borderRadius: BorderRadius.circular(24),
+                    color: cs.primary,
+                    elevation: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.touch_app,
+                              color: Colors.white, size: 18),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Click a node to connect — or click empty space to add & connect — ESC to cancel',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  // Connect-mode overlay hint
-                  if (connecting)
-                    Positioned(
-                      bottom: 16,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Material(
-                          borderRadius: BorderRadius.circular(24),
-                          color: cs.primary,
-                          elevation: 6,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.touch_app,
-                                    color: Colors.white, size: 18),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Click any node to connect — ESC to cancel',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  // Selected node config panel
-                  if (selectedNodeId != null)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 280,
-                    child: _NodeConfigPanel(
-                      node: workflow.nodes
-                          .firstWhere((n) => n.id == selectedNodeId),
-                      connections: workflow.connections,
-                      nodes: workflow.nodes,
-                      onClose: () =>
-                          setState(() => selectedNodeId = null),
-                      onUpdate: (n) => setState(() {}),
-                      onDeleteConnection: deleteConnection,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),  // Scaffold
-  );  // KeyboardListener
+                ),
+              ),
+            // Selected node config panel
+            if (selectedNodeId != null)
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: 280,
+                child: _NodeConfigPanel(
+                  node: workflow.nodes
+                      .firstWhere((n) => n.id == selectedNodeId),
+                  connections: workflow.connections,
+                  nodes: workflow.nodes,
+                  onClose: () =>
+                      setState(() => selectedNodeId = null),
+                  onUpdate: (n) => setState(() {}),
+                  onDeleteConnection: deleteConnection,
+                ),
+              ),
+          ],
+        ),
+      ),  // Scaffold
+    );  // KeyboardListener
   }  // build
 }  // _WorkflowCanvasState
 
-// ── Node Palette ─────────────────────────────────────────────────────────────
+// ── Quick Menu Overlay ────────────────────────────────────────────────────────
 
-class _NodePalette extends StatelessWidget {
-  final void Function(NodeType) onAdd;
-  const _NodePalette({required this.onAdd});
+/// Searchable floating menu for adding nodes to the canvas.
+/// Displayed via [showGeneralDialog] so it floats over the canvas.
+class _QuickMenuOverlay extends StatefulWidget {
+  final Offset? screenPosition;
+  final Size screenSize;
+  final void Function(NodeType) onSelect;
+
+  const _QuickMenuOverlay({
+    required this.screenPosition,
+    required this.screenSize,
+    required this.onSelect,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
-
-    return Container(
-      width: 80,
-      color: isDark ? const Color(0xFF16162A) : Colors.white,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text('Nodes',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: cs.onSurface.withOpacity(0.4))),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(8),
-              children: NodeType.values.map((type) {
-                return _PaletteItem(type: type, onAdd: onAdd);
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  State<_QuickMenuOverlay> createState() => _QuickMenuOverlayState();
 }
 
-class _PaletteItem extends StatelessWidget {
-  final NodeType type;
-  final void Function(NodeType) onAdd;
-  const _PaletteItem({required this.type, required this.onAdd});
+class _QuickMenuOverlayState extends State<_QuickMenuOverlay> {
+  final searchController = TextEditingController();
+  String query = '';
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   static String _descriptionForType(NodeType t) => switch (t) {
         NodeType.trigger => 'Starts the workflow (e.g. on event)',
@@ -581,38 +654,134 @@ class _PaletteItem extends StatelessWidget {
         NodeType.end => 'Marks the workflow end',
       };
 
+  List<NodeType> get filtered {
+    if (query.isEmpty) return NodeType.values;
+    final q = query.toLowerCase();
+    return NodeType.values
+        .where((t) =>
+            t.name.toLowerCase().contains(q) ||
+            _descriptionForType(t).toLowerCase().contains(q))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final color = WorkflowNode.colorForType(type);
-    return Tooltip(
-      message: _descriptionForType(type),
-      preferBelow: false,
-      child: InkWell(
-        onTap: () => onAdd(type),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            children: [
-              Icon(WorkflowNode.iconForType(type), color: color, size: 20),
-              const SizedBox(height: 4),
-              Text(type.name,
-                  style: TextStyle(
-                      fontSize: 9,
-                      color: color,
-                      fontWeight: FontWeight.w600)),
-            ],
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    const menuWidth = 260.0;
+    const menuMaxHeight = 360.0;
+
+    // Anchor the menu near the tap point, clamped to remain on screen.
+    final sp = widget.screenPosition;
+    double left = (sp != null ? sp.dx : widget.screenSize.width / 2) - menuWidth / 2;
+    double top = (sp != null ? sp.dy : widget.screenSize.height / 2) - 20;
+    left = left.clamp(8.0, widget.screenSize.width - menuWidth - 8);
+    top = top.clamp(8.0, widget.screenSize.height - menuMaxHeight - 8);
+
+    return Stack(
+      children: [
+        Positioned(
+          left: left,
+          top: top,
+          width: menuWidth,
+          child: Material(
+            elevation: 10,
+            borderRadius: BorderRadius.circular(12),
+            color: cs.surface,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_circle_outline,
+                          size: 16, color: cs.primary),
+                      const SizedBox(width: 8),
+                      Text('Add Node',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700)),
+                      const Spacer(),
+                      Text('Ctrl+Space',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                              color: cs.onSurface.withOpacity(0.4),
+                              fontFamily: 'monospace')),
+                    ],
+                  ),
+                ),
+                // Search field
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextField(
+                    controller: searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search nodes…',
+                      prefixIcon:
+                          const Icon(Icons.search, size: 16),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                    ),
+                    onChanged: (v) => setState(() => query = v),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Divider(height: 1),
+                // Node list
+                ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(maxHeight: menuMaxHeight - 110),
+                  child: filtered.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text('No nodes match',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color:
+                                      cs.onSurface.withOpacity(0.5))),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          shrinkWrap: true,
+                          children: filtered.map((type) {
+                            final color =
+                                WorkflowNode.colorForType(type);
+                            return ListTile(
+                              dense: true,
+                              leading: Icon(
+                                  WorkflowNode.iconForType(type),
+                                  color: color,
+                                  size: 18),
+                              title: Text(type.name,
+                                  style: TextStyle(
+                                      color: color,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13)),
+                              subtitle: Text(
+                                  _descriptionForType(type),
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(fontSize: 10)),
+                              onTap: () => widget.onSelect(type),
+                            );
+                          }).toList(),
+                        ),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
+
 
 // ── Node Widget ───────────────────────────────────────────────────────────────
 

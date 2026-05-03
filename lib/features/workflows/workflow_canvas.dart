@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/workflow.dart';
+import '../../app.dart';
 import '../../shared/widgets/app_button.dart';
 
 /// Full-screen workflow visual canvas builder.
@@ -43,23 +44,23 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     super.dispose();
   }
 
-  void _save() {
+  void save() {
     context.read<AppProvider>().updateWorkflow(_workflow);
     Navigator.of(context).pop();
   }
 
-  void _addNode(NodeType type) {
+  void add_node(NodeType type) {
     final node = WorkflowNode(
       id: _uuid.v4(),
-      label: _labelForType(type),
+      label: label_for_type(type),
       type: type,
       position: const Offset(300, 300),
     );
-    _pushUndo();
+    push_undo();
     setState(() => _workflow.nodes.add(node));
   }
 
-  String _labelForType(NodeType type) => switch (type) {
+  String label_for_type(NodeType type) => switch (type) {
         NodeType.trigger => 'New Trigger',
         NodeType.action => 'New Action',
         NodeType.condition => 'Condition',
@@ -68,8 +69,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         NodeType.end => 'End',
       };
 
-  void _deleteNode(String id) {
-    _pushUndo();
+  void delete_node(String id) {
+    push_undo();
     setState(() {
       _workflow.nodes.removeWhere((n) => n.id == id);
       _workflow.connections
@@ -78,14 +79,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     });
   }
 
-  void _onNodeTap(String id) {
+  void on_node_tap(String id) {
     if (_connecting && _connectFromId != null && _connectFromId != id) {
       final conn = WorkflowConnection(
         id: _uuid.v4(),
         fromNodeId: _connectFromId!,
         toNodeId: id,
       );
-      _pushUndo();
+      push_undo();
       setState(() {
         _workflow.connections.add(conn);
         _connecting = false;
@@ -96,14 +97,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     }
   }
 
-  void _startConnect(String id) {
+  void start_connect(String id) {
     setState(() {
       _connecting = true;
       _connectFromId = id;
     });
   }
 
-  Map<String, dynamic> _captureSnapshot() {
+  Map<String, dynamic> capture_snapshot() {
     return {
       'nodes': _workflow.nodes.map((n) => {
         'id': n.id, 'label': n.label, 'type': n.type.name,
@@ -116,13 +117,13 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     };
   }
 
-  void _pushUndo() {
-    _undoStack.add(_captureSnapshot());
+  void push_undo() {
+    _undoStack.add(capture_snapshot());
     if (_undoStack.length > 30) _undoStack.removeAt(0);
     _redoStack.clear();
   }
 
-  void _applySnapshot(Map<String, dynamic> snapshot) {
+  void apply_snapshot(Map<String, dynamic> snapshot) {
     final nodes = (snapshot['nodes'] as List).map((n) => WorkflowNode(
       id: n['id'] as String, label: n['label'] as String,
       type: NodeType.values.firstWhere((t) => t.name == n['type'], orElse: () => NodeType.action),
@@ -140,39 +141,39 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     });
   }
 
-  void _undo() {
+  void undo() {
     if (_undoStack.isEmpty) return;
-    _redoStack.add(_captureSnapshot());
-    _applySnapshot(_undoStack.removeLast());
+    _redoStack.add(capture_snapshot());
+    apply_snapshot(_undoStack.removeLast());
   }
 
-  void _redo() {
+  void redo() {
     if (_redoStack.isEmpty) return;
-    _undoStack.add(_captureSnapshot());
-    _applySnapshot(_redoStack.removeLast());
+    _undoStack.add(capture_snapshot());
+    apply_snapshot(_redoStack.removeLast());
   }
 
-  void _deleteConnection(String id) {
-    _pushUndo();
+  void delete_connection(String id) {
+    push_undo();
     setState(() => _workflow.connections.removeWhere((c) => c.id == id));
   }
 
-  void _cancelConnect() {
+  void cancel_connect() {
     setState(() {
       _connecting = false;
       _connectFromId = null;
     });
   }
 
-  void _showTutorial() {
+  void show_tutorial() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Text('🗺️ ', style: TextStyle(fontSize: 22)),
-            SizedBox(width: 6),
-            Text('Workflow Builder Guide'),
+            const Text('🗺️ ', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 6),
+            Text(ctx.l10n.canvasWorkflowGuideTitle),
           ],
         ),
         content: SizedBox(
@@ -181,46 +182,46 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 _TutorialSection(
                   icon: Icons.add_box_outlined,
-                  title: 'Adding Nodes',
+                  title: ctx.l10n.addingNodesSection,
                   body:
                       'Click any node type in the left palette to place it on the canvas.',
                 ),
                 _TutorialSection(
                   icon: Icons.drag_indicator,
-                  title: 'Moving Nodes',
+                  title: ctx.l10n.movingNodesSection,
                   body:
                       'Drag a node to reposition it anywhere on the canvas.',
                 ),
                 _TutorialSection(
                   icon: Icons.link,
-                  title: 'Connecting Nodes',
+                  title: ctx.l10n.connectingNodesSection,
                   body:
                       'Click the 🔗 icon on a node to enter connect mode, then click the target node to draw an arrow. Press ESC or tap the × chip in the toolbar to cancel.',
                 ),
                 _TutorialSection(
                   icon: Icons.settings_outlined,
-                  title: 'Configuring Nodes',
+                  title: ctx.l10n.configuringNodesSection,
                   body:
                       'Tap a node to open its config panel on the right. You can rename it, and delete any of its connections there.',
                 ),
                 _TutorialSection(
                   icon: Icons.delete_outline,
-                  title: 'Deleting',
+                  title: ctx.l10n.deletingSection,
                   body:
                       'Use the 🗑 icon on a node to remove it and all its connections. To remove a single connection, open the source node config panel.',
                 ),
                 _TutorialSection(
                   icon: Icons.undo,
-                  title: 'Undo / Redo',
+                  title: ctx.l10n.undoRedoSection,
                   body:
                       'Up to 30 undo steps are stored. Use the toolbar arrows to step back and forward.',
                 ),
                 _TutorialSection(
                   icon: Icons.upload_outlined,
-                  title: 'Export / Import',
+                  title: ctx.l10n.exportImportSection,
                   body:
                       'Export copies the workflow as JSON to your clipboard. Import lets you paste JSON to restore a workflow.',
                 ),
@@ -231,13 +232,13 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Got it!'),
+            child: Text(ctx.l10n.gotItButton),
           ),
         ],
       ),
     );
   }
-  Future<void> _exportJson() async {
+  Future<void> export_json() async {
     final data = {
       'id': _workflow.id,
       'name': _workflow.name,
@@ -262,33 +263,33 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     await Clipboard.setData(ClipboardData(text: json));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Workflow JSON copied to clipboard!')),
+        SnackBar(content: Text(context.l10n.canvasWorkflowJsonCopied)),
       );
     }
   }
 
   /// Show import dialog and parse JSON.
-  void _showImportDialog() {
+  void show_import_dialog() {
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Import Workflow JSON'),
+        title: Text(ctx.l10n.canvasImportJsonTitle),
         content: SizedBox(
           width: 500,
           child: TextField(
             controller: controller,
             maxLines: 12,
-            decoration: const InputDecoration(
-              hintText: 'Paste workflow JSON here...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: ctx.l10n.canvasImportJsonHint,
+              border: const OutlineInputBorder(),
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(ctx.l10n.cancelButton)),
           TextButton(
-            child: const Text('Import'),
+            child: Text(ctx.l10n.importButton),
             onPressed: () {
               try {
                 final data = jsonDecode(controller.text) as Map<String, dynamic>;
@@ -315,9 +316,9 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                     ..addAll(connections);
                 });
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workflow imported!')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.canvasWorkflowImported)));
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import error: $e')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.canvasImportError(e.toString()))));
               }
             },
           ),
@@ -339,7 +340,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.escape &&
             _connecting) {
-          _cancelConnect();
+          cancel_connect();
         }
       },
       child: Scaffold(
@@ -356,54 +357,54 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                 label: const Text('Click target node — ESC to cancel'),
                 backgroundColor: cs.primary.withOpacity(0.15),
                 deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: _cancelConnect,
+                onDeleted: cancel_connect,
               ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.undo),
               tooltip: 'Undo',
-              onPressed: _undoStack.isEmpty ? null : _undo,
+              onPressed: _undoStack.isEmpty ? null : undo,
             ),
             IconButton(
               icon: const Icon(Icons.redo),
               tooltip: 'Redo',
-              onPressed: _redoStack.isEmpty ? null : _redo,
+              onPressed: _redoStack.isEmpty ? null : redo,
             ),
             const SizedBox(width: 8),
             AppButton(
-              label: 'Export',
+              label: context.l10n.canvasExportButton,
               icon: const Icon(Icons.upload_outlined),
               size: AppButtonSize.sm,
               variant: AppButtonVariant.outline,
-              onPressed: _exportJson,
+              onPressed: export_json,
             ),
             const SizedBox(width: 8),
             AppButton(
-              label: 'Import',
+              label: context.l10n.importButton,
               icon: const Icon(Icons.download_outlined),
               size: AppButtonSize.sm,
               variant: AppButtonVariant.outline,
-              onPressed: _showImportDialog,
+              onPressed: show_import_dialog,
             ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.help_outline),
               tooltip: 'How to use',
-              onPressed: _showTutorial,
+              onPressed: show_tutorial,
             ),
             const SizedBox(width: 8),
             AppButton(
               label: 'Save',
               icon: const Icon(Icons.save),
               size: AppButtonSize.sm,
-              onPressed: _save,
+              onPressed: save,
             ),
             const SizedBox(width: 12),
           ],
         ),
         body: Row(
           children: [
-            _NodePalette(onAdd: _addNode),
+            _NodePalette(onAdd: add_node),
             Expanded(
               child: Stack(
                 children: [
@@ -450,7 +451,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                                 isSelected: _selectedNodeId == node.id,
                                 isConnectSource: _connectFromId == node.id,
                                 isConnecting: _connecting,
-                                onTap: () => _onNodeTap(node.id),
+                                onTap: () => on_node_tap(node.id),
                                 onDrag: (delta) {
                                   setState(() {
                                     node.position = Offset(
@@ -459,8 +460,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                                     );
                                   });
                                 },
-                                onConnect: () => _startConnect(node.id),
-                                onDelete: () => _deleteNode(node.id),
+                                onConnect: () => start_connect(node.id),
+                                onDelete: () => delete_node(node.id),
                               ),
                             );
                           }),
@@ -515,7 +516,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                       onClose: () =>
                           setState(() => _selectedNodeId = null),
                       onUpdate: (n) => setState(() {}),
-                      onDeleteConnection: _deleteConnection,
+                      onDeleteConnection: delete_connection,
                     ),
                   ),
               ],

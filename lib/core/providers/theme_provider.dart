@@ -18,10 +18,10 @@ class ThemeProvider extends ChangeNotifier {
   ThemeData get darkTheme => AppTheme.dark(seedColor: _seedColor);
 
   ThemeProvider() {
-    _load();
+    load();
   }
 
-  Future<void> _load() async {
+  Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final modeIndex = prefs.getInt('themeMode') ?? 2; // 2 = dark
     final colorValue = prefs.getInt('seedColor');

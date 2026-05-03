@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/cms_provider.dart';
 import '../../models/cms_entry.dart';
@@ -43,13 +44,13 @@ class _SearchPageState extends State<SearchPage> {
     final hasResults = tasks.isNotEmpty || workflows.isNotEmpty || plugins.isNotEmpty || cmsEntries.isNotEmpty || cmsPages.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      appBar: AppBar(title: Text(context.l10n.searchTitle)),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: AppInput(
             controller: controller,
-            hint: 'Search tasks, workflows & plugins…',
+            hint: context.l10n.searchHint,
             prefix: const Icon(Icons.search),
             autofocus: true,
             onChanged: (v) => setState(() => query = v),
@@ -57,31 +58,31 @@ class _SearchPageState extends State<SearchPage> {
         ),
         Expanded(
           child: q.isEmpty
-              ? _emptyState(context)
+              ? empty_state(context)
               : !hasResults
-                  ? Center(child: Text('No results for "$q"', style: Theme.of(context).textTheme.bodyMedium))
+                  ? Center(child: Text(context.l10n.noSearchResults(q), style: Theme.of(context).textTheme.bodyMedium))
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       children: [
                         if (tasks.isNotEmpty) ...[
-                          _sectionHeader(context, Icons.task_alt, 'Tasks'),
-                          ...tasks.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key, '/tasks')),
+                          section_header(context, Icons.task_alt, context.l10n.searchTasksSection),
+                          ...tasks.asMap().entries.map((e) => result_tile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key, '/tasks')),
                         ],
                         if (workflows.isNotEmpty) ...[
-                          _sectionHeader(context, Icons.account_tree, 'Workflows'),
-                          ...workflows.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key, '/workflows')),
+                          section_header(context, Icons.account_tree, context.l10n.searchWorkflowsSection),
+                          ...workflows.asMap().entries.map((e) => result_tile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key, '/workflows')),
                         ],
                         if (plugins.isNotEmpty) ...[
-                          _sectionHeader(context, Icons.extension, 'Plugins'),
-                          ...plugins.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key, '/plugins')),
+                          section_header(context, Icons.extension, context.l10n.searchPluginsSection),
+                          ...plugins.asMap().entries.map((e) => result_tile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key, '/plugins')),
                         ],
                         if (cmsEntries.isNotEmpty) ...[
-                          _sectionHeader(context, Icons.article_outlined, 'CMS Entries'),
-                          ...cmsEntries.asMap().entries.map((e) => _resultTile(context, e.value.title, e.value.status.name, Icons.article_outlined, const Color(0xFF6C63FF), e.key, '/cms/entries')),
+                          section_header(context, Icons.article_outlined, context.l10n.searchCmsEntriesSection),
+                          ...cmsEntries.asMap().entries.map((e) => result_tile(context, e.value.title, e.value.status.name, Icons.article_outlined, const Color(0xFF6C63FF), e.key, '/cms/entries')),
                         ],
                         if (cmsPages.isNotEmpty) ...[
-                          _sectionHeader(context, Icons.web_outlined, 'CMS Pages'),
-                          ...cmsPages.asMap().entries.map((e) => _resultTile(context, e.value.title, e.value.slug, Icons.web_outlined, const Color(0xFF3B82F6), e.key, '/cms/pages')),
+                          section_header(context, Icons.web_outlined, context.l10n.searchCmsPagesSection),
+                          ...cmsPages.asMap().entries.map((e) => result_tile(context, e.value.title, e.value.slug, Icons.web_outlined, const Color(0xFF3B82F6), e.key, '/cms/pages')),
                         ],
                       ],
                     ),
@@ -90,7 +91,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _emptyState(BuildContext context) {
+  Widget empty_state(BuildContext context) {
     return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.search, size: 64, color: Colors.grey.withOpacity(0.4)),
@@ -100,7 +101,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _sectionHeader(BuildContext context, IconData icon, String title) {
+  Widget section_header(BuildContext context, IconData icon, String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Row(children: [
@@ -111,7 +112,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _resultTile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index, String route) {
+  Widget result_tile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index, String route) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(

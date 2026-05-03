@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+enum TaskStatus { todo, inProgress, done, blocked }
+
 enum TaskPriority { low, medium, high, critical }
 
 extension TaskPriorityExt on TaskPriority {
@@ -23,6 +25,7 @@ class Task {
   String name;
   String description;
   TaskPriority priority;
+  TaskStatus status;
   List<String> tags;
   DateTime createdAt;
   DateTime? dueDate;
@@ -33,6 +36,7 @@ class Task {
     required this.name,
     this.description = '',
     this.priority = TaskPriority.medium,
+    this.status = TaskStatus.todo,
     this.tags = const [],
     DateTime? createdAt,
     this.dueDate,
@@ -44,6 +48,7 @@ class Task {
     String? name,
     String? description,
     TaskPriority? priority,
+    TaskStatus? status,
     List<String>? tags,
     DateTime? dueDate,
     Map<String, dynamic>? config,
@@ -53,6 +58,7 @@ class Task {
         name: name ?? this.name,
         description: description ?? this.description,
         priority: priority ?? this.priority,
+        status: status ?? this.status,
         tags: tags ?? this.tags,
         createdAt: createdAt,
         dueDate: dueDate ?? this.dueDate,

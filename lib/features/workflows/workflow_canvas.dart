@@ -1060,7 +1060,7 @@ class _NodeAction extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String tooltip;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _NodeAction(
       {required this.icon,
       required this.color,

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/chat_message.dart';
 import '../../shared/widgets/app_input.dart';
@@ -98,15 +99,15 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(children: [
-          Text('🤖', style: TextStyle(fontSize: 20)),
-          SizedBox(width: 8),
-          Text('FuzzyAI'),
+        title: Row(children: [
+          const Text('🤖', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Text(context.l10n.chatTitle),
         ]),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Clear chat',
+            tooltip: context.l10n.clearChatButton,
             onPressed: () => context.read<AppProvider>().clearChat(),
           ),
           const SizedBox(width: 8),
@@ -159,7 +160,7 @@ class _MessageBubble extends StatelessWidget {
               onLongPress: () async {
                 await Clipboard.setData(ClipboardData(text: message.text));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied!')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.copiedSnackbar)));
                 }
               },
               child: Container(
@@ -197,7 +198,7 @@ class _TypingIndicator extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16)),
-          child: Text('FuzzyAI is typing…', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.5), fontStyle: FontStyle.italic)),
+          child: Text(context.l10n.fuzzyAITyping, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.5), fontStyle: FontStyle.italic)),
         ),
       ]),
     ).animate(onPlay: (c) => c.repeat(reverse: true)).fadeIn(duration: 600.ms);
@@ -219,7 +220,7 @@ class _InputBar extends StatelessWidget {
         border: Border(top: BorderSide(color: cs.outline.withOpacity(0.2))),
       ),
       child: Row(children: [
-        Expanded(child: AppInput(controller: controller, hint: 'Message FuzzyAI…', onSubmitted: (_) => onSend())),
+        Expanded(child: AppInput(controller: controller, hint: context.l10n.messageFuzzyAI, onSubmitted: (_) => onSend())),
         const SizedBox(width: 8),
         IconButton.filled(onPressed: onSend, icon: const Icon(Icons.send)),
       ]),

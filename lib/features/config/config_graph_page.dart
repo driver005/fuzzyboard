@@ -125,7 +125,7 @@ class _GraphPanel extends StatelessWidget {
               ),
               // Plugin nodes
               for (final plugin in plugins)
-                _buildPluginNode(
+                buildPluginNode(
                   context,
                   plugin,
                   pluginPositions[plugin.id]!,
@@ -134,7 +134,7 @@ class _GraphPanel extends StatelessWidget {
                 ),
               // Worker nodes
               for (final worker in workers)
-                _buildWorkerNode(
+                buildWorkerNode(
                   context,
                   worker,
                   workerPositions[worker.id]!,
@@ -142,7 +142,7 @@ class _GraphPanel extends StatelessWidget {
                   () => onNodeSelected(worker.id),
                 ),
               // App node (center)
-              _buildAppNode(context, center, selectedId == 'app', () => onNodeSelected('app')),
+              buildAppNode(context, center, selectedId == 'app', () => onNodeSelected('app')),
             ],
           ),
         ),
@@ -150,7 +150,7 @@ class _GraphPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildAppNode(
+  Widget buildAppNode(
     BuildContext context,
     Offset pos,
     bool isSelected,
@@ -204,7 +204,7 @@ class _GraphPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildWorkerNode(
+  Widget buildWorkerNode(
     BuildContext context,
     Worker worker,
     Offset pos,
@@ -264,7 +264,7 @@ class _GraphPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildPluginNode(
+  Widget buildPluginNode(
     BuildContext context,
     Plugin plugin,
     Offset pos,
@@ -352,9 +352,9 @@ class _ConnectionPainter extends CustomPainter {
       old.center != center ||
       old.positions.length != positions.length ||
       old.lineColor != lineColor ||
-      !_positionsEqual(old.positions, positions);
+      !positionsEqual(old.positions, positions);
 
-  bool _positionsEqual(List<Offset> a, List<Offset> b) {
+  bool positionsEqual(List<Offset> a, List<Offset> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;

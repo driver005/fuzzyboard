@@ -61,9 +61,9 @@ class _SignupPageState extends State<SignupPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildLogo(context, cs, theme),
+                buildLogo(context, cs, theme),
                 const SizedBox(height: 40),
-                _buildSignupCard(context, cs, theme, isDark, auth),
+                buildSignupCard(context, cs, theme, isDark, auth),
               ]
                   .animate(interval: 80.ms)
                   .fadeIn(duration: 300.ms)
@@ -75,7 +75,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildLogo(BuildContext context, ColorScheme cs, ThemeData theme) {
+  Widget buildLogo(BuildContext context, ColorScheme cs, ThemeData theme) {
     return Column(
       children: [
         Container(
@@ -117,7 +117,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget _buildSignupCard(
+  Widget buildSignupCard(
     BuildContext context,
     ColorScheme cs,
     ThemeData theme,

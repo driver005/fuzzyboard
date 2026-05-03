@@ -20,47 +20,47 @@ class WorkflowCanvas extends StatefulWidget {
 }
 
 class _WorkflowCanvasState extends State<WorkflowCanvas> {
-  late Workflow _workflow;
-  String? _selectedNodeId;
-  bool _connecting = false;
-  String? _connectFromId;
-  final TransformationController _transform = TransformationController();
-  final FocusNode _keyboardFocus = FocusNode();
-  final _uuid = const Uuid();
-  final List<Map<String, dynamic>> _undoStack = [];
-  final List<Map<String, dynamic>> _redoStack = [];
+  late Workflow workflow;
+  String? selectedNodeId;
+  bool connecting = false;
+  String? connectFromId;
+  final TransformationController transform = TransformationController();
+  final FocusNode keyboardFocus = FocusNode();
+  final uuid = const Uuid();
+  final List<Map<String, dynamic>> undoStack = [];
+  final List<Map<String, dynamic>> redoStack = [];
 
   @override
   void initState() {
     super.initState();
     final app = context.read<AppProvider>();
-    _workflow = app.workflows.firstWhere((w) => w.id == widget.workflowId);
+    workflow = app.workflows.firstWhere((w) => w.id == widget.workflowId);
   }
 
   @override
   void dispose() {
-    _transform.dispose();
-    _keyboardFocus.dispose();
+    transform.dispose();
+    keyboardFocus.dispose();
     super.dispose();
   }
 
   void save() {
-    context.read<AppProvider>().updateWorkflow(_workflow);
+    context.read<AppProvider>().updateWorkflow(workflow);
     Navigator.of(context).pop();
   }
 
-  void add_node(NodeType type) {
+  void addNode(NodeType type) {
     final node = WorkflowNode(
-      id: _uuid.v4(),
-      label: label_for_type(type),
+      id: uuid.v4(),
+      label: labelForType(type),
       type: type,
       position: const Offset(300, 300),
     );
-    push_undo();
-    setState(() => _workflow.nodes.add(node));
+    pushUndo();
+    setState(() => workflow.nodes.add(node));
   }
 
-  String label_for_type(NodeType type) => switch (type) {
+  String labelForType(NodeType type) => switch (type) {
         NodeType.trigger => 'New Trigger',
         NodeType.action => 'New Action',
         NodeType.condition => 'Condition',
@@ -69,61 +69,61 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         NodeType.end => 'End',
       };
 
-  void delete_node(String id) {
-    push_undo();
+  void deleteNode(String id) {
+    pushUndo();
     setState(() {
-      _workflow.nodes.removeWhere((n) => n.id == id);
-      _workflow.connections
+      workflow.nodes.removeWhere((n) => n.id == id);
+      workflow.connections
           .removeWhere((c) => c.fromNodeId == id || c.toNodeId == id);
-      if (_selectedNodeId == id) _selectedNodeId = null;
+      if (selectedNodeId == id) selectedNodeId = null;
     });
   }
 
-  void on_node_tap(String id) {
-    if (_connecting && _connectFromId != null && _connectFromId != id) {
+  void onNodeTap(String id) {
+    if (connecting && connectFromId != null && connectFromId != id) {
       final conn = WorkflowConnection(
-        id: _uuid.v4(),
-        fromNodeId: _connectFromId!,
+        id: uuid.v4(),
+        fromNodeId: connectFromId!,
         toNodeId: id,
       );
-      push_undo();
+      pushUndo();
       setState(() {
-        _workflow.connections.add(conn);
-        _connecting = false;
-        _connectFromId = null;
+        workflow.connections.add(conn);
+        connecting = false;
+        connectFromId = null;
       });
     } else {
-      setState(() => _selectedNodeId = _selectedNodeId == id ? null : id);
+      setState(() => selectedNodeId = selectedNodeId == id ? null : id);
     }
   }
 
-  void start_connect(String id) {
+  void startConnect(String id) {
     setState(() {
-      _connecting = true;
-      _connectFromId = id;
+      connecting = true;
+      connectFromId = id;
     });
   }
 
-  Map<String, dynamic> capture_snapshot() {
+  Map<String, dynamic> captureSnapshot() {
     return {
-      'nodes': _workflow.nodes.map((n) => {
+      'nodes': workflow.nodes.map((n) => {
         'id': n.id, 'label': n.label, 'type': n.type.name,
         'x': n.position.dx, 'y': n.position.dy, 'config': Map.from(n.config),
       }).toList(),
-      'connections': _workflow.connections.map((c) => {
+      'connections': workflow.connections.map((c) => {
         'id': c.id, 'from': c.fromNodeId, 'to': c.toNodeId,
         'type': c.type.name, 'label': c.label,
       }).toList(),
     };
   }
 
-  void push_undo() {
-    _undoStack.add(capture_snapshot());
-    if (_undoStack.length > 30) _undoStack.removeAt(0);
-    _redoStack.clear();
+  void pushUndo() {
+    undoStack.add(captureSnapshot());
+    if (undoStack.length > 30) undoStack.removeAt(0);
+    redoStack.clear();
   }
 
-  void apply_snapshot(Map<String, dynamic> snapshot) {
+  void applySnapshot(Map<String, dynamic> snapshot) {
     final nodes = (snapshot['nodes'] as List).map((n) => WorkflowNode(
       id: n['id'] as String, label: n['label'] as String,
       type: NodeType.values.firstWhere((t) => t.name == n['type'], orElse: () => NodeType.action),
@@ -136,36 +136,36 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       label: c['label'] as String?,
     )).toList();
     setState(() {
-      _workflow.nodes..clear()..addAll(nodes);
-      _workflow.connections..clear()..addAll(connections);
+      workflow.nodes..clear()..addAll(nodes);
+      workflow.connections..clear()..addAll(connections);
     });
   }
 
   void undo() {
-    if (_undoStack.isEmpty) return;
-    _redoStack.add(capture_snapshot());
-    apply_snapshot(_undoStack.removeLast());
+    if (undoStack.isEmpty) return;
+    redoStack.add(captureSnapshot());
+    applySnapshot(undoStack.removeLast());
   }
 
   void redo() {
-    if (_redoStack.isEmpty) return;
-    _undoStack.add(capture_snapshot());
-    apply_snapshot(_redoStack.removeLast());
+    if (redoStack.isEmpty) return;
+    undoStack.add(captureSnapshot());
+    applySnapshot(redoStack.removeLast());
   }
 
-  void delete_connection(String id) {
-    push_undo();
-    setState(() => _workflow.connections.removeWhere((c) => c.id == id));
+  void deleteConnection(String id) {
+    pushUndo();
+    setState(() => workflow.connections.removeWhere((c) => c.id == id));
   }
 
-  void cancel_connect() {
+  void cancelConnect() {
     setState(() {
-      _connecting = false;
-      _connectFromId = null;
+      connecting = false;
+      connectFromId = null;
     });
   }
 
-  void show_tutorial() {
+  void showTutorial() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -238,12 +238,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       ),
     );
   }
-  Future<void> export_json() async {
+  Future<void> exportJson() async {
     final data = {
-      'id': _workflow.id,
-      'name': _workflow.name,
-      'description': _workflow.description,
-      'nodes': _workflow.nodes.map((n) => {
+      'id': workflow.id,
+      'name': workflow.name,
+      'description': workflow.description,
+      'nodes': workflow.nodes.map((n) => {
         'id': n.id,
         'label': n.label,
         'type': n.type.name,
@@ -251,7 +251,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         'y': n.position.dy,
         'config': n.config,
       }).toList(),
-      'connections': _workflow.connections.map((c) => {
+      'connections': workflow.connections.map((c) => {
         'id': c.id,
         'from': c.fromNodeId,
         'to': c.toNodeId,
@@ -269,7 +269,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   }
 
   /// Show import dialog and parse JSON.
-  void show_import_dialog() {
+  void showImportDialog() {
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -308,10 +308,10 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                   label: c['label'] as String?,
                 )).toList();
                 setState(() {
-                  _workflow.nodes
+                  workflow.nodes
                     ..clear()
                     ..addAll(nodes);
-                  _workflow.connections
+                  workflow.connections
                     ..clear()
                     ..addAll(connections);
                 });
@@ -334,41 +334,41 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     final isDark = cs.brightness == Brightness.dark;
 
     return KeyboardListener(
-      focusNode: _keyboardFocus,
+      focusNode: keyboardFocus,
       autofocus: true,
       onKeyEvent: (event) {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.escape &&
-            _connecting) {
-          cancel_connect();
+            connecting) {
+          cancelConnect();
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_workflow.name),
+          title: Text(workflow.name),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => Navigator.of(context).pop(),
           ),
           actions: [
-            if (_connecting)
+            if (connecting)
               Chip(
                 avatar: const Icon(Icons.link, size: 16),
                 label: const Text('Click target node — ESC to cancel'),
                 backgroundColor: cs.primary.withOpacity(0.15),
                 deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: cancel_connect,
+                onDeleted: cancelConnect,
               ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.undo),
               tooltip: 'Undo',
-              onPressed: _undoStack.isEmpty ? null : undo,
+              onPressed: undoStack.isEmpty ? null : undo,
             ),
             IconButton(
               icon: const Icon(Icons.redo),
               tooltip: 'Redo',
-              onPressed: _redoStack.isEmpty ? null : redo,
+              onPressed: redoStack.isEmpty ? null : redo,
             ),
             const SizedBox(width: 8),
             AppButton(
@@ -376,7 +376,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               icon: const Icon(Icons.upload_outlined),
               size: AppButtonSize.sm,
               variant: AppButtonVariant.outline,
-              onPressed: export_json,
+              onPressed: exportJson,
             ),
             const SizedBox(width: 8),
             AppButton(
@@ -384,13 +384,13 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               icon: const Icon(Icons.download_outlined),
               size: AppButtonSize.sm,
               variant: AppButtonVariant.outline,
-              onPressed: show_import_dialog,
+              onPressed: showImportDialog,
             ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.help_outline),
               tooltip: 'How to use',
-              onPressed: show_tutorial,
+              onPressed: showTutorial,
             ),
             const SizedBox(width: 8),
             AppButton(
@@ -404,7 +404,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         ),
         body: Row(
           children: [
-            _NodePalette(onAdd: add_node),
+            _NodePalette(onAdd: addNode),
             Expanded(
               child: Stack(
                 children: [
@@ -423,7 +423,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                   ),
                   // Interactive view
                   InteractiveViewer(
-                    transformationController: _transform,
+                    transformationController: transform,
                     boundaryMargin: const EdgeInsets.all(800),
                     minScale: 0.3,
                     maxScale: 2.5,
@@ -436,22 +436,22 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                           Positioned.fill(
                             child: CustomPaint(
                               painter: _ConnectionsPainter(
-                                nodes: _workflow.nodes,
-                                connections: _workflow.connections,
+                                nodes: workflow.nodes,
+                                connections: workflow.connections,
                                 primaryColor: cs.primary,
                               ),
                             ),
                           ),
-                          ..._workflow.nodes.map((node) {
+                          ...workflow.nodes.map((node) {
                             return Positioned(
                               left: node.position.dx,
                               top: node.position.dy,
                               child: _NodeWidget(
                                 node: node,
-                                isSelected: _selectedNodeId == node.id,
-                                isConnectSource: _connectFromId == node.id,
-                                isConnecting: _connecting,
-                                onTap: () => on_node_tap(node.id),
+                                isSelected: selectedNodeId == node.id,
+                                isConnectSource: connectFromId == node.id,
+                                isConnecting: connecting,
+                                onTap: () => onNodeTap(node.id),
                                 onDrag: (delta) {
                                   setState(() {
                                     node.position = Offset(
@@ -460,8 +460,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                                     );
                                   });
                                 },
-                                onConnect: () => start_connect(node.id),
-                                onDelete: () => delete_node(node.id),
+                                onConnect: () => startConnect(node.id),
+                                onDelete: () => deleteNode(node.id),
                               ),
                             );
                           }),
@@ -470,7 +470,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                     ),
                   ),
                   // Connect-mode overlay hint
-                  if (_connecting)
+                  if (connecting)
                     Positioned(
                       bottom: 16,
                       left: 0,
@@ -502,21 +502,21 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
                       ),
                     ),
                   // Selected node config panel
-                  if (_selectedNodeId != null)
+                  if (selectedNodeId != null)
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
                     width: 280,
                     child: _NodeConfigPanel(
-                      node: _workflow.nodes
-                          .firstWhere((n) => n.id == _selectedNodeId),
-                      connections: _workflow.connections,
-                      nodes: _workflow.nodes,
+                      node: workflow.nodes
+                          .firstWhere((n) => n.id == selectedNodeId),
+                      connections: workflow.connections,
+                      nodes: workflow.nodes,
                       onClose: () =>
-                          setState(() => _selectedNodeId = null),
+                          setState(() => selectedNodeId = null),
                       onUpdate: (n) => setState(() {}),
-                      onDeleteConnection: delete_connection,
+                      onDeleteConnection: deleteConnection,
                     ),
                   ),
               ],

@@ -11,10 +11,10 @@ import '../../models/worker.dart';
 
 /// Top-level application state provider.
 class AppProvider extends ChangeNotifier {
-  final _uuid = const Uuid();
+  final uuid = const Uuid();
 
   AppProvider() {
-    load_settings();
+    loadSettings();
   }
 
   // ── Settings flags ────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ class AppProvider extends ChangeNotifier {
   bool get verboseLogging => _verboseLogging;
   bool get autoSave => _autoSave;
 
-  Future<void> load_settings() async {
+  Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _showAvatar = prefs.getBool('showAvatar') ?? true;
     _reducedMotion = prefs.getBool('reducedMotion') ?? false;
@@ -153,7 +153,7 @@ class AppProvider extends ChangeNotifier {
     emitEvent('task_deleted');
   }
 
-  String generateId() => _uuid.v4();
+  String generateId() => uuid.v4();
 
   // ── Workflows ─────────────────────────────────────────────────────────────
   final List<Workflow> _workflows = [
@@ -259,7 +259,7 @@ class AppProvider extends ChangeNotifier {
           'Workflow ${_workflows[idx].name} ${_workflows[idx].isActive ? 'activated' : 'deactivated'}');
       emitEvent('workflow_toggled');
       if (_workflows[idx].isActive) {
-        final runId = _uuid.v4();
+        final runId = uuid.v4();
         addWorkflowRun(WorkflowRun(
           id: runId,
           workflowId: id,

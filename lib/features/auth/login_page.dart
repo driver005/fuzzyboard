@@ -61,10 +61,10 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo & branding
-                _buildLogo(context, cs, theme),
+                buildLogo(context, cs, theme),
                 const SizedBox(height: 40),
                 // Card
-                _buildLoginCard(context, cs, theme, isDark, auth),
+                buildLoginCard(context, cs, theme, isDark, auth),
               ]
                   .animate(interval: 80.ms)
                   .fadeIn(duration: 300.ms)
@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLogo(BuildContext context, ColorScheme cs, ThemeData theme) {
+  Widget buildLogo(BuildContext context, ColorScheme cs, ThemeData theme) {
     return Column(
       children: [
         Container(
@@ -118,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLoginCard(
+  Widget buildLoginCard(
     BuildContext context,
     ColorScheme cs,
     ThemeData theme,

@@ -7,30 +7,30 @@ class AuthProvider extends ChangeNotifier {
   String? currentUserName;
   bool isLoading = true;
 
-  static const String _keyEmail = 'auth_email';
-  static const String _keyName = 'auth_name';
-  static const String _keyIsAuthenticated = 'auth_is_authenticated';
+  static const String keyEmail = 'auth_email';
+  static const String keyName = 'auth_name';
+  static const String keyIsAuthenticated = 'auth_is_authenticated';
 
   AuthProvider() {
-    _loadAuth();
+    loadAuth();
   }
 
-  Future<void> _loadAuth() async {
+  Future<void> loadAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    isAuthenticated = prefs.getBool(_keyIsAuthenticated) ?? false;
-    currentUserEmail = prefs.getString(_keyEmail);
-    currentUserName = prefs.getString(_keyName);
+    isAuthenticated = prefs.getBool(keyIsAuthenticated) ?? false;
+    currentUserEmail = prefs.getString(keyEmail);
+    currentUserName = prefs.getString(keyName);
     isLoading = false;
     notifyListeners();
   }
 
-  static const _emailRegex =
+  static const emailRegex =
       r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$';
 
   Future<String?> signup(String name, String email, String password) async {
     if (name.trim().isEmpty) return 'Name is required';
     if (email.trim().isEmpty) return 'Email is required';
-    if (!RegExp(_emailRegex).hasMatch(email.trim())) {
+    if (!RegExp(emailRegex).hasMatch(email.trim())) {
       return 'Please enter a valid email address';
     }
     if (password.length < 6) return 'Password must be at least 6 characters';
@@ -44,9 +44,9 @@ class AuthProvider extends ChangeNotifier {
     isAuthenticated = true;
     currentUserEmail = email.trim();
     currentUserName = name.trim();
-    await prefs.setBool(_keyIsAuthenticated, true);
-    await prefs.setString(_keyEmail, email.trim());
-    await prefs.setString(_keyName, name.trim());
+    await prefs.setBool(keyIsAuthenticated, true);
+    await prefs.setString(keyEmail, email.trim());
+    await prefs.setString(keyName, name.trim());
 
     isLoading = false;
     notifyListeners();
@@ -58,7 +58,7 @@ class AuthProvider extends ChangeNotifier {
   /// performed. In production, credentials should be verified server-side.
   Future<String?> login(String email, String password) async {
     if (email.trim().isEmpty) return 'Email is required';
-    if (!RegExp(_emailRegex).hasMatch(email.trim())) {
+    if (!RegExp(emailRegex).hasMatch(email.trim())) {
       return 'Please enter a valid email address';
     }
     if (password.isEmpty) return 'Password is required';
@@ -72,9 +72,9 @@ class AuthProvider extends ChangeNotifier {
     isAuthenticated = true;
     currentUserEmail = email.trim();
     currentUserName = email.trim().split('@').first;
-    await prefs.setBool(_keyIsAuthenticated, true);
-    await prefs.setString(_keyEmail, email.trim());
-    await prefs.setString(_keyName, currentUserName!);
+    await prefs.setBool(keyIsAuthenticated, true);
+    await prefs.setString(keyEmail, email.trim());
+    await prefs.setString(keyName, currentUserName!);
 
     isLoading = false;
     notifyListeners();
@@ -86,9 +86,9 @@ class AuthProvider extends ChangeNotifier {
     currentUserEmail = null;
     currentUserName = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyEmail);
-    await prefs.remove(_keyName);
-    await prefs.remove(_keyIsAuthenticated);
+    await prefs.remove(keyEmail);
+    await prefs.remove(keyName);
+    await prefs.remove(keyIsAuthenticated);
     notifyListeners();
   }
 }

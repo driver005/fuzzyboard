@@ -24,7 +24,7 @@ class WorkflowsPage extends StatelessWidget {
             label: context.l10n.newWorkflowButton,
             icon: const Icon(Icons.add),
             size: AppButtonSize.sm,
-            onPressed: () => new_workflow(context),
+            onPressed: () => newWorkflow(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -61,7 +61,7 @@ class WorkflowsPage extends StatelessWidget {
     );
   }
 
-  void new_workflow(BuildContext context) {
+  void newWorkflow(BuildContext context) {
     final app = context.read<AppProvider>();
     final wf = Workflow(
       id: app.generateId(),
@@ -69,10 +69,10 @@ class WorkflowsPage extends StatelessWidget {
       description: '',
     );
     app.addWorkflow(wf);
-    open_canvas(context, wf);
+    openCanvas(context, wf);
   }
 
-  void open_canvas(BuildContext context, Workflow wf) {
+  void openCanvas(BuildContext context, Workflow wf) {
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -164,7 +164,7 @@ class _WorkflowCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 color: Colors.red.shade400,
-                onPressed: () => confirm_delete(context),
+                onPressed: () => confirmDelete(context),
               ),
             ],
           ),
@@ -173,7 +173,7 @@ class _WorkflowCard extends StatelessWidget {
     );
   }
 
-  void confirm_delete(BuildContext context) {
+  void confirmDelete(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

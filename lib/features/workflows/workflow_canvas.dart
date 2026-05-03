@@ -933,7 +933,7 @@ class _NodeWidget extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      onPanUpdate: readOnly ? null : (details) => onDrag?.call(details.delta),
+      onPanUpdate: readOnly ? null : (details) => onDrag!(details.delta),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: 160,

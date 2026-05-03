@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/cms_provider.dart';
 import '../../models/cms_entry.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../app.dart';
 
 class CmsOverviewPage extends StatelessWidget {
   const CmsOverviewPage({super.key});
@@ -14,31 +15,31 @@ class CmsOverviewPage extends StatelessWidget {
     final cms = context.watch<CmsProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('CMS Overview')),
+      appBar: AppBar(title: Text(context.l10n.cmsOverviewTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _StatRow(cms: cms),
           const SizedBox(height: 24),
-          Text('Quick Actions', style: Theme.of(context).textTheme.titleMedium),
+          Text(context.l10n.quickActionsTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              _QuickAction(icon: Icons.add_circle_outline, label: 'New Entry', color: const Color(0xFF6C63FF), onTap: () => context.go('/cms/entries')),
-              _QuickAction(icon: Icons.upload_outlined, label: 'Upload Media', color: const Color(0xFF10B981), onTap: () => context.go('/cms/media')),
-              _QuickAction(icon: Icons.web_outlined, label: 'Manage Pages', color: const Color(0xFF3B82F6), onTap: () => context.go('/cms/pages')),
-              _QuickAction(icon: Icons.category_outlined, label: 'Categories', color: const Color(0xFFF59E0B), onTap: () => context.go('/cms/categories')),
-              _QuickAction(icon: Icons.schema_outlined, label: 'Content Types', color: const Color(0xFFEC4899), onTap: () => context.go('/cms/types')),
+              _QuickAction(icon: Icons.add_circle_outline, label: context.l10n.newEntryAction, color: const Color(0xFF6C63FF), onTap: () => context.go('/cms/entries')),
+              _QuickAction(icon: Icons.upload_outlined, label: context.l10n.uploadMediaAction, color: const Color(0xFF10B981), onTap: () => context.go('/cms/media')),
+              _QuickAction(icon: Icons.web_outlined, label: context.l10n.managePagesAction, color: const Color(0xFF3B82F6), onTap: () => context.go('/cms/pages')),
+              _QuickAction(icon: Icons.category_outlined, label: context.l10n.categoriesAction, color: const Color(0xFFF59E0B), onTap: () => context.go('/cms/categories')),
+              _QuickAction(icon: Icons.schema_outlined, label: context.l10n.contentTypesAction, color: const Color(0xFFEC4899), onTap: () => context.go('/cms/types')),
             ],
           ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Recent Entries', style: Theme.of(context).textTheme.titleMedium),
-              TextButton(onPressed: () => context.go('/cms/entries'), child: const Text('View all')),
+              Text(context.l10n.recentEntriesTitle, style: Theme.of(context).textTheme.titleMedium),
+              TextButton(onPressed: () => context.go('/cms/entries'), child: Text(context.l10n.viewAllButton)),
             ],
           ),
           const SizedBox(height: 8),
@@ -78,11 +79,11 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = [
-      ('Total Entries', '${cms.totalEntries}', Icons.article, const Color(0xFF6C63FF)),
-      ('Published', '${cms.publishedEntries}', Icons.check_circle_outline, const Color(0xFF10B981)),
-      ('Drafts', '${cms.draftEntries}', Icons.edit_note, const Color(0xFFF59E0B)),
-      ('Media Files', '${cms.totalMedia}', Icons.photo_library_outlined, const Color(0xFF3B82F6)),
-      ('Pages', '${cms.totalPages}', Icons.web_outlined, const Color(0xFFEC4899)),
+      (context.l10n.totalEntriesStats, '${cms.totalEntries}', Icons.article, const Color(0xFF6C63FF)),
+      (context.l10n.publishedStats, '${cms.publishedEntries}', Icons.check_circle_outline, const Color(0xFF10B981)),
+      (context.l10n.draftsStats, '${cms.draftEntries}', Icons.edit_note, const Color(0xFFF59E0B)),
+      (context.l10n.mediaFilesStats, '${cms.totalMedia}', Icons.photo_library_outlined, const Color(0xFF3B82F6)),
+      (context.l10n.pagesStats, '${cms.totalPages}', Icons.web_outlined, const Color(0xFFEC4899)),
     ];
     return LayoutBuilder(builder: (context, c) {
       final cols = c.maxWidth > 700 ? 5 : 2;
@@ -149,8 +150,8 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
-      CmsEntryStatus.published => ('Published', const Color(0xFF10B981)),
-      CmsEntryStatus.draft => ('Draft', const Color(0xFFF59E0B)),
+      CmsEntryStatus.published => (context.l10n.publishedStatus, const Color(0xFF10B981)),
+      CmsEntryStatus.draft => (context.l10n.draftStatus, const Color(0xFFF59E0B)),
       CmsEntryStatus.archived => ('Archived', Colors.grey),
     };
     return Container(

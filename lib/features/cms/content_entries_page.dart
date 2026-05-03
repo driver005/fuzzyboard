@@ -8,6 +8,7 @@ import '../../models/cms_entry.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
+import '../../app.dart';
 
 class ContentEntriesPage extends StatefulWidget {
   const ContentEntriesPage({super.key});
@@ -41,14 +42,14 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Content Entries'),
+        title: Text(context.l10n.contentEntriesTitle),
         actions: [
           if (type != null)
             AppButton(
-              label: 'New Entry',
+              label: context.l10n.newEntryButton,
               icon: const Icon(Icons.add),
               size: AppButtonSize.sm,
-              onPressed: () => _showEntryDialog(context, type),
+              onPressed: () => show_entry_dialog(context, type),
             ),
           const SizedBox(width: 12),
         ],
@@ -76,7 +77,7 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
             ),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: AppInput(hint: 'Search entries…', prefix: const Icon(Icons.search, size: 18), onChanged: (v) => setState(() => search = v))),
+              Expanded(child: AppInput(hint: context.l10n.searchEntriesHint, prefix: const Icon(Icons.search, size: 18), onChanged: (v) => setState(() => search = v))),
               const SizedBox(width: 8),
               _StatusFilterChips(value: filterStatus, onChanged: (s) => setState(() => filterStatus = s)),
             ]),
@@ -88,7 +89,7 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.article_outlined, size: 48, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                   const SizedBox(height: 12),
-                  Text('No entries yet', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
+                  Text(context.l10n.noEntriesEmpty, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
                 ]))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -99,7 +100,7 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: AppCard(
                         title: entry.title,
-                        subtitle: 'by ${entry.author} • ${_formatDate(entry.updatedAt)}',
+                        subtitle: 'by ${entry.author} • ${format_date(entry.updatedAt)}',
                         actions: [
                           _StatusBadge(status: entry.status),
                           const SizedBox(width: 4),
@@ -107,7 +108,7 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
                             icon: const Icon(Icons.more_vert),
                             onSelected: (action) {
                               switch (action) {
-                                case 'edit': _showEntryDialog(context, type!, entry: entry);
+                                case 'edit': show_entry_dialog(context, type!, entry: entry);
                                 case 'publish': context.read<CmsProvider>().publishEntry(entry.id);
                                 case 'archive': context.read<CmsProvider>().archiveEntry(entry.id);
                                 case 'delete': context.read<CmsProvider>().deleteEntry(entry.id);
@@ -123,7 +124,7 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
                             ],
                           ),
                         ],
-                        onTap: () => _showEntryDialog(context, type!, entry: entry),
+                        onTap: () => show_entry_dialog(context, type!, entry: entry),
                       ).animate(delay: Duration(milliseconds: i * 50)).fadeIn().slideX(begin: 0.05),
                     );
                   },
@@ -133,9 +134,9 @@ class _ContentEntriesPageState extends State<ContentEntriesPage> {
     );
   }
 
-  String _formatDate(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String format_date(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  void _showEntryDialog(BuildContext context, CmsContentType type, {CmsEntry? entry}) {
+  void show_entry_dialog(BuildContext context, CmsContentType type, {CmsEntry? entry}) {
     showDialog(context: context, builder: (_) => _EntryDialog(type: type, existing: entry));
   }
 }
@@ -234,10 +235,10 @@ class _EntryDialogState extends State<_EntryDialog> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(widget.existing != null ? 'Edit Entry' : 'New ${widget.type.name}',
+            Text(widget.existing != null ? context.l10n.editEntryTitle : context.l10n.newEntryTitle(widget.type.name),
               style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            AppInput(label: 'Title', controller: titleController, hint: 'Entry title', autofocus: true),
+            AppInput(label: context.l10n.entryTitleLabel, controller: titleController, hint: context.l10n.entryTitleHint, autofocus: true),
             const SizedBox(height: 12),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Status', style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
@@ -249,9 +250,9 @@ class _EntryDialogState extends State<_EntryDialog> {
             ]),
             const SizedBox(height: 16),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancelButton)),
               const SizedBox(width: 8),
-              AppButton(label: widget.existing != null ? 'Update' : 'Create', onPressed: save),
+              AppButton(label: widget.existing != null ? 'Update' : context.l10n.createButton, onPressed: save),
             ]),
           ]),
         ),

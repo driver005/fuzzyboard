@@ -25,7 +25,7 @@ class WorkflowCanvas extends StatefulWidget {
   State<WorkflowCanvas> createState() => _WorkflowCanvasState();
 }
 
-class _WorkflowCanvasState extends State<WorkflowCanvas> {
+class _WorkflowCanvasState extends State<WorkflowCanvas> with SingleTickerProviderStateMixin {
   late Workflow workflow;
   String? selectedNodeId;
   bool connecting = false;
@@ -35,6 +35,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   final uuid = const Uuid();
   final List<Map<String, dynamic>> undoStack = [];
   final List<Map<String, dynamic>> redoStack = [];
+  late TabController canvasTabController;
 
   // Position where the next node will be placed (canvas coordinates).
   Offset pendingNodePosition = const Offset(400, 300);
@@ -46,10 +47,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     super.initState();
     final app = context.read<AppProvider>();
     workflow = app.workflows.firstWhere((w) => w.id == widget.workflowId);
+    canvasTabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
+    canvasTabController.dispose();
     transform.dispose();
     keyboardFocus.dispose();
     super.dispose();
@@ -228,6 +231,88 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       connecting = false;
       connectFromId = null;
     });
+  }
+
+  void applyTreeLayout() {
+    if (workflow.nodes.isEmpty) return;
+    pushUndo();
+
+    final inDegree = <String, int>{};
+    for (final n in workflow.nodes) inDegree[n.id] = 0;
+    for (final c in workflow.connections) {
+      inDegree[c.toNodeId] = (inDegree[c.toNodeId] ?? 0) + 1;
+    }
+
+    final adjList = <String, List<String>>{};
+    for (final n in workflow.nodes) adjList[n.id] = [];
+    for (final c in workflow.connections) {
+      adjList[c.fromNodeId]?.add(c.toNodeId);
+    }
+
+    final levels = <String, int>{};
+    final queue = <String>[];
+    for (final n in workflow.nodes) {
+      if ((inDegree[n.id] ?? 0) == 0) {
+        queue.add(n.id);
+        levels[n.id] = 0;
+      }
+    }
+    bool hasCycles = false;
+    if (queue.isEmpty && workflow.nodes.isNotEmpty) {
+      hasCycles = true;
+      queue.add(workflow.nodes.first.id);
+      levels[workflow.nodes.first.id] = 0;
+    }
+
+    int qi = 0;
+    while (qi < queue.length) {
+      final nodeId = queue[qi++];
+      final level = levels[nodeId]!;
+      for (final childId in (adjList[nodeId] ?? [])) {
+        if (!levels.containsKey(childId)) {
+          levels[childId] = level + 1;
+          queue.add(childId);
+        }
+      }
+    }
+    for (final n in workflow.nodes) {
+      if (!levels.containsKey(n.id)) levels[n.id] = 0;
+    }
+
+    final byLevel = <int, List<String>>{};
+    for (final entry in levels.entries) {
+      byLevel.putIfAbsent(entry.value, () => []).add(entry.key);
+    }
+
+    const xSpacing = 200.0;
+    const ySpacing = 160.0;
+    const xStart = 100.0;
+    const yStart = 80.0;
+
+    setState(() {
+      for (final levelEntry in byLevel.entries) {
+        final level = levelEntry.key;
+        final nodeIds = levelEntry.value;
+        for (int i = 0; i < nodeIds.length; i++) {
+          final nodeIdx = workflow.nodes.indexWhere((n) => n.id == nodeIds[i]);
+          if (nodeIdx != -1) {
+            workflow.nodes[nodeIdx].position = Offset(
+              xStart + i * xSpacing,
+              yStart + level * ySpacing,
+            );
+          }
+        }
+      }
+    });
+
+    if (hasCycles && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Workflow contains cycles — layout may be incomplete'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void showTutorial() {
@@ -416,6 +501,29 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               (HardwareKeyboard.instance.isControlPressed ||
                   HardwareKeyboard.instance.isMetaPressed)) {
             showQuickMenu();
+          } else if (event.logicalKey == LogicalKeyboardKey.keyI) {
+            showQuickMenu();
+          } else if (event.logicalKey == LogicalKeyboardKey.keyC &&
+              selectedNodeId != null) {
+            startConnect(selectedNodeId!);
+          } else if (selectedNodeId != null) {
+            double dx = 0, dy = 0;
+            if (event.logicalKey == LogicalKeyboardKey.keyH) dx = -20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyL) dx = 20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyJ) dy = 20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyK) dy = -20;
+            if (dx != 0 || dy != 0) {
+              final nodeIdx = workflow.nodes.indexWhere((n) => n.id == selectedNodeId);
+              if (nodeIdx != -1) {
+                pushUndo();
+                setState(() {
+                  workflow.nodes[nodeIdx].position = Offset(
+                    workflow.nodes[nodeIdx].position.dx + dx,
+                    workflow.nodes[nodeIdx].position.dy + dy,
+                  );
+                });
+              }
+            }
           }
         }
       },
@@ -531,6 +639,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               ),
               const SizedBox(width: 8),
               AppButton(
+                label: 'Tree Layout',
+                icon: const Icon(Icons.account_tree_outlined),
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+                onPressed: applyTreeLayout,
+              ),
+              const SizedBox(width: 8),
+              AppButton(
                 label: 'Add Node',
                 icon: const Icon(Icons.add_circle_outline),
                 size: AppButtonSize.sm,
@@ -547,9 +663,24 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             ],
             const SizedBox(width: 12),
           ],
+          bottom: TabBar(
+            controller: canvasTabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.account_tree_outlined, size: 15), text: 'Canvas'),
+              Tab(icon: Icon(Icons.data_object, size: 15), text: 'Config'),
+            ],
+          ),
         ),
-        body: Stack(
+        body: TabBarView(
+          controller: canvasTabController,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
+            Column(
+              children: [
+                _WorkflowSummaryBar(workflow: workflow, isRunning: isRunning),
+                Expanded(
+                  child: Stack(
+                    children: [
             // ── Infinite grid (screen-space) ───────────────────────────────
             // The grid is rendered OUTSIDE the InteractiveViewer so its painter
             // is always sized to the full viewport.  An AnimatedBuilder on the
@@ -714,6 +845,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               ),
           ],
         ),
+                ),  // Expanded
+              ],
+            ),  // Column
+            _WorkflowConfigTab(workflow: workflow),
+          ],
+        ),  // TabBarView
       ),  // Scaffold
     );  // KeyboardListener
   }  // build
@@ -1018,13 +1155,8 @@ class _NodeWidget extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _NodeAction(
-                        icon: Icons.link,
-                        color: color,
-                        tooltip: 'Connect to another node',
-                        onTap: onConnect),
                     _NodeAction(
                         icon: Icons.delete_outline,
                         color: Colors.red.shade400,

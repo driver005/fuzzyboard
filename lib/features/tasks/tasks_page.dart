@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -489,33 +490,171 @@ class _TaskFullModal extends StatefulWidget {
   State<_TaskFullModal> createState() => _TaskFullModalState();
 }
 
-class _TaskFullModalState extends State<_TaskFullModal> {
-  late TextEditingController name;
-  late TextEditingController desc;
-  late TextEditingController tags;
-  late TextEditingController assigneeController;
+class _TaskFullModalState extends State<_TaskFullModal>
+    with SingleTickerProviderStateMixin {
+  late TabController tabController;
+
+  // ── Definition tab ──
+  late TextEditingController nameCtrl;
+  late TextEditingController descCtrl;
+  late TextEditingController tagsCtrl;
+  late TextEditingController assigneeCtrl;
   late TaskPriority priority;
   DateTime? dueDate;
+
+  // ── Advanced tab (Conductor-inspired) ──
+  late TextEditingController timeoutCtrl;
+  late TextEditingController retryCountCtrl;
+  late TextEditingController retryDelayCtrl;
+  late TextEditingController responseTimeoutCtrl;
+  late TextEditingController ownerEmailCtrl;
+  late TextEditingController concurrencyCtrl;
+  late TaskRetryPolicy retryPolicy;
+  String? selectedPluginId;
+
+  // ── I/O tab ──
+  late Map<String, String> inputKeys;
+  late Map<String, String> outputKeys;
+  final TextEditingController newInputKeyCtrl = TextEditingController();
+  final TextEditingController newInputDescCtrl = TextEditingController();
+  final TextEditingController newOutputKeyCtrl = TextEditingController();
+  final TextEditingController newOutputDescCtrl = TextEditingController();
+
+  // ── JSON/YAML tab ──
+  bool useYaml = false;
 
   @override
   void initState() {
     super.initState();
-    name = TextEditingController(text: widget.task?.name ?? '');
-    desc = TextEditingController(text: widget.task?.description ?? '');
-    tags = TextEditingController(text: widget.task?.tags.join(', ') ?? '');
-    assigneeController = TextEditingController(
-        text: widget.task?.config['assignee'] as String? ?? '');
-    priority = widget.task?.priority ?? TaskPriority.medium;
-    dueDate = widget.task?.dueDate;
+    tabController = TabController(length: 4, vsync: this);
+    tabController.addListener(() => setState(() {}));
+
+    final t = widget.task;
+    nameCtrl = TextEditingController(text: t?.name ?? '');
+    descCtrl = TextEditingController(text: t?.description ?? '');
+    tagsCtrl = TextEditingController(text: t?.tags.join(', ') ?? '');
+    assigneeCtrl = TextEditingController(
+        text: t?.config['assignee'] as String? ?? '');
+    priority = t?.priority ?? TaskPriority.medium;
+    dueDate = t?.dueDate;
+
+    timeoutCtrl = TextEditingController(
+        text: (t?.timeoutSeconds ?? 3600).toString());
+    retryCountCtrl = TextEditingController(
+        text: (t?.retryCount ?? 3).toString());
+    retryDelayCtrl = TextEditingController(
+        text: (t?.retryDelaySeconds ?? 60).toString());
+    responseTimeoutCtrl = TextEditingController(
+        text: (t?.responseTimeoutSeconds ?? 600).toString());
+    ownerEmailCtrl = TextEditingController(text: t?.ownerEmail ?? '');
+    concurrencyCtrl = TextEditingController(
+        text: (t?.concurrentExecLimit ?? 0).toString());
+    retryPolicy = t?.retryPolicy ?? TaskRetryPolicy.fixed;
+    selectedPluginId = t?.pluginId;
+
+    inputKeys = Map.of(t?.inputKeys ?? {});
+    outputKeys = Map.of(t?.outputKeys ?? {});
   }
 
   @override
   void dispose() {
-    name.dispose();
-    desc.dispose();
-    tags.dispose();
-    assigneeController.dispose();
+    tabController.dispose();
+    nameCtrl.dispose();
+    descCtrl.dispose();
+    tagsCtrl.dispose();
+    assigneeCtrl.dispose();
+    timeoutCtrl.dispose();
+    retryCountCtrl.dispose();
+    retryDelayCtrl.dispose();
+    responseTimeoutCtrl.dispose();
+    ownerEmailCtrl.dispose();
+    concurrencyCtrl.dispose();
+    newInputKeyCtrl.dispose();
+    newInputDescCtrl.dispose();
+    newOutputKeyCtrl.dispose();
+    newOutputDescCtrl.dispose();
     super.dispose();
+  }
+
+  Task buildTask() {
+    final tagList = tagsCtrl.text
+        .split(',')
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+    final base = widget.task;
+    return Task(
+      id: base?.id ?? const Uuid().v4(),
+      name: nameCtrl.text.trim(),
+      description: descCtrl.text.trim(),
+      priority: priority,
+      status: base?.status ?? TaskStatus.todo,
+      tags: tagList,
+      createdAt: base?.createdAt ?? DateTime.now(),
+      dueDate: dueDate,
+      config: {
+        ...(base?.config ?? {}),
+        'assignee': assigneeCtrl.text.trim(),
+      },
+      timeoutSeconds: int.tryParse(timeoutCtrl.text) ?? 3600,
+      retryCount: int.tryParse(retryCountCtrl.text) ?? 3,
+      retryPolicy: retryPolicy,
+      retryDelaySeconds: int.tryParse(retryDelayCtrl.text) ?? 60,
+      responseTimeoutSeconds:
+          int.tryParse(responseTimeoutCtrl.text) ?? 600,
+      ownerEmail: ownerEmailCtrl.text.trim(),
+      pluginId: selectedPluginId,
+      inputKeys: Map.of(inputKeys),
+      outputKeys: Map.of(outputKeys),
+      concurrentExecLimit:
+          int.tryParse(concurrencyCtrl.text) ?? 0,
+    );
+  }
+
+  // ── JSON/YAML helpers ──────────────────────────────────────────────────────
+
+  Map<String, dynamic> get previewJson => buildTask().toJson();
+
+  String get jsonPreview {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(previewJson);
+  }
+
+  String get yamlPreview => _toYaml(previewJson, 0);
+
+  String _toYaml(dynamic value, int indent) {
+    final pad = '  ' * indent;
+    if (value is Map) {
+      if (value.isEmpty) return '{}';
+      final buf = StringBuffer();
+      for (final entry in value.entries) {
+        final v = entry.value;
+        if (v is Map || v is List) {
+          buf.writeln('$pad${entry.key}:');
+          buf.write(_toYaml(v, indent + 1));
+        } else {
+          buf.writeln('$pad${entry.key}: ${_scalar(v)}');
+        }
+      }
+      return buf.toString();
+    } else if (value is List) {
+      if (value.isEmpty) return '$pad[]\n';
+      final buf = StringBuffer();
+      for (final item in value) {
+        buf.writeln('$pad- ${_scalar(item)}');
+      }
+      return buf.toString();
+    }
+    return '$pad${_scalar(value)}\n';
+  }
+
+  String _scalar(dynamic v) {
+    if (v == null) return 'null';
+    if (v is bool) return v ? 'true' : 'false';
+    if (v is num) return '$v';
+    final s = '$v';
+    if (s.contains(':') || s.isEmpty) return '"$s"';
+    return s;
   }
 
   @override
@@ -534,6 +673,7 @@ class _TaskFullModalState extends State<_TaskFullModal> {
         color: isDark ? const Color(0xFF12121E) : cs.surface,
         child: Column(
           children: [
+            // ── Header ──────────────────────────────────────────────────────
             Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -556,41 +696,19 @@ class _TaskFullModalState extends State<_TaskFullModal> {
                     style: theme.textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
+                  if (!isNew) ...[
+                    const SizedBox(width: 10),
+                    _StatusBadgeTask(status: widget.task!.status),
+                  ],
                   const Spacer(),
                   AppButton(
                     label: isNew
                         ? context.l10n.createButton
                         : context.l10n.saveButton,
                     onPressed: () {
-                      if (name.text.trim().isEmpty) return;
+                      if (nameCtrl.text.trim().isEmpty) return;
                       HapticFeedback.mediumImpact();
-                      final tagList = tags.text
-                          .split(',')
-                          .map((t) => t.trim())
-                          .where((t) => t.isNotEmpty)
-                          .toList();
-                      final t = widget.task?.copyWith(
-                              name: name.text.trim(),
-                              description: desc.text.trim(),
-                              priority: priority,
-                              tags: tagList,
-                              dueDate: dueDate,
-                              config: {
-                                ...(widget.task?.config ?? {}),
-                                'assignee': assigneeController.text.trim()
-                              }) ??
-                          Task(
-                            id: const Uuid().v4(),
-                            name: name.text.trim(),
-                            description: desc.text.trim(),
-                            priority: priority,
-                            tags: tagList,
-                            dueDate: dueDate,
-                            config: {
-                              'assignee': assigneeController.text.trim()
-                            },
-                          );
-                      widget.onSave(t);
+                      widget.onSave(buildTask());
                       Navigator.of(context).pop();
                     },
                   ),
@@ -598,101 +716,807 @@ class _TaskFullModalState extends State<_TaskFullModal> {
                 ],
               ),
             ),
+            // ── Tab bar ──────────────────────────────────────────────────────
+            Container(
+              color: isDark ? const Color(0xFF16162A) : Colors.white,
+              child: TabBar(
+                controller: tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.info_outline, size: 16), text: 'Definition'),
+                  Tab(icon: Icon(Icons.tune, size: 16), text: 'Advanced'),
+                  Tab(icon: Icon(Icons.swap_horiz, size: 16), text: 'I/O'),
+                  Tab(icon: Icon(Icons.data_object, size: 16), text: 'JSON/YAML'),
+                ],
+              ),
+            ),
+            // ── Tab body ─────────────────────────────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppInput(
-                      label: context.l10n.taskNameLabel,
-                      hint: context.l10n.taskNameHint,
-                      controller: name,
-                    ),
-                    const SizedBox(height: 12),
-                    AppInput(
-                      label: context.l10n.descriptionLabel,
-                      hint: context.l10n.descriptionHint,
-                      controller: desc,
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 12),
-                    AppSelect<TaskPriority>(
-                      label: context.l10n.priorityLabel,
-                      value: priority,
-                      onChanged: (v) =>
-                          setState(() => priority = v ?? priority),
-                      items: TaskPriority.values
-                          .map((p) => DropdownMenuItem(
-                                value: p,
-                                child: Text(p.label),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 12),
-                    AppInput(
-                      label: context.l10n.tagsLabel,
-                      hint: context.l10n.tagsHint,
-                      controller: tags,
-                    ),
-                    const SizedBox(height: 12),
-                    AppInput(
-                      label: context.l10n.assigneeLabel,
-                      hint: context.l10n.assigneeHint,
-                      controller: assigneeController,
-                    ),
-                    const SizedBox(height: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(context.l10n.dueDateLabel,
-                            style: theme.textTheme.labelMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                dueDate != null
-                                    ? '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}'
-                                    : context.l10n.noDueDate,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                            TextButton.icon(
-                              icon: const Icon(Icons.calendar_today, size: 16),
-                              label: Text(dueDate == null
-                                  ? context.l10n.setDateButton
-                                  : context.l10n.changeButton),
-                              onPressed: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: dueDate ??
-                                      DateTime.now()
-                                          .add(const Duration(days: 1)),
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2030),
-                                );
-                                if (picked != null) {
-                                  setState(() => dueDate = picked);
-                                }
-                              },
-                            ),
-                            if (dueDate != null)
-                              IconButton(
-                                icon: const Icon(Icons.close, size: 16),
-                                onPressed: () =>
-                                    setState(() => dueDate = null),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              child: TabBarView(
+                controller: tabController,
+                children: [
+                  _DefinitionTab(
+                    nameCtrl: nameCtrl,
+                    descCtrl: descCtrl,
+                    tagsCtrl: tagsCtrl,
+                    assigneeCtrl: assigneeCtrl,
+                    priority: priority,
+                    dueDate: dueDate,
+                    onPriorityChanged: (v) =>
+                        setState(() => priority = v ?? priority),
+                    onDueDateChanged: (d) => setState(() => dueDate = d),
+                  ),
+                  _AdvancedTab(
+                    timeoutCtrl: timeoutCtrl,
+                    retryCountCtrl: retryCountCtrl,
+                    retryDelayCtrl: retryDelayCtrl,
+                    responseTimeoutCtrl: responseTimeoutCtrl,
+                    ownerEmailCtrl: ownerEmailCtrl,
+                    concurrencyCtrl: concurrencyCtrl,
+                    retryPolicy: retryPolicy,
+                    selectedPluginId: selectedPluginId,
+                    onRetryPolicyChanged: (v) =>
+                        setState(() => retryPolicy = v ?? retryPolicy),
+                    onPluginChanged: (id) =>
+                        setState(() => selectedPluginId = id),
+                    onChanged: () => setState(() {}),
+                  ),
+                  _IOTab(
+                    inputKeys: inputKeys,
+                    outputKeys: outputKeys,
+                    newInputKeyCtrl: newInputKeyCtrl,
+                    newInputDescCtrl: newInputDescCtrl,
+                    newOutputKeyCtrl: newOutputKeyCtrl,
+                    newOutputDescCtrl: newOutputDescCtrl,
+                    onChanged: () => setState(() {}),
+                  ),
+                  _JsonYamlTab(
+                    content: useYaml ? yamlPreview : jsonPreview,
+                    useYaml: useYaml,
+                    onToggle: (v) => setState(() => useYaml = v),
+                  ),
+                ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Status badge for tasks ─────────────────────────────────────────────────────
+
+class _StatusBadgeTask extends StatelessWidget {
+  final TaskStatus status;
+  const _StatusBadgeTask({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, label) = switch (status) {
+      TaskStatus.todo => (const Color(0xFF6B7280), 'To Do'),
+      TaskStatus.inProgress => (const Color(0xFF3B82F6), 'In Progress'),
+      TaskStatus.done => (const Color(0xFF10B981), 'Done'),
+      TaskStatus.blocked => (const Color(0xFFEF4444), 'Blocked'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+              width: 6,
+              height: 6,
+              decoration:
+                  BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Definition Tab ─────────────────────────────────────────────────────────────
+
+class _DefinitionTab extends StatelessWidget {
+  final TextEditingController nameCtrl;
+  final TextEditingController descCtrl;
+  final TextEditingController tagsCtrl;
+  final TextEditingController assigneeCtrl;
+  final TaskPriority priority;
+  final DateTime? dueDate;
+  final ValueChanged<TaskPriority?> onPriorityChanged;
+  final ValueChanged<DateTime?> onDueDateChanged;
+
+  const _DefinitionTab({
+    required this.nameCtrl,
+    required this.descCtrl,
+    required this.tagsCtrl,
+    required this.assigneeCtrl,
+    required this.priority,
+    required this.dueDate,
+    required this.onPriorityChanged,
+    required this.onDueDateChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppInput(
+            label: context.l10n.taskNameLabel,
+            hint: context.l10n.taskNameHint,
+            controller: nameCtrl,
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.descriptionLabel,
+            hint: context.l10n.descriptionHint,
+            controller: descCtrl,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          AppSelect<TaskPriority>(
+            label: context.l10n.priorityLabel,
+            value: priority,
+            onChanged: onPriorityChanged,
+            items: TaskPriority.values
+                .map((p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(p.label),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.tagsLabel,
+            hint: context.l10n.tagsHint,
+            controller: tagsCtrl,
+          ),
+          const SizedBox(height: 12),
+          AppInput(
+            label: context.l10n.assigneeLabel,
+            hint: context.l10n.assigneeHint,
+            controller: assigneeCtrl,
+          ),
+          const SizedBox(height: 12),
+          Text(context.l10n.dueDateLabel,
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  dueDate != null
+                      ? '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}'
+                      : context.l10n.noDueDate,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.calendar_today, size: 16),
+                label: Text(dueDate == null
+                    ? context.l10n.setDateButton
+                    : context.l10n.changeButton),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: dueDate ??
+                        DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) onDueDateChanged(picked);
+                },
+              ),
+              if (dueDate != null)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  onPressed: () => onDueDateChanged(null),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Advanced Tab (Conductor-inspired) ─────────────────────────────────────────
+
+class _AdvancedTab extends StatelessWidget {
+  final TextEditingController timeoutCtrl;
+  final TextEditingController retryCountCtrl;
+  final TextEditingController retryDelayCtrl;
+  final TextEditingController responseTimeoutCtrl;
+  final TextEditingController ownerEmailCtrl;
+  final TextEditingController concurrencyCtrl;
+  final TaskRetryPolicy retryPolicy;
+  final String? selectedPluginId;
+  final ValueChanged<TaskRetryPolicy?> onRetryPolicyChanged;
+  final ValueChanged<String?> onPluginChanged;
+  final VoidCallback onChanged;
+
+  const _AdvancedTab({
+    required this.timeoutCtrl,
+    required this.retryCountCtrl,
+    required this.retryDelayCtrl,
+    required this.responseTimeoutCtrl,
+    required this.ownerEmailCtrl,
+    required this.concurrencyCtrl,
+    required this.retryPolicy,
+    required this.selectedPluginId,
+    required this.onRetryPolicyChanged,
+    required this.onPluginChanged,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final plugins = context.watch<AppProvider>().installedPlugins;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Owner ──
+          _SectionLabel(label: 'Ownership', icon: Icons.person_outline),
+          const SizedBox(height: 12),
+          AppInput(
+            label: 'Owner Email',
+            hint: 'owner@example.com',
+            controller: ownerEmailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (_) => onChanged(),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Timeout ──
+          _SectionLabel(label: 'Timeouts', icon: Icons.timer_outlined),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: AppInput(
+                label: 'Timeout (seconds)',
+                hint: '3600',
+                controller: timeoutCtrl,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => onChanged(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppInput(
+                label: 'Response Timeout (seconds)',
+                hint: '600',
+                controller: responseTimeoutCtrl,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => onChanged(),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 20),
+
+          // ── Retry ──
+          _SectionLabel(label: 'Retry Policy', icon: Icons.replay_outlined),
+          const SizedBox(height: 12),
+          AppSelect<TaskRetryPolicy>(
+            label: 'Retry Logic',
+            value: retryPolicy,
+            onChanged: onRetryPolicyChanged,
+            items: TaskRetryPolicy.values
+                .map((r) => DropdownMenuItem(
+                      value: r,
+                      child: Text(r.label),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: AppInput(
+                label: 'Retry Count',
+                hint: '3',
+                controller: retryCountCtrl,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => onChanged(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppInput(
+                label: 'Retry Delay (seconds)',
+                hint: '60',
+                controller: retryDelayCtrl,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => onChanged(),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 20),
+
+          // ── Concurrency ──
+          _SectionLabel(
+              label: 'Rate / Concurrency', icon: Icons.speed_outlined),
+          const SizedBox(height: 12),
+          AppInput(
+            label: 'Concurrent Execution Limit (0 = unlimited)',
+            hint: '0',
+            controller: concurrencyCtrl,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => onChanged(),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Plugin association ──
+          _SectionLabel(label: 'Plugin', icon: Icons.extension_outlined),
+          const SizedBox(height: 12),
+          AppSelect<String?>(
+            label: 'Associated Plugin',
+            value: selectedPluginId,
+            hint: 'None',
+            onChanged: onPluginChanged,
+            items: [
+              const DropdownMenuItem<String?>(value: null, child: Text('None')),
+              ...plugins.map((p) => DropdownMenuItem<String?>(
+                    value: p.id,
+                    child: Row(
+                      children: [
+                        Text(p.iconEmoji ?? '🔌'),
+                        const SizedBox(width: 6),
+                        Text(p.name),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
+          if (selectedPluginId != null) ...[
+            const SizedBox(height: 8),
+            _PluginConfigPreview(
+              plugin: plugins.firstWhere((p) => p.id == selectedPluginId,
+                  orElse: () => plugins.first),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _SectionLabel({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: cs.primary),
+        const SizedBox(width: 6),
+        Text(label,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+        const SizedBox(width: 8),
+        Expanded(child: Divider(color: cs.outline.withOpacity(0.2))),
+      ],
+    );
+  }
+}
+
+class _PluginConfigPreview extends StatelessWidget {
+  final dynamic plugin;
+  const _PluginConfigPreview({required this.plugin});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    if (plugin.configSchema.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF5F5FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outline.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Plugin Config',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+          const SizedBox(height: 8),
+          ...plugin.configSchema.map<Widget>((field) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Text('${field.label}: ',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Expanded(
+                      child: Text(
+                        field.type.toString().split('.').last == 'secret'
+                            ? '••••••'
+                            : '${plugin.configValues[field.key] ?? field.defaultValue ?? '—'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurface.withOpacity(0.6)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+// ── I/O Tab ────────────────────────────────────────────────────────────────────
+
+class _IOTab extends StatelessWidget {
+  final Map<String, String> inputKeys;
+  final Map<String, String> outputKeys;
+  final TextEditingController newInputKeyCtrl;
+  final TextEditingController newInputDescCtrl;
+  final TextEditingController newOutputKeyCtrl;
+  final TextEditingController newOutputDescCtrl;
+  final VoidCallback onChanged;
+
+  const _IOTab({
+    required this.inputKeys,
+    required this.outputKeys,
+    required this.newInputKeyCtrl,
+    required this.newInputDescCtrl,
+    required this.newOutputKeyCtrl,
+    required this.newOutputDescCtrl,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(label: 'Input Keys', icon: Icons.input),
+          const SizedBox(height: 4),
+          Text(
+            'Define the input parameters this task expects from the workflow.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurface.withOpacity(0.5)),
+          ),
+          const SizedBox(height: 12),
+          _KeyValueTable(
+            entries: inputKeys,
+            onRemove: (key) {
+              inputKeys.remove(key);
+              onChanged();
+            },
+          ),
+          const SizedBox(height: 8),
+          _AddKeyValueRow(
+            keyCtrl: newInputKeyCtrl,
+            descCtrl: newInputDescCtrl,
+            onAdd: () {
+              final k = newInputKeyCtrl.text.trim();
+              if (k.isNotEmpty) {
+                inputKeys[k] = newInputDescCtrl.text.trim();
+                newInputKeyCtrl.clear();
+                newInputDescCtrl.clear();
+                onChanged();
+              }
+            },
+          ),
+          const SizedBox(height: 24),
+          _SectionLabel(label: 'Output Keys', icon: Icons.output),
+          const SizedBox(height: 4),
+          Text(
+            'Define the output parameters this task produces for downstream tasks.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurface.withOpacity(0.5)),
+          ),
+          const SizedBox(height: 12),
+          _KeyValueTable(
+            entries: outputKeys,
+            onRemove: (key) {
+              outputKeys.remove(key);
+              onChanged();
+            },
+          ),
+          const SizedBox(height: 8),
+          _AddKeyValueRow(
+            keyCtrl: newOutputKeyCtrl,
+            descCtrl: newOutputDescCtrl,
+            onAdd: () {
+              final k = newOutputKeyCtrl.text.trim();
+              if (k.isNotEmpty) {
+                outputKeys[k] = newOutputDescCtrl.text.trim();
+                newOutputKeyCtrl.clear();
+                newOutputDescCtrl.clear();
+                onChanged();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeyValueTable extends StatelessWidget {
+  final Map<String, String> entries;
+  final ValueChanged<String> onRemove;
+  const _KeyValueTable({required this.entries, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    if (entries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text('No keys defined yet.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurface.withOpacity(0.35))),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.outline.withOpacity(0.15)),
+        borderRadius: BorderRadius.circular(8),
+        color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB),
+      ),
+      child: Column(
+        children: entries.entries.toList().asMap().entries.map((e) {
+          final idx = e.key;
+          final entry = e.value;
+          return Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: idx < entries.length - 1
+                  ? Border(
+                      bottom: BorderSide(
+                          color: cs.outline.withOpacity(0.1)))
+                  : null,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: cs.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(entry.key,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                          color: cs.primary,
+                          fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    entry.value.isEmpty ? '—' : entry.value,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withOpacity(0.6)),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 16),
+                  color: Colors.red.shade400,
+                  onPressed: () => onRemove(entry.key),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _AddKeyValueRow extends StatelessWidget {
+  final TextEditingController keyCtrl;
+  final TextEditingController descCtrl;
+  final VoidCallback onAdd;
+  const _AddKeyValueRow(
+      {required this.keyCtrl, required this.descCtrl, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: AppInput(
+            hint: 'key name',
+            controller: keyCtrl,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: AppInput(
+            hint: 'description / type',
+            controller: descCtrl,
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filled(
+          icon: const Icon(Icons.add, size: 18),
+          onPressed: onAdd,
+          tooltip: 'Add key',
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
+}
+
+// ── JSON/YAML Tab ──────────────────────────────────────────────────────────────
+
+class _JsonYamlTab extends StatelessWidget {
+  final String content;
+  final bool useYaml;
+  final ValueChanged<bool> onToggle;
+  const _JsonYamlTab(
+      {required this.content,
+      required this.useYaml,
+      required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Container(
+      color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F5FF),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                Icon(Icons.data_object, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
+                Text(
+                  useYaml ? 'YAML Preview' : 'JSON Preview',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700, color: cs.primary),
+                ),
+                const Spacer(),
+                _PreviewToggle(useYaml: useYaml, onToggle: onToggle),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 16),
+                  tooltip: 'Copy',
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Copied to clipboard'),
+                          duration: Duration(seconds: 1)),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: cs.outline.withOpacity(0.1)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                content,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12.5,
+                  height: 1.6,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewToggle extends StatelessWidget {
+  final bool useYaml;
+  final ValueChanged<bool> onToggle;
+  const _PreviewToggle(
+      {required this.useYaml, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ToggleChip(
+            label: 'JSON',
+            selected: !useYaml,
+            onTap: () => onToggle(false),
+            cs: cs),
+        const SizedBox(width: 4),
+        _ToggleChip(
+            label: 'YAML',
+            selected: useYaml,
+            onTap: () => onToggle(true),
+            cs: cs),
+      ],
+    );
+  }
+}
+
+class _ToggleChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+  const _ToggleChip(
+      {required this.label,
+      required this.selected,
+      required this.onTap,
+      required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color:
+              selected ? cs.primary : cs.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : cs.primary,
+          ),
         ),
       ),
     );

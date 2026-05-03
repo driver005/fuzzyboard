@@ -71,8 +71,15 @@ class _PluginsPageState extends State<PluginsPage> with SingleTickerProviderStat
                         ),
                   ],
                 ),
-          // Tab 2: Config Graph
-          const ConfigGraphWidget(),
+          // Tab 2: Config Graph — use LayoutBuilder so InteractiveViewer
+          // always gets a finite viewport size regardless of parent constraints.
+          LayoutBuilder(
+            builder: (context, constraints) => SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: const ConfigGraphWidget(),
+            ),
+          ),
         ],
       ),
     );

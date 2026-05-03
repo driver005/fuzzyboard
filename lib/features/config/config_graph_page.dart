@@ -19,16 +19,25 @@ class ConfigGraphWidget extends StatefulWidget {
 }
 
 class _ConfigGraphWidgetState extends State<ConfigGraphWidget> {
+  String? selectedId;
+
   @override
   Widget build(BuildContext context) {
     return _GraphPanel(
-      selectedId: null,
+      selectedId: selectedId,
       onNodeSelected: (id) {
-        if (id == null) return;
+        if (id == null) {
+          setState(() => selectedId = null);
+          return;
+        }
+        setState(() => selectedId = id);
         showDialog(
           context: context,
+          useSafeArea: false,
           builder: (_) => _NodeDetailModal(nodeId: id),
-        );
+        ).then((_) {
+          if (mounted) setState(() => selectedId = null);
+        });
       },
     );
   }
@@ -46,38 +55,36 @@ class _NodeDetailModal extends StatelessWidget {
     final isDark = cs.brightness == Brightness.dark;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 420,
-          constraints: const BoxConstraints(maxHeight: 600),
-          color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
-                ),
-                child: Row(
-                  children: [
-                    Text('Node Config', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
+      insetPadding: EdgeInsets.zero,
+      shape: const RoundedRectangleBorder(),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: isDark ? const Color(0xFF12121E) : cs.surface,
+        child: Column(
+          children: [
+            Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF16162A) : Colors.white,
+                border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
               ),
-              Expanded(
-                child: _DetailPanel(selectedId: nodeId),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('Node Config', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                ],
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: _DetailPanel(selectedId: nodeId),
+            ),
+          ],
         ),
       ),
     );

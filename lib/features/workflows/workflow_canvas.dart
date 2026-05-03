@@ -67,7 +67,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
 
   /// Adds a node at [pendingNodePosition] and, if currently in connect mode,
   /// immediately creates a connection from the source node to the new node.
-  void _addNodeAndMaybeConnect(NodeType type) {
+  void addNodeAndMaybeConnect(NodeType type) {
     final node = WorkflowNode(
       id: uuid.v4(),
       label: labelForType(type),
@@ -111,7 +111,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         screenSize: size,
         onSelect: (type) {
           Navigator.of(ctx).pop();
-          _addNodeAndMaybeConnect(type);
+          addNodeAndMaybeConnect(type);
         },
       ),
       transitionBuilder: (ctx, anim, _, child) =>
@@ -475,22 +475,30 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         ),
         body: Stack(
           children: [
-            // Grid background
-            Container(
-              color: isDark
-                  ? const Color(0xFF0F0F1A)
-                  : const Color(0xFFF8F9FF),
-              child: CustomPaint(
-                painter: _GridPainter(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.black.withOpacity(0.04)),
-                child: const SizedBox.expand(),
+            // ── Infinite grid (screen-space) ───────────────────────────────
+            // The grid is rendered OUTSIDE the InteractiveViewer so its painter
+            // is always sized to the full viewport.  An AnimatedBuilder on the
+            // TransformationController keeps the grid lines aligned with the
+            // current pan/zoom, giving the visual illusion of an infinite grid.
+            AnimatedBuilder(
+              animation: transform,
+              builder: (ctx, _) => CustomPaint(
+                painter: _InfiniteGridPainter(
+                  transform: transform.value,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.04)
+                      : Colors.black.withOpacity(0.04),
+                ),
+                child: Container(
+                  color: isDark
+                      ? const Color(0xFF0F0F1A)
+                      : const Color(0xFFF8F9FF),
+                ),
               ),
             ),
-            // Interactive view — wrapped in a Listener so we can detect
-            // taps on empty canvas space while still letting InteractiveViewer
-            // handle panning / zooming.
+            // ── Interactive canvas ─────────────────────────────────────────
+            // Wrapped in a Listener so we can detect taps on empty canvas
+            // space while still letting InteractiveViewer handle pan / zoom.
             Listener(
               behavior: HitTestBehavior.translucent,
               onPointerDown: (e) => pointerDownPos = e.localPosition,
@@ -512,16 +520,23 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               },
               child: InteractiveViewer(
                 transformationController: transform,
-                // Unlimited panning — child boundary has no hard edges.
+                // Unlimited panning in all directions.
                 boundaryMargin: const EdgeInsets.all(double.infinity),
                 minScale: 0.1,
                 maxScale: 4.0,
+                // clipBehavior:none lets nodes render outside the SizedBox
+                // boundary when the user pans to the edge.
+                clipBehavior: Clip.none,
                 child: SizedBox(
-                  width: 8000,
-                  height: 6000,
+                  // Large but finite so InteractiveViewer has a reference
+                  // size for its internal coordinate maths.  The infinite
+                  // boundaryMargin means users can pan past these edges.
+                  width: 100000,
+                  height: 100000,
                   child: Stack(
                     children: [
-                      // Connections drawn inside InteractiveViewer so they pan/zoom with nodes
+                      // Connections painted inside the viewer so they
+                      // pan/zoom together with the nodes.
                       Positioned.fill(
                         child: CustomPaint(
                           painter: _ConnectionsPainter(
@@ -1284,26 +1299,61 @@ class _TutorialSection extends StatelessWidget {
 
 // ── Painters ──────────────────────────────────────────────────────────────────
 
-class _GridPainter extends CustomPainter {
+/// Screen-space infinite grid painter.
+///
+/// Rendered OUTSIDE the [InteractiveViewer] so it always fills the viewport.
+/// The [transform] matrix from [TransformationController.value] is used to
+/// align grid lines with the canvas coordinate system, so the grid visually
+/// scrolls and scales together with the canvas content — creating the
+/// appearance of a truly infinite grid.
+class _InfiniteGridPainter extends CustomPainter {
+  final Matrix4 transform;
   final Color color;
-  const _GridPainter({required this.color});
+
+  const _InfiniteGridPainter({required this.transform, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 1;
+
     const step = 30.0;
-    for (double x = 0; x < size.width; x += step) {
+
+    // Extract scale and translation from the 4×4 matrix.
+    // Column-major order: entry(0,0) = scaleX, entry(1,1) = scaleY,
+    // entry(0,3) = tx, entry(1,3) = ty.
+    final scaleX = transform.entry(0, 0);
+    final tx = transform.entry(0, 3);
+    final ty = transform.entry(1, 3);
+
+    final scaledStep = step * scaleX;
+    // Wrap the offsets so lines tile across the whole viewport.
+    final startX = tx % scaledStep;
+    final startY = ty % scaledStep;
+
+    // Vertical lines
+    for (double x = startX - scaledStep;
+        x < size.width + scaledStep;
+        x += scaledStep) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    for (double y = 0; y < size.height; y += step) {
+    // Horizontal lines
+    for (double y = startY - scaledStep;
+        y < size.height + scaledStep;
+        y += scaledStep) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 
   @override
-  bool shouldRepaint(_GridPainter oldDelegate) => false;
+  bool shouldRepaint(_InfiniteGridPainter old) {
+    if (old.color != color) return true;
+    // Only repaint when scale (0,0) or translation (0,3)/(1,3) changes.
+    return old.transform.entry(0, 0) != transform.entry(0, 0) ||
+        old.transform.entry(0, 3) != transform.entry(0, 3) ||
+        old.transform.entry(1, 3) != transform.entry(1, 3);
+  }
 }
 
 class _ConnectionsPainter extends CustomPainter {

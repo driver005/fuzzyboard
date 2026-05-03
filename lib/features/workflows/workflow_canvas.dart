@@ -67,7 +67,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
 
   /// Adds a node at [pendingNodePosition] and, if currently in connect mode,
   /// immediately creates a connection from the source node to the new node.
-  void addNodeAndMaybeConnect(NodeType type) {
+  void add_node_and_maybe_connect(NodeType type) {
     final node = WorkflowNode(
       id: uuid.v4(),
       label: labelForType(type),
@@ -111,7 +111,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
         screenSize: size,
         onSelect: (type) {
           Navigator.of(ctx).pop();
-          addNodeAndMaybeConnect(type);
+          add_node_and_maybe_connect(type);
         },
       ),
       transitionBuilder: (ctx, anim, _, child) =>

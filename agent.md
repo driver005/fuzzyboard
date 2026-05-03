@@ -44,7 +44,7 @@ page via the **Edit Canvas** button or when creating a new workflow.
 
 ### Adding nodes
 
-Three entry points all ultimately call `addNodeAndMaybeConnect(NodeType)`:
+Three entry points all ultimately call `add_node_and_maybe_connect(NodeType)`:
 
 1. **Add Node toolbar button** — opens the Quick Menu centred on the viewport.
 2. **Ctrl+Space / ⌘+Space** — opens the Quick Menu centred on the viewport.
@@ -89,7 +89,7 @@ A `WorkflowConnection` links two nodes:
    wrapping the `InteractiveViewer` fires on pointer-up.  If the pointer
    moved < 10 px (tap, not pan) and no node occupies the tap position, the
    Quick Menu opens.  Selecting a node type calls
-   `addNodeAndMaybeConnect(type)` which adds the node **and** auto-wires the
+   `add_node_and_maybe_connect(type)` which adds the node **and** auto-wires the
    connection in one step.
 4. Press **ESC** or the × chip in the toolbar → `cancelConnect()`.
 

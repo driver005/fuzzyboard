@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../app.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/page_widget.dart';
 import '../../shared/widgets/app_button.dart';

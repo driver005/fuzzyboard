@@ -1,4 +1,8 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
 
 /// The translations for English (`en`).
 class AppLocalizationsEn extends AppLocalizations {
@@ -68,7 +72,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBanner => 'Welcome back! 👋';
 
   @override
-  String get workflowRunningSmooth => 'Your workflow engine is running smoothly.';
+  String get workflowRunningSmooth =>
+      'Your workflow engine is running smoothly.';
 
   @override
   String get adminDashboard => 'Admin Dashboard';
@@ -200,7 +205,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noWorkflowsYet => 'No workflows yet';
 
   @override
-  String get createFirstWorkflow => 'Create your first workflow to get started.';
+  String get createFirstWorkflow =>
+      'Create your first workflow to get started.';
 
   @override
   String get editCanvasButton => 'Edit Canvas';
@@ -236,43 +242,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addingNodesSection => 'Adding Nodes';
 
   @override
-  String get addingNodesBody => 'Click any node type in the left palette to place it on the canvas.';
+  String get addingNodesBody =>
+      'Click any node type in the left palette to place it on the canvas.';
 
   @override
   String get movingNodesSection => 'Moving Nodes';
 
   @override
-  String get movingNodesBody => 'Drag a node to reposition it anywhere on the canvas.';
+  String get movingNodesBody =>
+      'Drag a node to reposition it anywhere on the canvas.';
 
   @override
   String get connectingNodesSection => 'Connecting Nodes';
 
   @override
-  String get connectingNodesBody => 'Click the 🔗 icon on a node to enter connect mode, then click the target node to draw an arrow. Press ESC or tap the × chip in the toolbar to cancel.';
+  String get connectingNodesBody =>
+      'Click the 🔗 icon on a node to enter connect mode, then click the target node to draw an arrow. Press ESC or tap the × chip in the toolbar to cancel.';
 
   @override
   String get configuringNodesSection => 'Configuring Nodes';
 
   @override
-  String get configuringNodesBody => 'Tap a node to open its config panel on the right. You can rename it, and delete any of its connections there.';
+  String get configuringNodesBody =>
+      'Tap a node to open its config panel on the right. You can rename it, and delete any of its connections there.';
 
   @override
   String get deletingSection => 'Deleting';
 
   @override
-  String get deletingBody => 'Use the 🗑 icon on a node to remove it and all its connections. To remove a single connection, open the source node config panel.';
+  String get deletingBody =>
+      'Use the 🗑 icon on a node to remove it and all its connections. To remove a single connection, open the source node config panel.';
 
   @override
   String get undoRedoSection => 'Undo / Redo';
 
   @override
-  String get undoRedoBody => 'Up to 30 undo steps are stored. Use the toolbar arrows to step back and forward.';
+  String get undoRedoBody =>
+      'Up to 30 undo steps are stored. Use the toolbar arrows to step back and forward.';
 
   @override
   String get exportImportSection => 'Export / Import';
 
   @override
-  String get exportImportBody => 'Export copies the workflow as JSON to your clipboard. Import lets you paste JSON to restore a workflow.';
+  String get exportImportBody =>
+      'Export copies the workflow as JSON to your clipboard. Import lets you paste JSON to restore a workflow.';
 
   @override
   String get canvasExportButton => 'Export';
@@ -290,7 +303,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get canvasTapToConnect => 'Tap to connect';
 
   @override
-  String get canvasClickToConnect => 'Click any node to connect — ESC to cancel';
+  String get canvasClickToConnect =>
+      'Click any node to connect — ESC to cancel';
 
   @override
   String get canvasConnectTooltip => 'Connect to another node';
@@ -391,7 +405,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPluginsInstalled => 'No plugins installed';
 
   @override
-  String get noPluginsInstalledSubtitle => 'Visit the Marketplace to install plugins.';
+  String get noPluginsInstalledSubtitle =>
+      'Visit the Marketplace to install plugins.';
 
   @override
   String get pluginStatusActive => 'Active';
@@ -415,7 +430,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pluginMarketplaceTitle => 'Plugin Marketplace';
 
   @override
-  String get pluginMarketplaceSubtitle => 'Extend your workflow engine with community plugins.';
+  String get pluginMarketplaceSubtitle =>
+      'Extend your workflow engine with community plugins.';
 
   @override
   String get installedBadge => 'Installed';
@@ -520,7 +536,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flutterValue => '3.27+';
 
   @override
-  String get aboutDescription => 'FuzzyBoard is an open workflow engine dashboard built with Flutter.';
+  String get aboutDescription =>
+      'FuzzyBoard is an open workflow engine dashboard built with Flutter.';
 
   @override
   String get pickColorTitle => 'Pick a color';
@@ -547,7 +564,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newTypeButton => 'New Type';
 
   @override
-  String get noContentTypes => 'No content types yet. Create your first schema.';
+  String get noContentTypes =>
+      'No content types yet. Create your first schema.';
 
   @override
   String get deleteContentTypeTitle => 'Delete Content Type';
@@ -852,7 +870,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveTaskTitle => 'Save SQL as Task';
 
   @override
-  String get saveTaskMessage => 'Give this SQL query a name. It will be added to your Tasks as a To-Do item.';
+  String get saveTaskMessage =>
+      'Give this SQL query a name. It will be added to your Tasks as a To-Do item.';
 
   @override
   String get taskNameInputLabel => 'Task Name';
@@ -945,7 +964,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get luaSubtitle => 'Build boolean logic visually';
 
   @override
-  String get luaDescription => 'Compose boolean expressions using AND, OR, NOT and comparison operators. The result is valid Lua code you can paste into your workflow scripts.';
+  String get luaDescription =>
+      'Compose boolean expressions using AND, OR, NOT and comparison operators. The result is valid Lua code you can paste into your workflow scripts.';
 
   @override
   String get luaCopyButton => 'Copy';
@@ -966,7 +986,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveLuaTaskTitle => 'Save Lua Expression as Task';
 
   @override
-  String get saveLuaTaskMessage => 'Give this Lua expression a name. It will be added to your Tasks as a To-Do item.';
+  String get saveLuaTaskMessage =>
+      'Give this Lua expression a name. It will be added to your Tasks as a To-Do item.';
 
   @override
   String get luaTaskNameLabel => 'Task Name';

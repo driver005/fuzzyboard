@@ -127,7 +127,6 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                 id: const Uuid().v4(),
                 name: name,
                 description: build_query(),
-                status: TaskStatus.todo,
                 priority: TaskPriority.medium,
                 tags: ['sql', _selectedTable],
                 config: {

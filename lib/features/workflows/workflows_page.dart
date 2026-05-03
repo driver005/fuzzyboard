@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../app.dart';
@@ -131,6 +132,7 @@ class _WorkflowCard extends StatelessWidget {
               Switch(
                 value: workflow.isActive,
                 onChanged: (_) {
+                  HapticFeedback.lightImpact();
                   app.toggleWorkflow(workflow.id);
                   if (!workflow.isActive) {
                     context.read<GamificationProvider>().onWorkflowRun();
@@ -226,6 +228,7 @@ class _WorkflowCard extends StatelessWidget {
             label: context.l10n.deleteAction,
             variant: AppButtonVariant.danger,
             onPressed: () {
+              HapticFeedback.mediumImpact();
               context.read<AppProvider>().deleteWorkflow(workflow.id);
               Navigator.of(ctx).pop();
             },

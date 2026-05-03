@@ -7,6 +7,7 @@ import '../../models/task.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
+import '../../shared/widgets/tutorial_banner.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -49,6 +50,17 @@ class _TasksPageState extends State<TasksPage> {
       ),
       body: Column(
         children: [
+          const TutorialBanner(
+            title: 'Tasks',
+            emoji: '✅',
+            steps: [
+              'Click "New Task" to create a task, or convert an SQL/Lua query directly from those builders.',
+              'Drag any task card between the To Do, In Progress, Done, and Failed columns.',
+              'Filter tasks by status or priority using the search bar and chips above.',
+              'Tap a task card or use ⋮ → Edit to update its name, description, tags, and due date.',
+              'Tasks created from the SQL/Lua builders carry a "sql" or "lua" tag for easy filtering.',
+            ],
+          ),
           // Filter bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

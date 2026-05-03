@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import '../../core/providers/app_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../models/task.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/app_input.dart';
+import '../../shared/widgets/tutorial_banner.dart';
 
 /// Visual SQL Query Builder
 class SqlBuilderPage extends StatefulWidget {
@@ -74,11 +80,82 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
     });
   }
 
+  void _showSaveAsTaskDialog(BuildContext context) {
+    final nameController = TextEditingController(
+        text: 'Query $_selectedTable');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Save SQL as Task'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Give this SQL query a name. It will be added to your Tasks as a To-Do item.',
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6)),
+              ),
+              const SizedBox(height: 16),
+              AppInput(
+                label: 'Task Name',
+                hint: 'e.g. Get active users',
+                controller: nameController,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          AppButton(
+            label: 'Cancel',
+            variant: AppButtonVariant.ghost,
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          AppButton(
+            label: 'Create Task',
+            icon: const Icon(Icons.add_task),
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isEmpty) return;
+              final task = Task(
+                id: const Uuid().v4(),
+                name: name,
+                description: _buildQuery(),
+                status: TaskStatus.todo,
+                priority: TaskPriority.medium,
+                tags: ['sql', _selectedTable],
+                config: {
+                  'source': 'sql_builder',
+                  'table': _selectedTable,
+                },
+              );
+              context.read<AppProvider>().addTask(task);
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Task "$name" created!'),
+                  action: SnackBarAction(
+                    label: 'View Tasks',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = cs.brightness == Brightness.dark;
     final availableCols = _tableColumns[_selectedTable] ?? [];
 
     return Scaffold(
@@ -89,6 +166,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
             label: 'Copy SQL',
             icon: const Icon(Icons.copy),
             size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: _buildQuery()));
               if (context.mounted) {
@@ -97,6 +175,13 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                 );
               }
             },
+          ),
+          const SizedBox(width: 8),
+          AppButton(
+            label: 'Save as Task',
+            icon: const Icon(Icons.add_task),
+            size: AppButtonSize.sm,
+            onPressed: () => _showSaveAsTaskDialog(context),
           ),
           const SizedBox(width: 12),
         ],
@@ -107,7 +192,25 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
           return wide
               ? Row(
                   children: [
-                    Expanded(flex: 3, child: _buildLeftPanel(availableCols)),
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          const TutorialBanner(
+                            title: 'SQL Visual Builder',
+                            emoji: '🗄️',
+                            steps: [
+                              'Pick a table in the FROM section — columns will update automatically.',
+                              'Toggle the columns you want in SELECT. No selection means SELECT *.',
+                              'Add WHERE conditions to filter rows by column value.',
+                              'Optionally set ORDER BY and LIMIT to sort and cap results.',
+                              'The generated SQL updates live. Copy it or save it directly as a Task.',
+                            ],
+                          ),
+                          Expanded(child: _buildLeftPanel(availableCols)),
+                        ],
+                      ),
+                    ),
                     VerticalDivider(
                         width: 1,
                         color: cs.outline.withOpacity(0.2)),
@@ -118,6 +221,15 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
                   length: 2,
                   child: Column(
                     children: [
+                      const TutorialBanner(
+                        title: 'SQL Visual Builder',
+                        emoji: '🗄️',
+                        steps: [
+                          'Pick a table in FROM, toggle SELECT columns, add WHERE conditions.',
+                          'Set ORDER BY and LIMIT. The Query tab shows the generated SQL.',
+                          'Use "Save as Task" to create a task from the current query.',
+                        ],
+                      ),
                       TabBar(tabs: const [
                         Tab(text: 'Builder'),
                         Tab(text: 'Query'),

@@ -5,6 +5,7 @@ import '../../core/providers/app_provider.dart';
 import '../../models/workflow.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../shared/widgets/tutorial_banner.dart';
 import 'workflow_canvas.dart';
 
 class WorkflowsPage extends StatelessWidget {
@@ -31,17 +32,30 @@ class WorkflowsPage extends StatelessWidget {
           ? const _EmptyState()
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: app.workflows
-                  .asMap()
-                  .entries
-                  .map((e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _WorkflowCard(workflow: e.value)
-                            .animate()
-                            .fadeIn(delay: (e.key * 80).ms)
-                            .slideY(begin: 0.1),
-                      ))
-                  .toList(),
+              children: [
+                const TutorialBanner(
+                  title: 'Workflows',
+                  emoji: '⚙️',
+                  steps: [
+                    'Click "New Workflow" to create an automation. Each workflow is a chain of nodes.',
+                    'Use the toggle switch on each workflow card to activate or deactivate it.',
+                    'Click "Edit Canvas" to open the visual workflow builder.',
+                    'In the canvas: add nodes from the left palette, drag to move them, click 🔗 to connect them, and tap a node to configure it.',
+                    'Click the ❓ help icon in the canvas toolbar for a full guide.',
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...app.workflows
+                    .asMap()
+                    .entries
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _WorkflowCard(workflow: e.value)
+                              .animate()
+                              .fadeIn(delay: (e.key * 80).ms)
+                              .slideY(begin: 0.1),
+                        )),
+              ],
             ),
     );
   }

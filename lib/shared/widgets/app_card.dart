@@ -104,6 +104,7 @@ class StatCard extends StatelessWidget {
   final bool changePositive;
   final IconData icon;
   final Color iconColor;
+  final VoidCallback? onTap;
 
   const StatCard({
     super.key,
@@ -113,6 +114,7 @@ class StatCard extends StatelessWidget {
     this.changePositive = true,
     required this.icon,
     required this.iconColor,
+    this.onTap,
   });
 
   @override
@@ -121,6 +123,7 @@ class StatCard extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return AppCard(
+      onTap: onTap,
       child: Row(
         children: [
           Container(

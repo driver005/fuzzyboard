@@ -1,14 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/task.dart';
 import '../../models/workflow.dart';
 import '../../models/plugin.dart';
 import '../../models/chat_message.dart';
 import '../../models/page_widget.dart';
+import '../../models/workflow_run.dart';
 
 /// Top-level application state provider.
 class AppProvider extends ChangeNotifier {
   final _uuid = const Uuid();
+
+  AppProvider() {
+    _loadSettings();
+  }
+
+  // ── Settings flags ────────────────────────────────────────────────────────
+  bool _showAvatar = true;
+  bool _reducedMotion = false;
+  bool _verboseLogging = false;
+  bool _autoSave = true;
+
+  bool get showAvatar => _showAvatar;
+  bool get reducedMotion => _reducedMotion;
+  bool get verboseLogging => _verboseLogging;
+  bool get autoSave => _autoSave;
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _showAvatar = prefs.getBool('showAvatar') ?? true;
+    _reducedMotion = prefs.getBool('reducedMotion') ?? false;
+    _verboseLogging = prefs.getBool('verboseLogging') ?? false;
+    _autoSave = prefs.getBool('autoSave') ?? true;
+    notifyListeners();
+  }
+
+  Future<void> setShowAvatar(bool v) async {
+    _showAvatar = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showAvatar', v);
+  }
+
+  Future<void> setReducedMotion(bool v) async {
+    _reducedMotion = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('reducedMotion', v);
+  }
+
+  Future<void> setVerboseLogging(bool v) async {
+    _verboseLogging = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('verboseLogging', v);
+  }
+
+  Future<void> setAutoSave(bool v) async {
+    _autoSave = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('autoSave', v);
+  }
 
   // ── Event bus ─────────────────────────────────────────────────────────────
   String _lastEvent = '';
@@ -31,6 +85,11 @@ class AppProvider extends ChangeNotifier {
   void addLog(String msg) {
     _logs.insert(0, '[${DateTime.now().toIso8601String()}] $msg');
     if (_logs.length > 500) _logs.removeLast();
+    notifyListeners();
+  }
+
+  void clearLogs() {
+    _logs.clear();
     notifyListeners();
   }
 
@@ -198,6 +257,19 @@ class AppProvider extends ChangeNotifier {
       addLog(
           'Workflow ${_workflows[idx].name} ${_workflows[idx].isActive ? 'activated' : 'deactivated'}');
       emitEvent('workflow_toggled');
+      if (_workflows[idx].isActive) {
+        final runId = _uuid.v4();
+        addWorkflowRun(WorkflowRun(
+          id: runId,
+          workflowId: id,
+          startedAt: DateTime.now(),
+          status: WorkflowRunStatus.running,
+        ));
+        _workflows[idx].runCount++;
+        Future.delayed(const Duration(seconds: 2), () {
+          completeWorkflowRun(runId, WorkflowRunStatus.success);
+        });
+      }
     }
   }
 
@@ -318,6 +390,11 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearChat() {
+    chatMessages.clear();
+    notifyListeners();
+  }
+
   // ── Voice Commands ────────────────────────────────────────────────────────
   final List<String> voiceCommands = [
     'Show me the dashboard',
@@ -342,6 +419,30 @@ class AppProvider extends ChangeNotifier {
 
   void removePageWidget(String id) {
     pageWidgets.removeWhere((w) => w.id == id);
+    notifyListeners();
+  }
+
+  void reorderPageWidget(int oldIndex, int newIndex) {
+    final widget = pageWidgets.removeAt(oldIndex);
+    pageWidgets.insert(newIndex, widget);
+    notifyListeners();
+  }
+
+  // ── Workflow Runs ─────────────────────────────────────────────────────────
+  final List<WorkflowRun> workflowRuns = [];
+
+  List<WorkflowRun> runsForWorkflow(String workflowId) =>
+      workflowRuns.where((r) => r.workflowId == workflowId).toList();
+
+  void addWorkflowRun(WorkflowRun run) {
+    workflowRuns.insert(0, run);
+    notifyListeners();
+  }
+
+  void completeWorkflowRun(String runId, WorkflowRunStatus status) {
+    final idx = workflowRuns.indexWhere((r) => r.id == runId);
+    if (idx == -1) return;
+    workflowRuns[idx].status = status;
     notifyListeners();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/app_button.dart';
@@ -88,10 +89,13 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
             label: 'Copy SQL',
             icon: const Icon(Icons.copy),
             size: AppButtonSize.sm,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('SQL copied to clipboard!')),
-              );
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _buildQuery()));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('SQL copied to clipboard!')),
+                );
+              }
             },
           ),
           const SizedBox(width: 12),

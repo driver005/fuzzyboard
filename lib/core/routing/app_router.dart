@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/app_provider.dart';
+import '../../core/providers/theme_provider.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/tasks/tasks_page.dart';
 import '../../features/workflows/workflows_page.dart';
@@ -53,6 +56,14 @@ final appRouter = GoRouter(
   ],
 );
 
+/// Determine the active header tab based on the current route.
+AppHeaderTab _tabFromRoute(String loc) {
+  if (loc.startsWith('/cms') || loc == '/builder') {
+    return AppHeaderTab.pages;
+  }
+  return AppHeaderTab.data;
+}
+
 class _AppShell extends StatelessWidget {
   final Widget child;
   const _AppShell({required this.child});
@@ -61,25 +72,171 @@ class _AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final mobile = isMobile(context);
     final desktop = isDesktop(context);
+    final themeProvider = context.watch<ThemeProvider>();
+    final loc = GoRouterState.of(context).uri.toString();
+    final currentTab = _tabFromRoute(loc);
 
     return Scaffold(
+      appBar: _AppHeader(currentTab: currentTab),
       body: Row(
         children: [
           if (!mobile)
-            AppSidebar(collapsed: !desktop),
+            AppSidebar(
+              collapsed: !desktop || themeProvider.compactSidebar,
+              tab: currentTab,
+            ),
           if (!mobile)
             const VerticalDivider(width: 1),
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: mobile ? const AppBottomNav() : null,
-      floatingActionButton: mobile
-          ? null
-          : const Padding(
-              padding: EdgeInsets.only(bottom: 12, right: 12),
-              child: AvatarWidget(size: 56),
+      bottomNavigationBar: mobile ? AppBottomNav(tab: currentTab) : null,
+    );
+  }
+}
+
+/// Persistent top header bar with logo and Data/Pages tab switcher.
+class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
+  final AppHeaderTab currentTab;
+
+  const _AppHeader({required this.currentTab});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
+    final mobile = isMobile(context);
+    final showAvatar = context.watch<AppProvider>().showAvatar;
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF16162A) : Colors.white,
+        border: Border(
+          bottom: BorderSide(color: cs.outline.withOpacity(0.15)),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              // Logo mark
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [cs.primary, cs.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.blur_on, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 8),
+              if (!mobile)
+                Text(
+                  'FuzzyBoard',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              const SizedBox(width: 20),
+              // Data tab button
+              _HeaderTabBtn(
+                label: 'Data',
+                icon: Icons.storage_outlined,
+                selected: currentTab == AppHeaderTab.data,
+                onTap: () {
+                  if (currentTab != AppHeaderTab.data) context.go('/');
+                },
+              ),
+              const SizedBox(width: 4),
+              // Pages tab button
+              _HeaderTabBtn(
+                label: 'Pages',
+                icon: Icons.web_outlined,
+                selected: currentTab == AppHeaderTab.pages,
+                onTap: () {
+                  if (currentTab != AppHeaderTab.pages) context.go('/cms');
+                },
+              ),
+              const Spacer(),
+              // Avatar (AI mascot) — always visible when enabled
+              if (showAvatar) ...[
+                const AvatarWidget(size: 34),
+                const SizedBox(width: 4),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A single tab button in the top header bar.
+class _HeaderTabBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _HeaderTabBtn({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? cs.primary.withOpacity(0.3) : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: selected
+                  ? cs.primary
+                  : cs.onSurface.withOpacity(0.55),
             ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: selected
+                    ? cs.primary
+                    : cs.onSurface.withOpacity(0.7),
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

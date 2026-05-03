@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/cms_provider.dart';
+import '../../models/cms_entry.dart';
+import '../../models/cms_page.dart';
 import '../../models/plugin.dart';
 import '../../models/task.dart';
 import '../../models/workflow.dart';
@@ -27,13 +31,16 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
+    final cms = context.watch<CmsProvider>();
     final q = query.toLowerCase();
 
     final tasks = q.isEmpty ? <Task>[] : app.tasks.where((t) => t.name.toLowerCase().contains(q) || t.description.toLowerCase().contains(q)).toList();
     final workflows = q.isEmpty ? <Workflow>[] : app.workflows.where((w) => w.name.toLowerCase().contains(q) || w.description.toLowerCase().contains(q)).toList();
     final plugins = q.isEmpty ? <Plugin>[] : app.plugins.where((p) => p.name.toLowerCase().contains(q) || p.description.toLowerCase().contains(q)).toList();
+    final cmsEntries = q.isEmpty ? <CmsEntry>[] : cms.entries.where((e) => e.title.toLowerCase().contains(q)).toList();
+    final cmsPages = q.isEmpty ? <CmsPage>[] : cms.pages.where((p) => p.title.toLowerCase().contains(q) || p.slug.toLowerCase().contains(q)).toList();
 
-    final hasResults = tasks.isNotEmpty || workflows.isNotEmpty || plugins.isNotEmpty;
+    final hasResults = tasks.isNotEmpty || workflows.isNotEmpty || plugins.isNotEmpty || cmsEntries.isNotEmpty || cmsPages.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Search')),
@@ -58,15 +65,23 @@ class _SearchPageState extends State<SearchPage> {
                       children: [
                         if (tasks.isNotEmpty) ...[
                           _sectionHeader(context, Icons.task_alt, 'Tasks'),
-                          ...tasks.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key)),
+                          ...tasks.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.task_alt, const Color(0xFF6C63FF), e.key, '/tasks')),
                         ],
                         if (workflows.isNotEmpty) ...[
                           _sectionHeader(context, Icons.account_tree, 'Workflows'),
-                          ...workflows.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key)),
+                          ...workflows.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.account_tree, const Color(0xFF10B981), e.key, '/workflows')),
                         ],
                         if (plugins.isNotEmpty) ...[
                           _sectionHeader(context, Icons.extension, 'Plugins'),
-                          ...plugins.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key)),
+                          ...plugins.asMap().entries.map((e) => _resultTile(context, e.value.name, e.value.description, Icons.extension, const Color(0xFF3B82F6), e.key, '/plugins')),
+                        ],
+                        if (cmsEntries.isNotEmpty) ...[
+                          _sectionHeader(context, Icons.article_outlined, 'CMS Entries'),
+                          ...cmsEntries.asMap().entries.map((e) => _resultTile(context, e.value.title, e.value.status.name, Icons.article_outlined, const Color(0xFF6C63FF), e.key, '/cms/entries')),
+                        ],
+                        if (cmsPages.isNotEmpty) ...[
+                          _sectionHeader(context, Icons.web_outlined, 'CMS Pages'),
+                          ...cmsPages.asMap().entries.map((e) => _resultTile(context, e.value.title, e.value.slug, Icons.web_outlined, const Color(0xFF3B82F6), e.key, '/cms/pages')),
                         ],
                       ],
                     ),
@@ -96,7 +111,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _resultTile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index) {
+  Widget _resultTile(BuildContext context, String title, String subtitle, IconData icon, Color color, int index, String route) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppCard(
@@ -108,7 +123,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         title: title,
         subtitle: subtitle,
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opened: $title'))),
+        onTap: () => context.go(route),
       ).animate(delay: Duration(milliseconds: index * 60)).fadeIn().slideX(begin: 0.1),
     );
   }

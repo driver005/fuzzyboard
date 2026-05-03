@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/app_button.dart';
@@ -46,10 +47,13 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             label: 'Copy',
             icon: const Icon(Icons.copy),
             size: AppButtonSize.sm,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lua expression copied!')),
-              );
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _toLua(_root)));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Lua expression copied!')),
+                );
+              }
             },
           ),
           const SizedBox(width: 12),

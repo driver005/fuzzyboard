@@ -212,6 +212,8 @@ class _AppearanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
     return AppCard(
       title: '✨ Appearance',
       subtitle: 'Visual preferences',
@@ -220,18 +222,18 @@ class _AppearanceSection extends StatelessWidget {
           _ToggleSetting(
               title: 'Show avatar mascot',
               subtitle: 'Display the floating avatar on desktop',
-              value: true,
-              onChanged: (_) {}),
+              value: app.showAvatar,
+              onChanged: (v) => app.setShowAvatar(v)),
           _ToggleSetting(
               title: 'Reduced motion',
               subtitle: 'Minimize animations throughout the app',
-              value: false,
-              onChanged: (_) {}),
+              value: app.reducedMotion,
+              onChanged: (v) => app.setReducedMotion(v)),
           _ToggleSetting(
               title: 'Compact sidebar',
               subtitle: 'Use icon-only sidebar on medium screens',
-              value: false,
-              onChanged: (_) {}),
+              value: themeProvider.compactSidebar,
+              onChanged: (v) => themeProvider.setCompactSidebar(v)),
         ],
       ),
     );
@@ -257,13 +259,13 @@ class _EngineSection extends StatelessWidget {
           _ToggleSetting(
               title: 'Auto-save workflows',
               subtitle: 'Automatically save on every change',
-              value: true,
-              onChanged: (_) {}),
+              value: app.autoSave,
+              onChanged: (v) => app.setAutoSave(v)),
           _ToggleSetting(
               title: 'Verbose logging',
               subtitle: 'Log detailed execution traces',
-              value: false,
-              onChanged: (_) {}),
+              value: app.verboseLogging,
+              onChanged: (v) => app.setVerboseLogging(v)),
         ],
       ),
     );

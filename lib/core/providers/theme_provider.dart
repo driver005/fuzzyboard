@@ -8,9 +8,11 @@ import '../theme/app_colors.dart';
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.dark;
   Color _seedColor = AppColors.brandPrimary;
+  bool _compactSidebar = false;
 
   ThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
+  bool get compactSidebar => _compactSidebar;
 
   ThemeData get lightTheme => AppTheme.light(seedColor: _seedColor);
   ThemeData get darkTheme => AppTheme.dark(seedColor: _seedColor);
@@ -28,6 +30,7 @@ class ThemeProvider extends ChangeNotifier {
       // Reconstruct color from stored ARGB int
       _seedColor = Color(colorValue);
     }
+    _compactSidebar = prefs.getBool('compactSidebar') ?? false;
     notifyListeners();
   }
 
@@ -45,5 +48,12 @@ class ThemeProvider extends ChangeNotifier {
     // Store as ARGB integer (color.value returns the ARGB int representation)
     // ignore: deprecated_member_use
     await prefs.setInt('seedColor', color.value);
+  }
+
+  Future<void> setCompactSidebar(bool v) async {
+    _compactSidebar = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('compactSidebar', v);
   }
 }

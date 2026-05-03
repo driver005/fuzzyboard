@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/user_provider.dart';
@@ -59,6 +60,7 @@ class DashboardPage extends StatelessWidget {
                 change: '+2 today',
                 icon: Icons.task_alt,
                 iconColor: const Color(0xFF6C63FF),
+                onTap: () => context.go('/tasks'),
               ),
               StatCard(
                 title: 'Active Workflows',
@@ -66,6 +68,7 @@ class DashboardPage extends StatelessWidget {
                 change: 'of ${app.workflows.length} total',
                 icon: Icons.account_tree,
                 iconColor: const Color(0xFF10B981),
+                onTap: () => context.go('/workflows'),
               ),
               StatCard(
                 title: 'Plugins',
@@ -73,6 +76,7 @@ class DashboardPage extends StatelessWidget {
                 change: 'installed',
                 icon: Icons.extension,
                 iconColor: const Color(0xFF3B82F6),
+                onTap: () => context.go('/plugins'),
               ),
               StatCard(
                 title: 'Runs Today',
@@ -80,6 +84,7 @@ class DashboardPage extends StatelessWidget {
                 change: '↑ 12%',
                 icon: Icons.play_circle,
                 iconColor: const Color(0xFFF59E0B),
+                onTap: () => context.go('/workflows'),
               ),
             ].map((c) => c.animate().fadeIn(delay: 100.ms).slideY(begin: 0.2)).toList(),
           ),
@@ -252,10 +257,12 @@ class _WorkflowRunsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spots = List.generate(
-      7,
-      (i) => FlSpot(i.toDouble(), (20 + i * 8 + (i % 3) * 5).toDouble()),
-    );
+    final totalRuns = workflows.fold(0, (s, w) => s + w.runCount);
+    final base = totalRuns > 0 ? totalRuns / 7 : 5;
+    final spots = List.generate(7, (i) {
+      final variance = (i % 3 == 0 ? 1.3 : i % 2 == 0 ? 0.8 : 1.0);
+      return FlSpot(i.toDouble(), (base * variance).clamp(0.0, base * 2.0));
+    });
     return AppCard(
       title: 'Runs (Last 7 days)',
       child: SizedBox(
@@ -306,6 +313,21 @@ class _RecentActivity extends StatelessWidget {
   final List<String> logs;
   const _RecentActivity({required this.logs});
 
+  String _relativeTime(String logEntry) {
+    try {
+      final match = RegExp(r'\[(\d{4}-\d{2}-\d{2}T[\d:.]+)\]').firstMatch(logEntry);
+      if (match != null) {
+        final dt = DateTime.parse(match.group(1)!);
+        final diff = DateTime.now().difference(dt);
+        if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+        if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+        if (diff.inHours < 24) return '${diff.inHours}h ago';
+        return '${diff.inDays}d ago';
+      }
+    } catch (_) {}
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -342,6 +364,7 @@ class _RecentActivity extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                       ),
+                      Text(_relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
                     ],
                   ),
                 );

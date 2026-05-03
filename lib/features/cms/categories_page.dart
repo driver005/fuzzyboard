@@ -88,10 +88,22 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     slugController = TextEditingController(text: widget.existing?.slug ?? '');
     descController = TextEditingController(text: widget.existing?.description ?? '');
     color = widget.existing?.color ?? const Color(0xFF6C63FF);
+    if (widget.existing == null) {
+      nameController.addListener(_autoSlug);
+    }
+  }
+
+  void _autoSlug() {
+    if (widget.existing != null) return;
+    final raw = nameController.text.trim().toLowerCase();
+    slugController.text = raw
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
   }
 
   @override
   void dispose() {
+    nameController.removeListener(_autoSlug);
     nameController.dispose();
     slugController.dispose();
     descController.dispose();

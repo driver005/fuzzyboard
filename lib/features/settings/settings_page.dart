@@ -7,6 +7,7 @@ import '../../core/providers/app_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
+import '../../app.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -14,10 +15,10 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.all(20),
-        children: const [
+        children: [
           _ThemeSection(),
           SizedBox(height: 20),
           _AppearanceSection(),
@@ -52,29 +53,29 @@ class _ThemeSection extends StatelessWidget {
     ];
 
     return AppCard(
-      title: '🎨 Theme',
-      subtitle: 'Customize the look and feel',
+      title: context.l10n.themeSection,
+      subtitle: context.l10n.themeSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Mode selector
-          Text('Color Mode',
+          Text(context.l10n.colorModeLabel,
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           SegmentedButton<ThemeMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                   value: ThemeMode.light,
-                  label: Text('Light'),
+                  label: Text(context.l10n.lightMode),
                   icon: Icon(Icons.light_mode)),
               ButtonSegment(
                   value: ThemeMode.dark,
-                  label: Text('Dark'),
+                  label: Text(context.l10n.darkMode),
                   icon: Icon(Icons.dark_mode)),
               ButtonSegment(
                   value: ThemeMode.system,
-                  label: Text('System'),
+                  label: Text(context.l10n.systemMode),
                   icon: Icon(Icons.auto_mode)),
             ],
             selected: {themeProvider.themeMode},
@@ -83,7 +84,7 @@ class _ThemeSection extends StatelessWidget {
           ).animate().fadeIn(),
           const SizedBox(height: 20),
           // Seed color
-          Text('Accent Color',
+          Text(context.l10n.accentColorLabel,
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
@@ -151,7 +152,7 @@ class _CustomColorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showPicker(context),
+      onTap: () => show_picker(context),
       child: Container(
         width: 36,
         height: 36,
@@ -176,12 +177,12 @@ class _CustomColorButton extends StatelessWidget {
     );
   }
 
-  void _showPicker(BuildContext context) {
+  void show_picker(BuildContext context) {
     Color picked = current;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Pick a color'),
+        title: Text(context.l10n.pickColorTitle),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: picked,
@@ -192,7 +193,7 @@ class _CustomColorButton extends StatelessWidget {
         ),
         actions: [
           AppButton(
-              label: 'Cancel',
+              label: context.l10n.cancelButton,
               variant: AppButtonVariant.ghost,
               onPressed: () => Navigator.of(ctx).pop()),
           AppButton(
@@ -215,23 +216,23 @@ class _AppearanceSection extends StatelessWidget {
     final app = context.watch<AppProvider>();
     final themeProvider = context.watch<ThemeProvider>();
     return AppCard(
-      title: '✨ Appearance',
-      subtitle: 'Visual preferences',
+      title: context.l10n.appearanceSection,
+      subtitle: context.l10n.appearanceSubtitle,
       child: Column(
         children: [
           _ToggleSetting(
-              title: 'Show avatar mascot',
-              subtitle: 'Display the floating avatar on desktop',
+              title: context.l10n.showAvatarToggle,
+              subtitle: context.l10n.showAvatarDesc,
               value: app.showAvatar,
               onChanged: (v) => app.setShowAvatar(v)),
           _ToggleSetting(
-              title: 'Reduced motion',
-              subtitle: 'Minimize animations throughout the app',
+              title: context.l10n.reducedMotionToggle,
+              subtitle: context.l10n.reducedMotionDesc,
               value: app.reducedMotion,
               onChanged: (v) => app.setReducedMotion(v)),
           _ToggleSetting(
-              title: 'Compact sidebar',
-              subtitle: 'Use icon-only sidebar on medium screens',
+              title: context.l10n.compactSidebarToggle,
+              subtitle: context.l10n.compactSidebarDesc,
               value: themeProvider.compactSidebar,
               onChanged: (v) => themeProvider.setCompactSidebar(v)),
         ],
@@ -247,23 +248,23 @@ class _EngineSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
     return AppCard(
-      title: '⚙️ Engine',
-      subtitle: 'Workflow engine settings',
+      title: context.l10n.engineSection,
+      subtitle: context.l10n.engineSubtitle,
       child: Column(
         children: [
           _ToggleSetting(
-              title: 'Developer Mode',
-              subtitle: 'Enable advanced dev tools and logs',
+              title: context.l10n.devModeToggle,
+              subtitle: context.l10n.devModeDesc,
               value: app.devMode,
               onChanged: (_) => app.toggleDevMode()),
           _ToggleSetting(
-              title: 'Auto-save workflows',
-              subtitle: 'Automatically save on every change',
+              title: context.l10n.autoSaveToggle,
+              subtitle: context.l10n.autoSaveDesc,
               value: app.autoSave,
               onChanged: (v) => app.setAutoSave(v)),
           _ToggleSetting(
-              title: 'Verbose logging',
-              subtitle: 'Log detailed execution traces',
+              title: context.l10n.verboseLoggingToggle,
+              subtitle: context.l10n.verboseLoggingDesc,
               value: app.verboseLogging,
               onChanged: (v) => app.setVerboseLogging(v)),
         ],
@@ -321,16 +322,16 @@ class _AboutSection extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return AppCard(
-      title: 'ℹ️ About FuzzyBoard',
+      title: context.l10n.aboutSectionTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoRow('Version', '1.0.0'),
-          _InfoRow('Engine', 'FuzzyFlow v0.9'),
-          _InfoRow('Flutter', '3.27+'),
+          _InfoRow(context.l10n.versionLabel, context.l10n.versionValue),
+          _InfoRow(context.l10n.engineLabel, context.l10n.engineValue),
+          _InfoRow(context.l10n.flutterLabel, context.l10n.flutterValue),
           const SizedBox(height: 12),
           Text(
-            'FuzzyBoard is an open workflow engine dashboard built with Flutter.',
+            context.l10n.aboutDescription,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: cs.onSurface.withOpacity(0.6)),
           ),

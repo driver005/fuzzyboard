@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/gamification_provider.dart';
 import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_input.dart';
 import '../../app.dart';
+import 'marketplace_plugin_preview.dart';
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});
@@ -159,8 +161,14 @@ class _MarketplaceCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final app = context.read<AppProvider>();
+    final devMode = app.devMode;
 
     return AppCard(
+      onTap: () => showDialog(
+        context: context,
+        useSafeArea: false,
+        builder: (_) => MarketplacePluginPreview(plugin: plugin),
+      ),
       child: Row(
         children: [
           Container(
@@ -238,19 +246,43 @@ class _MarketplaceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          plugin.isInstalled
-              ? AppButton(
-                  label: context.l10n.installedBadge,
-                  variant: AppButtonVariant.ghost,
-                  size: AppButtonSize.sm,
-                  onPressed: null,
-                )
-              : AppButton(
-                  label: context.l10n.installButton,
-                  icon: const Icon(Icons.download),
-                  size: AppButtonSize.sm,
-                  onPressed: () => app.installPlugin(plugin.id),
+          if (plugin.isInstalled)
+            AppButton(
+              label: context.l10n.installedBadge,
+              variant: AppButtonVariant.ghost,
+              size: AppButtonSize.sm,
+              onPressed: null,
+            )
+          else if (!devMode)
+            Tooltip(
+              message: 'Enable Dev Mode in Settings to install plugins',
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: cs.outline.withOpacity(0.2)),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline, size: 13, color: cs.onSurface.withOpacity(0.4)),
+                    const SizedBox(width: 4),
+                    Text('Dev only', style: TextStyle(fontSize: 11, color: cs.onSurface.withOpacity(0.45), fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            )
+          else
+            AppButton(
+              label: context.l10n.installButton,
+              icon: const Icon(Icons.download),
+              size: AppButtonSize.sm,
+              onPressed: () {
+                app.installPlugin(plugin.id);
+                context.read<GamificationProvider>().onPluginInstalled();
+              },
+            ),
         ],
       ),
     );

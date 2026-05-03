@@ -8,6 +8,82 @@ import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_input.dart';
 
+/// Standalone widget version of the config graph (no Scaffold).
+/// Node selection opens a modal dialog instead of a side panel.
+/// Use this to embed the graph in other pages (e.g. PluginsPage).
+class ConfigGraphWidget extends StatefulWidget {
+  const ConfigGraphWidget({super.key});
+
+  @override
+  State<ConfigGraphWidget> createState() => _ConfigGraphWidgetState();
+}
+
+class _ConfigGraphWidgetState extends State<ConfigGraphWidget> {
+  @override
+  Widget build(BuildContext context) {
+    return _GraphPanel(
+      selectedId: null,
+      onNodeSelected: (id) {
+        if (id == null) return;
+        showDialog(
+          context: context,
+          builder: (_) => _NodeDetailModal(nodeId: id),
+        );
+      },
+    );
+  }
+}
+
+/// Modal wrapper around the existing detail panels.
+class _NodeDetailModal extends StatelessWidget {
+  final String nodeId;
+  const _NodeDetailModal({required this.nodeId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 420,
+          constraints: const BoxConstraints(maxHeight: 600),
+          color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          child: Column(
+            children: [
+              Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
+                ),
+                child: Row(
+                  children: [
+                    Text('Node Config', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _DetailPanel(selectedId: nodeId),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ConfigGraphPage extends StatefulWidget {
   const ConfigGraphPage({super.key});
 
@@ -34,24 +110,19 @@ class _ConfigGraphPageState extends State<ConfigGraphPage> {
           child: Divider(height: 1, color: cs.outline.withOpacity(0.15)),
         ),
       ),
-      body: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: _GraphPanel(
-              selectedId: selectedId,
-              onNodeSelected: (id) => setState(() => selectedId = id),
-            ),
-          ),
-          VerticalDivider(width: 1, color: cs.outline.withOpacity(0.15)),
-          SizedBox(
-            width: 320,
-            child: _DetailPanel(
-              key: ValueKey(selectedId),
-              selectedId: selectedId,
-            ),
-          ),
-        ],
+      body: _GraphPanel(
+        selectedId: selectedId,
+        onNodeSelected: (id) {
+          if (id == null) {
+            setState(() => selectedId = null);
+            return;
+          }
+          setState(() => selectedId = id);
+          showDialog(
+            context: context,
+            builder: (_) => _NodeDetailModal(nodeId: id),
+          ).then((_) => setState(() => selectedId = null));
+        },
       ),
     );
   }

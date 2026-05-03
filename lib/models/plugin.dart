@@ -34,6 +34,12 @@ class Plugin {
   int? downloadCount;
   String? iconEmoji;
   List<String> tags;
+  /// README markdown shown in marketplace preview
+  String? readme;
+  /// Schema defining available config keys with type/default/description
+  List<PluginConfigField> configSchema;
+  /// User-configured values for this plugin instance
+  Map<String, dynamic> configValues;
 
   Plugin({
     required this.id,
@@ -48,5 +54,26 @@ class Plugin {
     this.downloadCount,
     this.iconEmoji,
     this.tags = const [],
+    this.readme,
+    List<PluginConfigField>? configSchema,
+    Map<String, dynamic>? configValues,
+  })  : configSchema = configSchema ?? [],
+        configValues = configValues ?? {};
+}
+
+enum PluginConfigFieldType { string, number, boolean, secret }
+
+class PluginConfigField {
+  final String key;
+  final String label;
+  final PluginConfigFieldType type;
+  final dynamic defaultValue;
+  final String? description;
+  const PluginConfigField({
+    required this.key,
+    required this.label,
+    required this.type,
+    this.defaultValue,
+    this.description,
   });
 }

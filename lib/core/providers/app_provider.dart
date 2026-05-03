@@ -198,6 +198,15 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  void updatePlugin(Plugin plugin) {
+    final idx = _plugins.indexWhere((p) => p.id == plugin.id);
+    if (idx != -1) {
+      _plugins[idx] = plugin;
+      addLog('Plugin config updated: ${plugin.name}');
+      notifyListeners();
+    }
+  }
+
   // ── Chat Messages ─────────────────────────────────────────────────────────
   final List<ChatMessage> chatMessages = buildSeedChatMessages();
 

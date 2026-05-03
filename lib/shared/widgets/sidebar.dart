@@ -79,12 +79,6 @@ List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
       route: '/plugins',
     ),
     _NavItem(
-      label: l10n.sidebarMarketplace,
-      icon: Icons.store_outlined,
-      activeIcon: Icons.store,
-      route: '/marketplace',
-    ),
-    _NavItem(
       label: l10n.sidebarSqlBuilder,
       icon: Icons.table_chart_outlined,
       activeIcon: Icons.table_chart,
@@ -119,12 +113,6 @@ List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
       icon: Icons.bug_report_outlined,
       activeIcon: Icons.bug_report,
       route: '/dev',
-    ),
-    _NavItem(
-      label: 'Config Graph',
-      icon: Icons.device_hub_outlined,
-      activeIcon: Icons.device_hub,
-      route: '/config',
     ),
     _NavItem(
       label: l10n.sidebarSettings,

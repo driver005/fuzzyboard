@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
@@ -7,6 +8,7 @@ import '../../models/worker.dart';
 import '../../models/plugin.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_input.dart';
+import '../plugins/plugin_config_modal.dart';
 
 /// Standalone widget version of the config graph (no Scaffold).
 /// Node selection opens a modal dialog instead of a side panel.
@@ -31,13 +33,30 @@ class _ConfigGraphWidgetState extends State<ConfigGraphWidget> {
           return;
         }
         setState(() => selectedId = id);
-        showDialog(
-          context: context,
-          useSafeArea: false,
-          builder: (_) => _NodeDetailModal(nodeId: id),
-        ).then((_) {
-          if (mounted) setState(() => selectedId = null);
-        });
+        // If the tapped node is a plugin, open the same PluginConfigModal
+        // used in the installed plugins list view.
+        final provider = context.read<AppProvider>();
+        final plugin = provider.plugins.cast<Plugin?>().firstWhere(
+          (p) => p?.id == id,
+          orElse: () => null,
+        );
+        if (plugin != null) {
+          showDialog(
+            context: context,
+            useSafeArea: false,
+            builder: (_) => PluginConfigModal(plugin: plugin),
+          ).then((_) {
+            if (mounted) setState(() => selectedId = null);
+          });
+        } else {
+          showDialog(
+            context: context,
+            useSafeArea: false,
+            builder: (_) => _NodeDetailModal(nodeId: id),
+          ).then((_) {
+            if (mounted) setState(() => selectedId = null);
+          });
+        }
       },
     );
   }
@@ -60,14 +79,48 @@ class _NodeDetailModal extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: double.infinity,
-        color: isDark ? const Color(0xFF12121E) : cs.surface,
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? LinearGradient(
+                  colors: [
+                    const Color(0xFF0F0F1E).withOpacity(0.98),
+                    const Color(0xFF12121E).withOpacity(0.96),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    cs.surface.withOpacity(0.98),
+                    const Color(0xFFFAFBFF).withOpacity(0.96),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+        ),
         child: Column(
           children: [
             Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF16162A) : Colors.white,
+                gradient: isDark
+                    ? LinearGradient(
+                        colors: [
+                          const Color(0xFF16162A).withOpacity(0.97),
+                          const Color(0xFF1A1A30).withOpacity(0.95),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.97),
+                          const Color(0xFFF0F4FF).withOpacity(0.95),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                 border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
               ),
               child: Row(
@@ -137,7 +190,7 @@ class _ConfigGraphPageState extends State<ConfigGraphPage> {
 
 // ── Graph Panel ────────────────────────────────────────────────────────────────
 
-class _GraphPanel extends StatelessWidget {
+class _GraphPanel extends StatefulWidget {
   final String? selectedId;
   final ValueChanged<String?> onNodeSelected;
 
@@ -152,6 +205,46 @@ class _GraphPanel extends StatelessWidget {
   static const double appNodeR = 38;
 
   @override
+  State<_GraphPanel> createState() => _GraphPanelState();
+}
+
+class _GraphPanelState extends State<_GraphPanel> with TickerProviderStateMixin {
+  late final TransformationController transformController;
+  late final AnimationController pulseController;
+  late final Animation<double> pulseAnimation;
+  bool didInit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    transformController = TransformationController();
+    pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(parent: pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    transformController.dispose();
+    pulseController.dispose();
+    super.dispose();
+  }
+
+  void _maybeCenterCanvas(BoxConstraints constraints) {
+    if (!didInit && constraints.maxWidth > 0 && constraints.maxHeight > 0) {
+      didInit = true;
+      const cs = _GraphPanel.canvasSize;
+      final dx = (constraints.maxWidth - cs) / 2;
+      final dy = (constraints.maxHeight - cs) / 2;
+      transformController.value = Matrix4.translationValues(dx, dy, 0);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final workers = provider.workers;
@@ -163,8 +256,8 @@ class _GraphPanel extends StatelessWidget {
     for (int i = 0; i < workers.length; i++) {
       final angle = (2 * math.pi * i / workers.length) - math.pi / 2;
       workerPositions[workers[i].id] = Offset(
-        center.dx + workerRadius * math.cos(angle),
-        center.dy + workerRadius * math.sin(angle),
+        _GraphPanel.center.dx + _GraphPanel.workerRadius * math.cos(angle),
+        _GraphPanel.center.dy + _GraphPanel.workerRadius * math.sin(angle),
       );
     }
 
@@ -172,8 +265,8 @@ class _GraphPanel extends StatelessWidget {
     for (int i = 0; i < plugins.length; i++) {
       final angle = (2 * math.pi * i / plugins.length) - math.pi / 2;
       pluginPositions[plugins[i].id] = Offset(
-        center.dx + pluginRadius * math.cos(angle),
-        center.dy + pluginRadius * math.sin(angle),
+        _GraphPanel.center.dx + _GraphPanel.pluginRadius * math.cos(angle),
+        _GraphPanel.center.dy + _GraphPanel.pluginRadius * math.sin(angle),
       );
     }
 
@@ -182,50 +275,81 @@ class _GraphPanel extends StatelessWidget {
       ...pluginPositions.values,
     ];
 
-    return Container(
-      color: isDark ? const Color(0xFF13131F) : const Color(0xFFF9FAFB),
-      child: InteractiveViewer(
-        boundaryMargin: const EdgeInsets.all(80),
-        minScale: 0.3,
-        maxScale: 2.5,
-        child: SizedBox(
-          width: canvasSize,
-          height: canvasSize,
-          child: Stack(
-            children: [
-              // Connection lines
-              CustomPaint(
-                size: const Size(canvasSize, canvasSize),
-                painter: _ConnectionPainter(
-                  center: center,
-                  positions: allPositions,
-                  lineColor: cs.outline.withOpacity(0.25),
-                ),
-              ),
-              // Plugin nodes
-              for (final plugin in plugins)
-                buildPluginNode(
-                  context,
-                  plugin,
-                  pluginPositions[plugin.id]!,
-                  selectedId == plugin.id,
-                  () => onNodeSelected(plugin.id),
-                ),
-              // Worker nodes
-              for (final worker in workers)
-                buildWorkerNode(
-                  context,
-                  worker,
-                  workerPositions[worker.id]!,
-                  selectedId == worker.id,
-                  () => onNodeSelected(worker.id),
-                ),
-              // App node (center)
-              buildAppNode(context, center, selectedId == 'app', () => onNodeSelected('app')),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _maybeCenterCanvas(constraints);
+        return Container(
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? LinearGradient(
+                    colors: [
+                      const Color(0xFF0D0D1A).withOpacity(0.97),
+                      const Color(0xFF13131F).withOpacity(0.93),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : LinearGradient(
+                    colors: [
+                      const Color(0xFFF0F4FF).withOpacity(0.97),
+                      const Color(0xFFF9FAFB).withOpacity(0.93),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
           ),
-        ),
-      ),
+          child: InteractiveViewer(
+            transformationController: transformController,
+            boundaryMargin: const EdgeInsets.all(80),
+            minScale: 0.3,
+            maxScale: 2.5,
+            child: SizedBox(
+              width: _GraphPanel.canvasSize,
+              height: _GraphPanel.canvasSize,
+              child: Stack(
+                children: [
+                  // Connection lines
+                  CustomPaint(
+                    size: const Size(_GraphPanel.canvasSize, _GraphPanel.canvasSize),
+                    painter: _ConnectionPainter(
+                      center: _GraphPanel.center,
+                      positions: allPositions,
+                      lineColor: cs.outline.withOpacity(0.25),
+                    ),
+                  ),
+                  // Plugin nodes
+                  for (int i = 0; i < plugins.length; i++)
+                    buildPluginNode(
+                      context,
+                      plugins[i],
+                      pluginPositions[plugins[i].id]!,
+                      widget.selectedId == plugins[i].id,
+                      () => widget.onNodeSelected(plugins[i].id),
+                      i,
+                    ),
+                  // Worker nodes
+                  for (int i = 0; i < workers.length; i++)
+                    buildWorkerNode(
+                      context,
+                      workers[i],
+                      workerPositions[workers[i].id]!,
+                      widget.selectedId == workers[i].id,
+                      () => widget.onNodeSelected(workers[i].id),
+                      i,
+                    ),
+                  // App node (center)
+                  buildAppNode(
+                    context,
+                    _GraphPanel.center,
+                    widget.selectedId == 'app',
+                    () => widget.onNodeSelected('app'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -236,51 +360,66 @@ class _GraphPanel extends StatelessWidget {
     VoidCallback onTap,
   ) {
     final cs = Theme.of(context).colorScheme;
+    const r = _GraphPanel.appNodeR;
     return Positioned(
-      left: pos.dx - appNodeR,
-      top: pos.dy - appNodeR,
-      width: appNodeR * 2,
-      height: appNodeR * 2,
+      left: pos.dx - r,
+      top: pos.dy - r,
+      width: r * 2,
+      height: r * 2,
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [cs.primary, cs.secondary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: cs.primary.withOpacity(isSelected ? 0.5 : 0.25),
-                blurRadius: isSelected ? 20 : 10,
-                spreadRadius: isSelected ? 3 : 0,
+        child: AnimatedBuilder(
+          animation: pulseAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: isSelected ? 1.1 : pulseAnimation.value * 0.06 + 0.97,
+              child: child,
+            );
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  cs.primary.withOpacity(0.92),
+                  cs.secondary.withOpacity(0.80),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-            border: isSelected
-                ? Border.all(color: Colors.white, width: 2.5)
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.blur_on, color: Colors.white, size: 20),
-              const SizedBox(height: 2),
-              Text(
-                context.l10n.configAppNode,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withOpacity(isSelected ? 0.55 : 0.30),
+                  blurRadius: isSelected ? 24 : 14,
+                  spreadRadius: isSelected ? 4 : 2,
                 ),
-              ),
-            ],
+              ],
+              border: isSelected
+                  ? Border.all(color: Colors.white.withOpacity(0.85), width: 2.5)
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.blur_on, color: Colors.white, size: 20),
+                const SizedBox(height: 2),
+                Text(
+                  context.l10n.configAppNode,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
+    )
+        .animate()
+        .scale(begin: const Offset(0.4, 0.4), duration: 600.ms, curve: Curves.elasticOut);
   }
 
   Widget buildWorkerNode(
@@ -289,31 +428,42 @@ class _GraphPanel extends StatelessWidget {
     Offset pos,
     bool isSelected,
     VoidCallback onTap,
+    int index,
   ) {
-    const color = Color(0xFF3B82F6);
+    final cs = Theme.of(context).colorScheme;
+    const w = _GraphPanel.nodeW;
+    const h = _GraphPanel.nodeH;
+    const baseColor = Color(0xFF3B82F6);
 
     return Positioned(
-      left: pos.dx - nodeW / 2,
-      top: pos.dy - nodeH / 2,
-      width: nodeW,
-      height: nodeH,
+      left: pos.dx - w / 2,
+      top: pos.dy - h / 2,
+      width: w,
+      height: h,
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: color,
+            gradient: LinearGradient(
+              colors: [
+                baseColor.withOpacity(0.88),
+                baseColor.withOpacity(0.65),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(isSelected ? 0.45 : 0.2),
-                blurRadius: isSelected ? 16 : 6,
-                spreadRadius: isSelected ? 2 : 0,
+                color: baseColor.withOpacity(isSelected ? 0.50 : 0.25),
+                blurRadius: isSelected ? 18 : 7,
+                spreadRadius: isSelected ? 3 : 0,
               ),
             ],
             border: isSelected
-                ? Border.all(color: Colors.white, width: 2)
-                : null,
+                ? Border.all(color: Colors.white.withOpacity(0.85), width: 2)
+                : Border.all(color: cs.outline.withOpacity(0.15)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -322,13 +472,13 @@ class _GraphPanel extends StatelessWidget {
                 worker.status == WorkerStatus.running
                     ? Icons.play_circle_outline
                     : Icons.stop_circle_outlined,
-                color: Colors.white70,
+                color: Colors.white.withOpacity(0.85),
                 size: 12,
               ),
               Text(
                 worker.name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                 ),
@@ -340,7 +490,10 @@ class _GraphPanel extends StatelessWidget {
           ),
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(delay: (index * 60 + 150).ms, duration: 400.ms)
+        .scale(begin: const Offset(0.5, 0.5), delay: (index * 60 + 150).ms, duration: 400.ms, curve: Curves.elasticOut);
   }
 
   Widget buildPluginNode(
@@ -349,33 +502,44 @@ class _GraphPanel extends StatelessWidget {
     Offset pos,
     bool isSelected,
     VoidCallback onTap,
+    int index,
   ) {
-    final color = plugin.isInstalled
+    final cs = Theme.of(context).colorScheme;
+    const w = _GraphPanel.nodeW;
+    const h = _GraphPanel.nodeH;
+    final baseColor = plugin.isInstalled
         ? const Color(0xFF10B981)
         : const Color(0xFF6B7280);
 
     return Positioned(
-      left: pos.dx - nodeW / 2,
-      top: pos.dy - nodeH / 2,
-      width: nodeW,
-      height: nodeH,
+      left: pos.dx - w / 2,
+      top: pos.dy - h / 2,
+      width: w,
+      height: h,
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
-            color: color,
+            gradient: LinearGradient(
+              colors: [
+                baseColor.withOpacity(0.88),
+                baseColor.withOpacity(0.60),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(isSelected ? 0.45 : 0.2),
-                blurRadius: isSelected ? 16 : 6,
-                spreadRadius: isSelected ? 2 : 0,
+                color: baseColor.withOpacity(isSelected ? 0.50 : 0.22),
+                blurRadius: isSelected ? 18 : 7,
+                spreadRadius: isSelected ? 3 : 0,
               ),
             ],
             border: isSelected
-                ? Border.all(color: Colors.white, width: 2)
-                : null,
+                ? Border.all(color: Colors.white.withOpacity(0.85), width: 2)
+                : Border.all(color: cs.outline.withOpacity(0.15)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -384,8 +548,8 @@ class _GraphPanel extends StatelessWidget {
                 Text(plugin.iconEmoji!, style: const TextStyle(fontSize: 10)),
               Text(
                 plugin.name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                 ),
@@ -397,7 +561,10 @@ class _GraphPanel extends StatelessWidget {
           ),
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(delay: (index * 50 + 200).ms, duration: 400.ms)
+        .scale(begin: const Offset(0.5, 0.5), delay: (index * 50 + 200).ms, duration: 400.ms, curve: Curves.elasticOut);
   }
 }
 
@@ -444,6 +611,23 @@ class _ConnectionPainter extends CustomPainter {
 
 // ── Detail Panel ───────────────────────────────────────────────────────────────
 
+/// Returns a subtle fluid gradient decoration for panel backgrounds.
+BoxDecoration _panelGradient(bool isDark) => BoxDecoration(
+      gradient: LinearGradient(
+        colors: isDark
+            ? [
+                const Color(0xFF1A1A2E).withOpacity(0.97),
+                const Color(0xFF1E1E2E).withOpacity(0.95),
+              ]
+            : [
+                Colors.white.withOpacity(0.97),
+                const Color(0xFFFAFBFF).withOpacity(0.95),
+              ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+
 class _DetailPanel extends StatelessWidget {
   final String? selectedId;
 
@@ -456,7 +640,7 @@ class _DetailPanel extends StatelessWidget {
 
     if (selectedId == null) {
       return Container(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        decoration: _panelGradient(isDark),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -560,7 +744,7 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
     final isDark = cs.brightness == Brightness.dark;
 
     return Container(
-      color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -733,7 +917,7 @@ class _WorkerConfigPanelState extends State<_WorkerConfigPanel> {
     };
 
     return Container(
-      color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -865,7 +1049,7 @@ class _PluginInfoPanel extends StatelessWidget {
         plugin.isInstalled ? const Color(0xFF10B981) : const Color(0xFF6B7280);
 
     return Container(
-      color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

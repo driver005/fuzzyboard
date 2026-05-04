@@ -2,28 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// All text styles for FuzzyBoard.
-/// Swap `GoogleFonts.interTextTheme(...)` for any other Google Font call to
-/// instantly change the app-wide typography (e.g. `GoogleFonts.poppinsTextTheme(...)`).
+/// Nunito is a rounded, friendly typeface that gives the app a game-like feel.
+/// Swap `GoogleFonts.nunitoTextTheme(...)` for any other Google Font call to
+/// instantly change the app-wide typography.
 class AppTypography {
   AppTypography._();
 
-  static TextTheme get textTheme => GoogleFonts.interTextTheme(
+  static TextTheme get textTheme => GoogleFonts.nunitoTextTheme(
         const TextTheme(
-          displayLarge: TextStyle(fontSize: 57, fontWeight: FontWeight.w300),
-          displayMedium: TextStyle(fontSize: 45, fontWeight: FontWeight.w300),
-          displaySmall: TextStyle(fontSize: 36, fontWeight: FontWeight.w400),
-          headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
-          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
-          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-          bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-          labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+          displayLarge:  TextStyle(fontSize: 57, fontWeight: FontWeight.w800),
+          displayMedium: TextStyle(fontSize: 45, fontWeight: FontWeight.w800),
+          displaySmall:  TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+          headlineLarge:  TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+          headlineSmall:  TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+          titleLarge:  TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          titleSmall:  TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          bodyLarge:   TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          bodyMedium:  TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          bodySmall:   TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          labelLarge:  TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          labelSmall:  TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         ),
       );
 

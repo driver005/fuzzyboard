@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'bounce_widget.dart';
 
 /// App-wide card widget with optional header, footer, and actions.
+/// Tappable cards automatically get a bouncy spring press animation.
 class AppCard extends StatelessWidget {
   final Widget? child;
   final String? title;
@@ -33,66 +35,84 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final effectiveColor =
-        color ?? theme.cardTheme.color ?? cs.surface;
+    final effectiveColor = color ?? theme.cardTheme.color ?? cs.surface;
 
-    return SizedBox(
+    Widget card = SizedBox(
       width: width,
       height: height,
-      child: Material(
-        color: effectiveColor,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (title != null || subtitle != null || leading != null || actions != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    children: [
-                      if (leading != null) ...[
-                        leading!,
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (title != null)
-                              Text(title!,
-                                  style: theme.textTheme.titleMedium),
-                            if (subtitle != null)
-                              Text(subtitle!,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                      color: cs.onSurface.withOpacity(0.6))),
+      child: Container(
+        decoration: BoxDecoration(
+          color: effectiveColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: cs.primary.withOpacity(0.10),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (title != null ||
+                      subtitle != null ||
+                      leading != null ||
+                      actions != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Row(
+                        children: [
+                          if (leading != null) ...[
+                            leading!,
+                            const SizedBox(width: 12),
                           ],
-                        ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (title != null)
+                                  Text(title!,
+                                      style: theme.textTheme.titleMedium),
+                                if (subtitle != null)
+                                  Text(subtitle!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                          color: cs.onSurface.withOpacity(0.6))),
+                              ],
+                            ),
+                          ),
+                          if (actions != null) ...actions!,
+                        ],
                       ),
-                      if (actions != null) ...actions!,
-                    ],
-                  ),
-                ),
-              if (child != null)
-                Padding(
-                  padding: padding ?? const EdgeInsets.all(16),
-                  child: child,
-                ),
-              if (footer != null) ...[
-                Divider(height: 1, color: cs.outline.withOpacity(0.2)),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: footer!,
-                ),
-              ],
-            ],
+                    ),
+                  if (child != null)
+                    Padding(
+                      padding: padding ?? const EdgeInsets.all(16),
+                      child: child,
+                    ),
+                  if (footer != null) ...[
+                    Divider(height: 1, color: cs.outline.withOpacity(0.2)),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: footer!,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
-      ),
     );
+
+    if (onTap != null) {
+      card = BounceOnTap(onTap: onTap, scale: 0.96, child: card);
+    }
+    return card;
   }
 }
 
@@ -127,13 +147,24 @@ class StatCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [iconColor, iconColor.withOpacity(0.6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withOpacity(0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -150,8 +181,8 @@ class StatCard extends StatelessWidget {
                     change!,
                     style: theme.textTheme.bodySmall?.copyWith(
                         color: changePositive
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFFEF4444)),
+                            ? const Color(0xFF06D6A0)
+                            : const Color(0xFFFF3D71)),
                   ),
               ],
             ),

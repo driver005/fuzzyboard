@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import 'bounce_widget.dart';
 
 const double _sidebarWidth = 240;
 const double _railWidth = 72;
@@ -363,36 +364,58 @@ class _NavTile extends StatelessWidget {
     return Tooltip(
       message: collapsed ? item.label : '',
       preferBelow: false,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        decoration: isActive
-            ? BoxDecoration(
-                color: cs.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              )
-            : null,
-        child: ListTile(
-          dense: true,
-          contentPadding: EdgeInsets.only(
-            left: collapsed ? 16 : (item.isSubItem ? 28 : 12),
-            right: 12,
+      child: BounceOnTap(
+        onTap: onTap,
+        scale: 0.94,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: isActive
+              ? BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      cs.primary.withOpacity(0.22),
+                      cs.secondary.withOpacity(0.12),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.primary.withOpacity(0.18),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: cs.primary.withOpacity(0.30),
+                    width: 1.5,
+                  ),
+                )
+              : null,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.only(
+              left: collapsed ? 16 : (item.isSubItem ? 28 : 12),
+              right: 12,
+            ),
+            leading: Icon(
+              isActive ? item.activeIcon : item.icon,
+              size: item.isSubItem ? 18 : 22,
+              color: isActive ? cs.primary : cs.onSurface.withOpacity(0.6),
+            ),
+            title: collapsed
+                ? null
+                : Text(item.label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: item.isSubItem ? 13 : null,
+                      fontWeight:
+                          isActive ? FontWeight.w800 : FontWeight.w500,
+                      color:
+                          isActive ? cs.primary : cs.onSurface.withOpacity(0.8),
+                    )),
+            onTap: null, // handled by BounceOnTap
           ),
-          leading: Icon(
-            isActive ? item.activeIcon : item.icon,
-            size: item.isSubItem ? 18 : 22,
-            color: isActive ? cs.primary : cs.onSurface.withOpacity(0.6),
-          ),
-          title: collapsed
-              ? null
-              : Text(item.label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontSize: item.isSubItem ? 13 : null,
-                    fontWeight:
-                        isActive ? FontWeight.w600 : FontWeight.w400,
-                    color:
-                        isActive ? cs.primary : cs.onSurface.withOpacity(0.8),
-                  )),
-          onTap: onTap,
         ),
       ),
     );
@@ -419,15 +442,21 @@ class _SidebarAction extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Tooltip(
       message: collapsed ? label : '',
-      child: InkWell(
+      child: BounceOnTap(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        scale: 0.94,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: active
               ? BoxDecoration(
-                  color: cs.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    colors: [
+                      cs.primary.withOpacity(0.18),
+                      cs.secondary.withOpacity(0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.primary.withOpacity(0.25)),
                 )
               : null,
           child: Row(

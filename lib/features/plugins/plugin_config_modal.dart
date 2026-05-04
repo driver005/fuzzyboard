@@ -120,7 +120,25 @@ class _PluginConfigModalState extends State<PluginConfigModal> {
       child: Container(
         width: double.infinity,
         height: double.infinity,
-        color: isDark ? const Color(0xFF12121E) : cs.surface,
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? LinearGradient(
+                  colors: [
+                    const Color(0xFF0F0F1E).withOpacity(0.98),
+                    const Color(0xFF12121E).withOpacity(0.96),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    cs.surface.withOpacity(0.98),
+                    const Color(0xFFFAFBFF).withOpacity(0.95),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+        ),
         child: Column(
           children: [
             // Header
@@ -128,7 +146,23 @@ class _PluginConfigModalState extends State<PluginConfigModal> {
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF16162A) : Colors.white,
+                gradient: isDark
+                    ? LinearGradient(
+                        colors: [
+                          const Color(0xFF16162A).withOpacity(0.97),
+                          const Color(0xFF1A1A30).withOpacity(0.95),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.97),
+                          const Color(0xFFF0F4FF).withOpacity(0.95),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                 border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
               ),
               child: Row(
@@ -244,7 +278,14 @@ class _ToggleChip extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? cs.primary : cs.primary.withOpacity(0.08),
+          gradient: selected
+              ? LinearGradient(
+                  colors: [cs.primary.withOpacity(0.92), cs.primary.withOpacity(0.75)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: selected ? null : cs.primary.withOpacity(0.08),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -273,7 +314,25 @@ class _ConfigPreviewPanel extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Container(
-      color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F5FF),
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? LinearGradient(
+                colors: [
+                  const Color(0xFF080812).withOpacity(0.97),
+                  const Color(0xFF0D0D1A).withOpacity(0.95),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [
+                  const Color(0xFFF0F0FF).withOpacity(0.97),
+                  const Color(0xFFF5F5FF).withOpacity(0.95),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

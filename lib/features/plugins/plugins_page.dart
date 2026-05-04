@@ -101,7 +101,14 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.12),
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.18),
+                theme.colorScheme.primary.withOpacity(0.08),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text('$count',
@@ -140,8 +147,16 @@ class _PluginCard extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: plugin.category.color.withOpacity(0.12),
+              gradient: LinearGradient(
+                colors: [
+                  plugin.category.color.withOpacity(0.20),
+                  plugin.category.color.withOpacity(0.08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: plugin.category.color.withOpacity(0.20)),
             ),
             child: Center(
               child: Text(plugin.iconEmoji ?? '🔌',
@@ -161,7 +176,14 @@ class _PluginCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: plugin.category.color.withOpacity(0.12),
+                        gradient: LinearGradient(
+                          colors: [
+                            plugin.category.color.withOpacity(0.20),
+                            plugin.category.color.withOpacity(0.10),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(plugin.category.label,
@@ -225,8 +247,13 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.18), color.withOpacity(0.08)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -254,21 +281,29 @@ class _EmptyPlugins extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('🔌', style: TextStyle(fontSize: 64)),
+          const Text('🔌', style: TextStyle(fontSize: 64))
+              .animate()
+              .scale(begin: const Offset(0.5, 0.5), duration: 600.ms, curve: Curves.elasticOut)
+              .fadeIn(duration: 400.ms),
           const SizedBox(height: 16),
           Text(context.l10n.noPluginsInstalled,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
                       .onSurface
-                      .withOpacity(0.5))),
+                      .withOpacity(0.5)))
+              .animate()
+              .fadeIn(delay: 200.ms, duration: 400.ms)
+              .slideY(begin: 0.3, delay: 200.ms),
           const SizedBox(height: 8),
           Text(context.l10n.noPluginsInstalledSubtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
                       .onSurface
-                      .withOpacity(0.4))),
+                      .withOpacity(0.4)))
+              .animate()
+              .fadeIn(delay: 300.ms, duration: 400.ms),
         ],
       ),
     );

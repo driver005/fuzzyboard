@@ -233,7 +233,7 @@ class _Star extends StatelessWidget {
     )
         .animate(onPlay: (ctrl) => ctrl.repeat(reverse: true))
         .fadeIn(
-            begin: opacity * 0.3,
+            begin: (opacity * 0.3).clamp(0.0, 1.0),
             duration: Duration(milliseconds: (800 + size * 200).toInt()),
             curve: Curves.easeInOut);
   }

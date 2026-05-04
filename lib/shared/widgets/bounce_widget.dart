@@ -18,10 +18,10 @@ class BounceOnTap extends StatefulWidget {
   });
 
   @override
-  State<BounceOnTap> createState() => BounceOnTapState();
+  State<BounceOnTap> createState() => _BounceOnTapState();
 }
 
-class BounceOnTapState extends State<BounceOnTap> {
+class _BounceOnTapState extends State<BounceOnTap> {
   bool pressed = false;
 
   @override

@@ -112,13 +112,9 @@ class AppButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(radius),
                   side: borderSide,
                 ),
-          child: InkWell(
-            onTap: null, // tap handled by BounceOnTap
-            borderRadius: BorderRadius.circular(radius),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
-              child: content,
-            ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            child: content,
           ),
         ),
       ),

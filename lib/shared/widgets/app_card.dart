@@ -56,10 +56,7 @@ class AppCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: Material(
             color: Colors.transparent,
-            child: InkWell(
-              onTap: null, // tap handled by BounceOnTap
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -110,7 +107,6 @@ class AppCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
 
     if (onTap != null) {

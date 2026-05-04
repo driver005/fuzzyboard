@@ -417,7 +417,9 @@ class _GraphPanelState extends State<_GraphPanel> with TickerProviderStateMixin 
           ),
         ),
       ),
-    ).animate().scale(begin: const Offset(0.4, 0.4), duration: 600.ms, curve: Curves.elasticOut);
+    )
+        .animate()
+        .scale(begin: const Offset(0.4, 0.4), duration: 600.ms, curve: Curves.elasticOut);
   }
 
   Widget buildWorkerNode(
@@ -609,6 +611,23 @@ class _ConnectionPainter extends CustomPainter {
 
 // ── Detail Panel ───────────────────────────────────────────────────────────────
 
+/// Returns a subtle fluid gradient decoration for panel backgrounds.
+BoxDecoration _panelGradient(bool isDark) => BoxDecoration(
+      gradient: LinearGradient(
+        colors: isDark
+            ? [
+                const Color(0xFF1A1A2E).withOpacity(0.97),
+                const Color(0xFF1E1E2E).withOpacity(0.95),
+              ]
+            : [
+                Colors.white.withOpacity(0.97),
+                const Color(0xFFFAFBFF).withOpacity(0.95),
+              ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+
 class _DetailPanel extends StatelessWidget {
   final String? selectedId;
 
@@ -621,7 +640,7 @@ class _DetailPanel extends StatelessWidget {
 
     if (selectedId == null) {
       return Container(
-        decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [const Color(0xFF1A1A2E).withOpacity(0.97), const Color(0xFF1E1E2E).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight) : LinearGradient(colors: [Colors.white.withOpacity(0.97), const Color(0xFFFAFBFF).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+        decoration: _panelGradient(isDark),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -725,7 +744,7 @@ class _AppConfigPanelState extends State<_AppConfigPanel> {
     final isDark = cs.brightness == Brightness.dark;
 
     return Container(
-      decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [const Color(0xFF1A1A2E).withOpacity(0.97), const Color(0xFF1E1E2E).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight) : LinearGradient(colors: [Colors.white.withOpacity(0.97), const Color(0xFFFAFBFF).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -898,7 +917,7 @@ class _WorkerConfigPanelState extends State<_WorkerConfigPanel> {
     };
 
     return Container(
-      decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [const Color(0xFF1A1A2E).withOpacity(0.97), const Color(0xFF1E1E2E).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight) : LinearGradient(colors: [Colors.white.withOpacity(0.97), const Color(0xFFFAFBFF).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1030,7 +1049,7 @@ class _PluginInfoPanel extends StatelessWidget {
         plugin.isInstalled ? const Color(0xFF10B981) : const Color(0xFF6B7280);
 
     return Container(
-      decoration: BoxDecoration(gradient: isDark ? LinearGradient(colors: [const Color(0xFF1A1A2E).withOpacity(0.97), const Color(0xFF1E1E2E).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight) : LinearGradient(colors: [Colors.white.withOpacity(0.97), const Color(0xFFFAFBFF).withOpacity(0.95)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+      decoration: _panelGradient(isDark),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

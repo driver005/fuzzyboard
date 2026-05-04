@@ -217,7 +217,14 @@ class _TaskListTab extends StatelessWidget {
                   itemBuilder: (context, i) {
                     return _TaskCard(
                       task: tasks[i],
-                      onTap: () => onEdit(tasks[i]),
+                      onTap: () => showDialog(
+                        context: context,
+                        useSafeArea: false,
+                        builder: (ctx) => _TaskViewModal(
+                          task: tasks[i],
+                          onEdit: () => onEdit(tasks[i]),
+                        ),
+                      ),
                     )
                         .animate()
                         .fadeIn(delay: (i * 50).ms)
@@ -475,6 +482,313 @@ class _Chip extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// ── Task View Modal (read-only) ────────────────────────────────────────────────
+
+class _TaskViewModal extends StatefulWidget {
+  final Task task;
+  final VoidCallback onEdit;
+  const _TaskViewModal({required this.task, required this.onEdit});
+
+  @override
+  State<_TaskViewModal> createState() => _TaskViewModalState();
+}
+
+class _TaskViewModalState extends State<_TaskViewModal> {
+  bool starting = false;
+
+  bool get isRunning {
+    final app = context.read<AppProvider>();
+    return app.runsForTask(widget.task.id).any((r) => r.status == TaskRunStatus.running);
+  }
+
+  bool get lastRunFailed {
+    final app = context.read<AppProvider>();
+    final runs = app.runsForTask(widget.task.id);
+    if (runs.isEmpty) return false;
+    return runs.first.status == TaskRunStatus.failed;
+  }
+
+  Future<void> startRun() async {
+    final app = context.read<AppProvider>();
+    final run = TaskRun(
+      id: const Uuid().v4(),
+      taskId: widget.task.id,
+      taskName: widget.task.name,
+      status: TaskRunStatus.running,
+    );
+    app.addTaskRun(run);
+    setState(() => starting = false);
+    await Future.delayed(const Duration(seconds: 3));
+    if (mounted) {
+      app.updateTaskRun(TaskRun(
+        id: run.id,
+        taskId: run.taskId,
+        taskName: run.taskName,
+        status: TaskRunStatus.done,
+        startedAt: run.startedAt,
+        finishedAt: DateTime.now(),
+      ));
+      setState(() {});
+    }
+  }
+
+  void stopRun() {
+    final app = context.read<AppProvider>();
+    final runs = app.runsForTask(widget.task.id);
+    final active = runs.cast<TaskRun?>().firstWhere(
+      (r) => r?.status == TaskRunStatus.running,
+      orElse: () => null,
+    );
+    if (active != null) {
+      app.updateTaskRun(TaskRun(
+        id: active.id,
+        taskId: active.taskId,
+        taskName: active.taskName,
+        status: TaskRunStatus.failed,
+        startedAt: active.startedAt,
+        finishedAt: DateTime.now(),
+      ));
+    }
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppProvider>();
+    final task = widget.task;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final running = app.runsForTask(task.id).any((r) => r.status == TaskRunStatus.running);
+    final failed = !running && app.runsForTask(task.id).isNotEmpty &&
+        app.runsForTask(task.id).first.status == TaskRunStatus.failed;
+
+    return Dialog(
+      insetPadding: EdgeInsets.zero,
+      shape: const RoundedRectangleBorder(),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: isDark ? const Color(0xFF12121E) : cs.surface,
+        child: Column(
+          children: [
+            // Header
+            Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF16162A) : Colors.white,
+                border: Border(
+                    bottom: BorderSide(color: cs.outline.withOpacity(0.15))),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    task.name,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 10),
+                  _StatusBadgeTask(status: task.status),
+                  const Spacer(),
+                  // Action buttons
+                  if (running)
+                    AppButton(
+                      label: 'Stop',
+                      icon: const Icon(Icons.stop_circle_outlined),
+                      variant: AppButtonVariant.danger,
+                      size: AppButtonSize.sm,
+                      onPressed: stopRun,
+                    )
+                  else ...[
+                    AppButton(
+                      label: 'Start',
+                      icon: const Icon(Icons.play_arrow),
+                      size: AppButtonSize.sm,
+                      onPressed: startRun,
+                    ),
+                    if (failed) ...[
+                      const SizedBox(width: 8),
+                      AppButton(
+                        label: 'Retry',
+                        icon: const Icon(Icons.replay),
+                        variant: AppButtonVariant.outline,
+                        size: AppButtonSize.sm,
+                        onPressed: startRun,
+                      ),
+                    ],
+                  ],
+                  const SizedBox(width: 8),
+                  AppButton(
+                    label: 'Change',
+                    icon: const Icon(Icons.edit_outlined),
+                    variant: AppButtonVariant.outline,
+                    size: AppButtonSize.sm,
+                    onPressed: running
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            widget.onEdit();
+                          },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+            // Body
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (running)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 14, height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF3B82F6)),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text('Running…',
+                                style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    _ViewSection(label: 'Details', icon: Icons.info_outline, children: [
+                      _ViewRow(label: 'Name', value: task.name),
+                      if (task.description.isNotEmpty)
+                        _ViewRow(label: 'Description', value: task.description),
+                      _ViewRow(label: 'Priority', value: task.priority.label),
+                      if (task.tags.isNotEmpty)
+                        _ViewRow(label: 'Tags', value: task.tags.join(', ')),
+                      if (task.dueDate != null)
+                        _ViewRow(
+                          label: 'Due',
+                          value:
+                              '${task.dueDate!.year}-${task.dueDate!.month.toString().padLeft(2, '0')}-${task.dueDate!.day.toString().padLeft(2, '0')}',
+                        ),
+                    ]),
+                    const SizedBox(height: 16),
+                    _ViewSection(label: 'Execution', icon: Icons.timer_outlined, children: [
+                      _ViewRow(label: 'Timeout', value: '${task.timeoutSeconds}s'),
+                      _ViewRow(label: 'Response Timeout', value: '${task.responseTimeoutSeconds}s'),
+                      _ViewRow(label: 'Retry Count', value: '${task.retryCount}'),
+                      _ViewRow(label: 'Retry Policy', value: task.retryPolicy.label),
+                      _ViewRow(label: 'Retry Delay', value: '${task.retryDelaySeconds}s'),
+                      _ViewRow(
+                        label: 'Concurrency',
+                        value: task.concurrentExecLimit == 0
+                            ? 'Unlimited'
+                            : '${task.concurrentExecLimit}',
+                      ),
+                    ]),
+                    if (task.inputKeys.isNotEmpty || task.outputKeys.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _ViewSection(label: 'I/O Keys', icon: Icons.swap_horiz, children: [
+                        if (task.inputKeys.isNotEmpty)
+                          _ViewRow(
+                            label: 'Inputs',
+                            value: task.inputKeys.keys.join(', '),
+                          ),
+                        if (task.outputKeys.isNotEmpty)
+                          _ViewRow(
+                            label: 'Outputs',
+                            value: task.outputKeys.keys.join(', '),
+                          ),
+                      ]),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ViewSection extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final List<Widget> children;
+  const _ViewSection({required this.label, required this.icon, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: cs.primary),
+            const SizedBox(width: 6),
+            Text(label,
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700, color: cs.primary)),
+            const SizedBox(width: 8),
+            Expanded(child: Divider(color: cs.outline.withOpacity(0.2))),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: cs.outline.withOpacity(0.12)),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
+
+class _ViewRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _ViewRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(label,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w600, color: cs.onSurface.withOpacity(0.6))),
+          ),
+          Expanded(
+            child: Text(value, style: theme.textTheme.bodySmall),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -966,7 +1280,7 @@ class _AdvancedTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final plugins = context.watch<AppProvider>().installedPlugins;
+    final plugins = context.watch<AppProvider>().plugins;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),

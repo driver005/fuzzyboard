@@ -25,7 +25,7 @@ class WorkflowCanvas extends StatefulWidget {
   State<WorkflowCanvas> createState() => _WorkflowCanvasState();
 }
 
-class _WorkflowCanvasState extends State<WorkflowCanvas> {
+class _WorkflowCanvasState extends State<WorkflowCanvas> with SingleTickerProviderStateMixin {
   late Workflow workflow;
   String? selectedNodeId;
   bool connecting = false;
@@ -35,6 +35,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   final uuid = const Uuid();
   final List<Map<String, dynamic>> undoStack = [];
   final List<Map<String, dynamic>> redoStack = [];
+  late TabController canvasTabController;
 
   // Position where the next node will be placed (canvas coordinates).
   Offset pendingNodePosition = const Offset(400, 300);
@@ -46,10 +47,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     super.initState();
     final app = context.read<AppProvider>();
     workflow = app.workflows.firstWhere((w) => w.id == widget.workflowId);
+    canvasTabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
+    canvasTabController.dispose();
     transform.dispose();
     keyboardFocus.dispose();
     super.dispose();
@@ -228,6 +231,88 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
       connecting = false;
       connectFromId = null;
     });
+  }
+
+  void applyTreeLayout() {
+    if (workflow.nodes.isEmpty) return;
+    pushUndo();
+
+    final inDegree = <String, int>{};
+    for (final n in workflow.nodes) inDegree[n.id] = 0;
+    for (final c in workflow.connections) {
+      inDegree[c.toNodeId] = (inDegree[c.toNodeId] ?? 0) + 1;
+    }
+
+    final adjList = <String, List<String>>{};
+    for (final n in workflow.nodes) adjList[n.id] = [];
+    for (final c in workflow.connections) {
+      adjList[c.fromNodeId]?.add(c.toNodeId);
+    }
+
+    final levels = <String, int>{};
+    final queue = <String>[];
+    for (final n in workflow.nodes) {
+      if ((inDegree[n.id] ?? 0) == 0) {
+        queue.add(n.id);
+        levels[n.id] = 0;
+      }
+    }
+    bool hasCycles = false;
+    if (queue.isEmpty && workflow.nodes.isNotEmpty) {
+      hasCycles = true;
+      queue.add(workflow.nodes.first.id);
+      levels[workflow.nodes.first.id] = 0;
+    }
+
+    int qi = 0;
+    while (qi < queue.length) {
+      final nodeId = queue[qi++];
+      final level = levels[nodeId]!;
+      for (final childId in (adjList[nodeId] ?? [])) {
+        if (!levels.containsKey(childId)) {
+          levels[childId] = level + 1;
+          queue.add(childId);
+        }
+      }
+    }
+    for (final n in workflow.nodes) {
+      if (!levels.containsKey(n.id)) levels[n.id] = 0;
+    }
+
+    final byLevel = <int, List<String>>{};
+    for (final entry in levels.entries) {
+      byLevel.putIfAbsent(entry.value, () => []).add(entry.key);
+    }
+
+    const xSpacing = 200.0;
+    const ySpacing = 160.0;
+    const xStart = 100.0;
+    const yStart = 80.0;
+
+    setState(() {
+      for (final levelEntry in byLevel.entries) {
+        final level = levelEntry.key;
+        final nodeIds = levelEntry.value;
+        for (int i = 0; i < nodeIds.length; i++) {
+          final nodeIdx = workflow.nodes.indexWhere((n) => n.id == nodeIds[i]);
+          if (nodeIdx != -1) {
+            workflow.nodes[nodeIdx].position = Offset(
+              xStart + i * xSpacing,
+              yStart + level * ySpacing,
+            );
+          }
+        }
+      }
+    });
+
+    if (hasCycles && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Workflow contains cycles — layout may be incomplete'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void showTutorial() {
@@ -416,6 +501,29 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               (HardwareKeyboard.instance.isControlPressed ||
                   HardwareKeyboard.instance.isMetaPressed)) {
             showQuickMenu();
+          } else if (event.logicalKey == LogicalKeyboardKey.keyI) {
+            showQuickMenu();
+          } else if (event.logicalKey == LogicalKeyboardKey.keyC &&
+              selectedNodeId != null) {
+            startConnect(selectedNodeId!);
+          } else if (selectedNodeId != null) {
+            double dx = 0, dy = 0;
+            if (event.logicalKey == LogicalKeyboardKey.keyH) dx = -20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyL) dx = 20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyJ) dy = 20;
+            else if (event.logicalKey == LogicalKeyboardKey.keyK) dy = -20;
+            if (dx != 0 || dy != 0) {
+              final nodeIdx = workflow.nodes.indexWhere((n) => n.id == selectedNodeId);
+              if (nodeIdx != -1) {
+                pushUndo();
+                setState(() {
+                  workflow.nodes[nodeIdx].position = Offset(
+                    workflow.nodes[nodeIdx].position.dx + dx,
+                    workflow.nodes[nodeIdx].position.dy + dy,
+                  );
+                });
+              }
+            }
           }
         }
       },
@@ -531,6 +639,14 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               ),
               const SizedBox(width: 8),
               AppButton(
+                label: 'Tree Layout',
+                icon: const Icon(Icons.account_tree_outlined),
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+                onPressed: applyTreeLayout,
+              ),
+              const SizedBox(width: 8),
+              AppButton(
                 label: 'Add Node',
                 icon: const Icon(Icons.add_circle_outline),
                 size: AppButtonSize.sm,
@@ -547,9 +663,24 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
             ],
             const SizedBox(width: 12),
           ],
+          bottom: TabBar(
+            controller: canvasTabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.account_tree_outlined, size: 15), text: 'Canvas'),
+              Tab(icon: Icon(Icons.data_object, size: 15), text: 'Config'),
+            ],
+          ),
         ),
-        body: Stack(
+        body: TabBarView(
+          controller: canvasTabController,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
+            Column(
+              children: [
+                _WorkflowSummaryBar(workflow: workflow, isRunning: isRunning),
+                Expanded(
+                  child: Stack(
+                    children: [
             // ── Infinite grid (screen-space) ───────────────────────────────
             // The grid is rendered OUTSIDE the InteractiveViewer so its painter
             // is always sized to the full viewport.  An AnimatedBuilder on the
@@ -714,6 +845,12 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
               ),
           ],
         ),
+                ),  // Expanded
+              ],
+            ),  // Column
+            _WorkflowConfigTab(workflow: workflow),
+          ],
+        ),  // TabBarView
       ),  // Scaffold
     );  // KeyboardListener
   }  // build
@@ -1018,13 +1155,8 @@ class _NodeWidget extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _NodeAction(
-                        icon: Icons.link,
-                        color: color,
-                        tooltip: 'Connect to another node',
-                        onTap: onConnect),
                     _NodeAction(
                         icon: Icons.delete_outline,
                         color: Colors.red.shade400,
@@ -1409,6 +1541,327 @@ class _TutorialSection extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Workflow Summary Bar ──────────────────────────────────────────────────────
+
+class _WorkflowSummaryBar extends StatelessWidget {
+  final Workflow workflow;
+  final bool isRunning;
+  const _WorkflowSummaryBar({required this.workflow, required this.isRunning});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF16162A) : Colors.white,
+        border: Border(bottom: BorderSide(color: cs.outline.withOpacity(0.12))),
+      ),
+      child: Row(
+        children: [
+          _SummaryChip(
+            icon: Icons.device_hub,
+            label: '${workflow.nodes.length} nodes',
+            color: cs.primary,
+          ),
+          const SizedBox(width: 8),
+          _SummaryChip(
+            icon: Icons.linear_scale,
+            label: '${workflow.connections.length} connections',
+            color: cs.primary,
+          ),
+          const SizedBox(width: 8),
+          _SummaryChip(
+            icon: workflow.isActive
+                ? Icons.check_circle_outline
+                : Icons.pause_circle_outline,
+            label: workflow.isActive ? 'Active' : 'Inactive',
+            color: workflow.isActive
+                ? const Color(0xFF10B981)
+                : cs.onSurface.withOpacity(0.4),
+          ),
+          if (isRunning) ...[
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 1.5, color: Color(0xFF3B82F6)),
+                ),
+                const SizedBox(width: 6),
+                const Text('Running',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF3B82F6),
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _SummaryChip(
+      {required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+// ── Workflow Config Tab ───────────────────────────────────────────────────────
+
+class _WorkflowConfigTab extends StatefulWidget {
+  final Workflow workflow;
+  const _WorkflowConfigTab({required this.workflow});
+
+  @override
+  State<_WorkflowConfigTab> createState() => _WorkflowConfigTabState();
+}
+
+class _WorkflowConfigTabState extends State<_WorkflowConfigTab> {
+  bool useYaml = false;
+
+  Map<String, dynamic> get workflowJson => {
+        'id': widget.workflow.id,
+        'name': widget.workflow.name,
+        'description': widget.workflow.description,
+        'isActive': widget.workflow.isActive,
+        'runCount': widget.workflow.runCount,
+        'nodes': widget.workflow.nodes
+            .map((n) => {
+                  'id': n.id,
+                  'label': n.label,
+                  'type': n.type.name,
+                  'x': n.position.dx,
+                  'y': n.position.dy,
+                  'config': n.config,
+                })
+            .toList(),
+        'connections': widget.workflow.connections
+            .map((c) => {
+                  'id': c.id,
+                  'from': c.fromNodeId,
+                  'to': c.toNodeId,
+                  'type': c.type.name,
+                  'label': c.label,
+                })
+            .toList(),
+      };
+
+  String get jsonContent =>
+      const JsonEncoder.withIndent('  ').convert(workflowJson);
+
+  String get yamlContent => _toYaml(workflowJson, 0);
+
+  String _toYaml(dynamic value, int indent) {
+    final pad = '  ' * indent;
+    if (value is Map) {
+      if (value.isEmpty) return '{}\n';
+      final buf = StringBuffer();
+      for (final entry in value.entries) {
+        final v = entry.value;
+        if (v is Map || v is List) {
+          buf.writeln('$pad${entry.key}:');
+          buf.write(_toYaml(v, indent + 1));
+        } else {
+          buf.writeln('$pad${entry.key}: ${_scalar(v)}');
+        }
+      }
+      return buf.toString();
+    } else if (value is List) {
+      if (value.isEmpty) return '$pad[]\n';
+      final buf = StringBuffer();
+      for (final item in value) {
+        if (item is Map) {
+          // Inline the first key-value pair after the hyphen, then indent the rest.
+          final entries = item.entries.toList();
+          if (entries.isEmpty) {
+            buf.writeln('$pad- {}');
+          } else {
+            final first = entries.first;
+            buf.writeln('$pad- ${first.key}: ${_scalar(first.value)}');
+            final rest = entries.skip(1);
+            final childPad = '  ' * (indent + 1);
+            for (final e in rest) {
+              final v = e.value;
+              if (v is Map || v is List) {
+                buf.writeln('$childPad${e.key}:');
+                buf.write(_toYaml(v, indent + 2));
+              } else {
+                buf.writeln('$childPad${e.key}: ${_scalar(v)}');
+              }
+            }
+          }
+        } else {
+          buf.writeln('$pad- ${_scalar(item)}');
+        }
+      }
+      return buf.toString();
+    }
+    return '$pad${_scalar(value)}\n';
+  }
+
+  // Characters that require quoting in YAML scalars.
+  static final RegExp _yamlSpecial =
+      RegExp('[:{}\x5b\x5d,|>&*!%@`"\x27\\\\]|^[-?]');
+
+  String _scalar(dynamic v) {
+    if (v == null) return 'null';
+    if (v is bool) return v ? 'true' : 'false';
+    if (v is num) return '$v';
+    final s = '$v';
+    if (s.isEmpty ||
+        s.contains('\n') ||
+        s.contains('\r') ||
+        _yamlSpecial.hasMatch(s)) {
+      return '"${s.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';
+    }
+    return s;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final content = useYaml ? yamlContent : jsonContent;
+
+    return Container(
+      color: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F5FF),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                Icon(Icons.data_object, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
+                Text(
+                  useYaml ? 'YAML Config' : 'JSON Config',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700, color: cs.primary),
+                ),
+                const Spacer(),
+                _WfPreviewToggle(
+                    useYaml: useYaml,
+                    onToggle: (v) => setState(() => useYaml = v)),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 16),
+                  tooltip: 'Copy',
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Copied to clipboard'),
+                          duration: Duration(seconds: 1)),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: cs.outline.withOpacity(0.1)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                content,
+                style: const TextStyle(
+                  fontFamily: 'Courier New',
+                  fontFamilyFallback: ['Courier', 'monospace'],
+                  fontSize: 12.5,
+                  height: 1.6,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WfPreviewToggle extends StatelessWidget {
+  final bool useYaml;
+  final ValueChanged<bool> onToggle;
+  const _WfPreviewToggle({required this.useYaml, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _WfToggleChip(
+            label: 'JSON', selected: !useYaml, onTap: () => onToggle(false), cs: cs),
+        const SizedBox(width: 4),
+        _WfToggleChip(
+            label: 'YAML', selected: useYaml, onTap: () => onToggle(true), cs: cs),
+      ],
+    );
+  }
+}
+
+class _WfToggleChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+  const _WfToggleChip(
+      {required this.label,
+      required this.selected,
+      required this.onTap,
+      required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary : cs.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : cs.primary),
+        ),
       ),
     );
   }

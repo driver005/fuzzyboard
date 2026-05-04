@@ -740,8 +740,8 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> with SingleTickerProvid
                 clipBehavior: Clip.none,
                 child: SizedBox(
                   // Large but finite so InteractiveViewer has a reference
-                  // size for its internal coordinate maths.  The infinite
-                  // boundaryMargin means users can pan past these edges.
+                  // size for its internal coordinate maths.  The large
+                  // boundaryMargin allows users to pan well past these edges.
                   width: 100000,
                   height: 100000,
                   child: Stack(

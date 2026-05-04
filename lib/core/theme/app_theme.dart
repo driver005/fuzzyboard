@@ -47,7 +47,7 @@ class AppTheme {
         backgroundColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         elevation: 0,
         scrolledUnderElevation: 2,
-        shadowColor: cs.primary.withOpacity(0.18),
+        shadowColor: cs.primary,
         titleTextStyle: AppTypography.textTheme.titleLarge?.copyWith(
           color: cs.onSurface,
         ),
@@ -56,9 +56,8 @@ class AppTheme {
       // ── Card ──────────────────────────────────────────────────────────
       cardTheme: CardTheme(
         elevation: 4,
-        shadowColor: cs.primary.withOpacity(0.18),
+        shadowColor: cs.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
       ),
       // ── Input ─────────────────────────────────────────────────────────
@@ -87,7 +86,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           elevation: 6,
-          shadowColor: cs.primary.withOpacity(0.45),
+          shadowColor: cs.primary,
         ),
       ),
       // ── OutlinedButton ────────────────────────────────────────────────

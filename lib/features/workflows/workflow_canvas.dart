@@ -730,8 +730,9 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> with SingleTickerProvid
                     },
               child: InteractiveViewer(
                 transformationController: transform,
-                // Unlimited panning in all directions.
-                boundaryMargin: const EdgeInsets.all(double.infinity),
+                // Finite but large boundary so users can pan well beyond the
+                // visible canvas without causing RenderFlex overflow on web.
+                boundaryMargin: const EdgeInsets.all(10000),
                 minScale: 0.1,
                 maxScale: 4.0,
                 // clipBehavior:none lets nodes render outside the SizedBox

@@ -144,39 +144,37 @@ class _WorkflowCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              // Info chips — Expanded so they never push the action buttons off screen
+              // Info chips — Wrap so they break across lines instead of overflowing
               Expanded(
-                child: Row(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     _InfoChip(
                         icon: Icons.play_circle_outline,
                         label: context.l10n.runsCount(workflow.runCount)),
-                    const SizedBox(width: 8),
                     _InfoChip(
                         icon: Icons.device_hub,
                         label: context.l10n.nodesCount(workflow.nodes.length)),
-                    const SizedBox(width: 8),
                     _InfoChip(
                         icon: workflow.isActive ? Icons.check_circle : Icons.pause_circle,
                         label: workflow.isActive ? context.l10n.activeStatus : context.l10n.inactiveStatus,
                         color: workflow.isActive
                             ? const Color(0xFF10B981)
                             : cs.onSurface.withOpacity(0.4)),
-                    if (isRunning) ...[
-                      const SizedBox(width: 8),
+                    if (isRunning)
                       _InfoChip(
                         icon: Icons.radio_button_checked,
                         label: 'Running',
                         color: const Color(0xFF3B82F6),
                       ),
-                    ],
                   ],
                 ),
               ),
               // Action buttons — icon-only keeps the row compact on any screen width
               IconButton(
                 icon: const Icon(Icons.visibility_outlined),
-                tooltip: 'View',
+                tooltip: context.l10n.viewWorkflowButton,
                 onPressed: () => showWorkflowModal(context),
               ),
               IconButton(
@@ -194,7 +192,7 @@ class _WorkflowCard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 color: Colors.red.shade400,
-                tooltip: 'Delete',
+                tooltip: context.l10n.deleteAction,
                 onPressed: isRunning ? null : () => confirmDelete(context),
               ),
             ],

@@ -85,6 +85,7 @@
   "newWorkflowButton": "New Workflow",
   "noWorkflowsYet": "No workflows yet",
   "createFirstWorkflow": "Create your first workflow to get started.",
+  "viewWorkflowButton": "View",
   "editCanvasButton": "Edit Canvas",
   "deleteWorkflowConfirm": "Delete Workflow?",
   "deleteWorkflowMessage": "Are you sure you want to delete \"{name}\"?",

@@ -58,6 +58,7 @@ class AppTheme {
         elevation: 4,
         shadowColor: cs.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
       ),
       // ── Input ─────────────────────────────────────────────────────────

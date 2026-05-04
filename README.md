@@ -26,7 +26,7 @@ A **responsive** workflow engine dashboard built with Flutter. Runs on smartphon
 
 ### Prerequisites
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) ≥ 3.27
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) ≥ 3.22
 
 ### Install & Run
 
@@ -80,25 +80,34 @@ Shared UI components live in **`lib/shared/widgets/`**:
 ```
 lib/
 ├── main.dart                    # Entry point
-├── app.dart                     # Root MaterialApp.router
+├── app.dart                     # Root MaterialApp.router + MultiProvider
 ├── core/
-│   ├── theme/                   # ← Design system tokens
-│   ├── providers/               # ThemeProvider + AppProvider
-│   └── routing/                 # go_router config
+│   ├── theme/                   # Design-system tokens
+│   ├── providers/               # All ChangeNotifier providers
+│   └── routing/                 # go_router config + auth guards
 ├── shared/
 │   ├── widgets/                 # Shared UI components
-│   └── layout/                  # ResponsiveLayout utilities
-├── models/                      # Task, Workflow, Plugin data models
+│   └── layout/                  # Responsive-layout utilities
+├── models/                      # Task, Workflow, Plugin, CMS data models
+├── data/                        # Seed / demo data builders
+├── adapters/                    # Abstract adapter interfaces (Task, Workflow, Plugin, …)
 └── features/
-    ├── dashboard/               # Dashboard with stats & charts
-    ├── tasks/                   # Task CRUD with status lanes
-    ├── workflows/               # Workflow list + visual canvas
-    ├── settings/                # Theme + engine settings
-    ├── dev_mode/                # Logs, state inspector, test runner
-    ├── plugins/                 # Installed plugins manager
+    ├── auth/                    # Login screen + auth guards
+    ├── dashboard/               # Stats, charts, welcome banner
+    ├── tasks/                   # Task CRUD + run history
+    ├── workflows/               # Workflow list + infinite canvas editor
+    ├── plugins/                 # Plugin manager
     ├── marketplace/             # Plugin discovery
     ├── sql_builder/             # Visual SQL query builder
-    └── lua_builder/             # Visual Lua boolean expression builder
+    ├── lua_builder/             # Visual Lua boolean-expression builder
+    ├── cms/                     # CMS (types, entries, media, pages, categories)
+    ├── chat/                    # Chat panel
+    ├── voice/                   # Voice-command panel
+    ├── page_builder/            # Page builder
+    ├── config/                  # Configuration
+    ├── search/                  # Search
+    ├── settings/                # Theme + engine settings
+    └── dev_mode/                # Logs, state inspector, test runner
 ```
 
 ---
@@ -124,7 +133,7 @@ Or use the **Settings page** at runtime to pick any color.
 Open `lib/core/theme/app_typography.dart` and swap the font family:
 
 ```dart
-// Replace GoogleFonts.interTextTheme with any other Google Font:
+// Replace GoogleFonts.nunitoTextTheme with any other Google Font:
 static TextTheme get textTheme => GoogleFonts.poppinsTextTheme(...);
 ```
 

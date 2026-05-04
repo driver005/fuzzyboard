@@ -144,43 +144,42 @@ class _WorkflowCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoChip(
-                  icon: Icons.play_circle_outline,
-                  label: context.l10n.runsCount(workflow.runCount)),
-              const SizedBox(width: 8),
-              _InfoChip(
-                  icon: Icons.device_hub,
-                  label: context.l10n.nodesCount(workflow.nodes.length)),
-              const SizedBox(width: 8),
-              _InfoChip(
-                  icon: workflow.isActive ? Icons.check_circle : Icons.pause_circle,
-                  label: workflow.isActive ? context.l10n.activeStatus : context.l10n.inactiveStatus,
-                  color: workflow.isActive
-                      ? const Color(0xFF10B981)
-                      : cs.onSurface.withOpacity(0.4)),
-              if (isRunning) ...[
-                const SizedBox(width: 8),
-                _InfoChip(
-                  icon: Icons.radio_button_checked,
-                  label: 'Running',
-                  color: const Color(0xFF3B82F6),
+              // Info chips — Wrap so they break across lines instead of overflowing
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _InfoChip(
+                        icon: Icons.play_circle_outline,
+                        label: context.l10n.runsCount(workflow.runCount)),
+                    _InfoChip(
+                        icon: Icons.device_hub,
+                        label: context.l10n.nodesCount(workflow.nodes.length)),
+                    _InfoChip(
+                        icon: workflow.isActive ? Icons.check_circle : Icons.pause_circle,
+                        label: workflow.isActive ? context.l10n.activeStatus : context.l10n.inactiveStatus,
+                        color: workflow.isActive
+                            ? const Color(0xFF10B981)
+                            : cs.onSurface.withOpacity(0.4)),
+                    if (isRunning)
+                      _InfoChip(
+                        icon: Icons.radio_button_checked,
+                        label: context.l10n.runningStatus,
+                        color: const Color(0xFF3B82F6),
+                      ),
+                  ],
                 ),
-              ],
-              const Spacer(),
-              // View execution state
-              AppButton(
-                label: 'View',
+              ),
+              // Action buttons — icon-only keeps the row compact on any screen width
+              IconButton(
                 icon: const Icon(Icons.visibility_outlined),
-                variant: AppButtonVariant.outline,
-                size: AppButtonSize.sm,
+                tooltip: context.l10n.viewWorkflowButton,
                 onPressed: () => showWorkflowModal(context),
               ),
-              const SizedBox(width: 8),
-              AppButton(
-                label: context.l10n.editCanvasButton,
-                icon: const Icon(Icons.edit),
-                variant: isRunning ? AppButtonVariant.ghost : AppButtonVariant.outline,
-                size: AppButtonSize.sm,
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: context.l10n.editCanvasButton,
                 onPressed: isRunning
                     ? null
                     : () => Navigator.of(context).push(
@@ -190,10 +189,10 @@ class _WorkflowCard extends StatelessWidget {
                           ),
                         ),
               ),
-              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 color: Colors.red.shade400,
+                tooltip: context.l10n.deleteAction,
                 onPressed: isRunning ? null : () => confirmDelete(context),
               ),
             ],

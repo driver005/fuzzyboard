@@ -283,21 +283,18 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
                     onTap: () =>
                         setState(() => group.negated = !group.negated)),
                 const Spacer(),
-                AppButton(
-                  label: 'Add Condition',
-                  icon: const Icon(Icons.add),
-                  size: AppButtonSize.sm,
-                  variant: AppButtonVariant.outline,
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  tooltip: 'Add Condition',
+                  visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() {
                     group.children.add(_ConditionNode());
                   }),
                 ),
-                const SizedBox(width: 6),
-                AppButton(
-                  label: 'Add Group',
+                IconButton(
                   icon: const Icon(Icons.account_tree_outlined),
-                  size: AppButtonSize.sm,
-                  variant: AppButtonVariant.ghost,
+                  tooltip: 'Add Group',
+                  visualDensity: VisualDensity.compact,
                   onPressed: () => setState(() {
                     group.children.add(_GroupNode(op: 'and'));
                   }),

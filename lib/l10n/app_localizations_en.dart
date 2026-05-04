@@ -209,6 +209,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create your first workflow to get started.';
 
   @override
+  String get viewWorkflowButton => 'View';
+
+  @override
   String get editCanvasButton => 'Edit Canvas';
 
   @override
@@ -234,6 +237,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inactiveStatus => 'Inactive';
+
+  @override
+  String get runningStatus => 'Running';
 
   @override
   String get canvasWorkflowGuideTitle => 'Workflow Builder Guide';

@@ -592,9 +592,12 @@ class _TaskViewModalState extends State<_TaskViewModal> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    task.name,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  Flexible(
+                    child: Text(
+                      task.name,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   _StatusBadgeTask(status: task.status),

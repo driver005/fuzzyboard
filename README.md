@@ -1,24 +1,29 @@
 # FuzzyBoard 🤖
 
-A **responsive** workflow engine dashboard built with Flutter. Runs on smartphone, tablet, laptop, and web.
+**FuzzyBoard** is a full-featured, responsive workflow-automation dashboard built entirely with Flutter. It runs seamlessly on smartphone, tablet, laptop, and web — one codebase, every screen size.
+
+The project is designed as a self-contained showcase of Flutter best practices: a rich component library, reactive state management, adaptive layouts, animated UI, gamification, and a growing set of developer-focused tools.
 
 ---
 
-## ✨ Features
+## ✨ Feature Overview
 
 | Feature | Description |
 |---|---|
-| 🗂️ **Task Management** | Define, track and manage tasks with priorities, statuses, and tags |
-| 🔄 **Workflow Visual Builder** | Drag-and-drop canvas to create workflow graphs with nodes and connections |
-| 🔌 **Plugin System** | Manage installed plugins, toggle activation, and view metadata |
-| 🛍️ **Plugin Marketplace** | Discover and install community plugins by category |
-| 🗄️ **SQL Visual Builder** | Build SQL queries visually – SELECT, WHERE, ORDER BY, LIMIT |
-| 🌙 **Lua Expression Builder** | Compose simple boolean Lua expressions visually with AND/OR/NOT groups |
-| ⚙️ **Settings** | Toggle theme mode (Light / Dark / System), change accent color, and tweak engine settings |
-| 👾 **Dev Mode** | View logs, inspect app state as JSON, and run simulated tests |
-| 🎨 **Design System** | Centralized `AppButton`, `AppInput`, `AppCard` widgets – swap once, re-skin everywhere |
-| 🤖 **Avatar Mascot** | A 3D-style emoji avatar that reacts to app events with animations |
-| 📊 **Dashboard** | Welcome banner, stat cards, task status pie chart, workflow runs line chart |
+| 📊 **Dashboard** | Welcome banner, live stat cards, task-status pie chart, workflow-run line chart, and a leaderboard |
+| 🗂️ **Task Management** | Create, edit, delete and run tasks with priorities, statuses, tags, and a full execution history |
+| 🔄 **Workflow Visual Builder** | Drag-and-drop infinite canvas — add, connect, and configure trigger/action/condition/delay/script nodes |
+| 🔌 **Plugin System** | Manage installed plugins, toggle activation, configure per-plugin settings, and browse the plugin README |
+| 🛍️ **Plugin Marketplace** | Discover community plugins by category, install with one tap |
+| 🗄️ **SQL Visual Builder** | Build SQL queries point-and-click — FROM table, SELECT columns, WHERE clauses, ORDER BY, LIMIT; live preview |
+| 🌙 **Lua Expression Builder** | Compose boolean Lua expressions visually with nested AND/OR/NOT groups; generates a runnable Lua script live |
+| 📝 **CMS** | Content types, entries, media library, pages, and category management |
+| ⚙️ **Settings** | Toggle Light / Dark / System theme, pick any accent color, manage engine options (avatar, motion, logging, auto-save) |
+| 👾 **Dev Mode** | Live event log, JSON state inspector, simulated test runner, and XP/level gamification stats |
+| 🎤 **Voice Commands** | Simulated voice-command panel with a scrollable command reference |
+| 🎮 **Gamification** | XP, levels, streaks, and tasks-completed counter — all persisted across sessions |
+| 🤖 **Avatar Mascot** | Animated 3D-style emoji that reacts to in-app events |
+| 🔐 **Auth Flow** | Role-based auth skeleton (admin / user) with a login screen and redirect guards |
 
 ---
 
@@ -26,7 +31,7 @@ A **responsive** workflow engine dashboard built with Flutter. Runs on smartphon
 
 ### Prerequisites
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) ≥ 3.27
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) ≥ 3.22
 
 ### Install & Run
 
@@ -34,15 +39,16 @@ A **responsive** workflow engine dashboard built with Flutter. Runs on smartphon
 flutter pub get
 flutter run -d chrome          # Web
 flutter run -d macos           # Desktop (macOS)
-flutter run                    # Default device
+flutter run                    # Default connected device
 ```
 
 ### Build
 
 ```bash
-flutter build web              # Web
+flutter build web              # Web (PWA-ready)
 flutter build apk              # Android
 flutter build ios              # iOS
+flutter build macos            # macOS
 ```
 
 ### Tests
@@ -53,25 +59,78 @@ flutter test
 
 ---
 
-## 🎨 Theming & Design System
+## 🏗️ Architecture
 
-The entire visual identity is controlled from **`lib/core/theme/`**:
+FuzzyBoard follows a **Provider + GoRouter** architecture:
+
+```
+User action
+  → Widget calls Provider method
+    → Provider mutates state & calls notifyListeners()
+      → Dependent widgets rebuild
+```
+
+| Layer | Location | Purpose |
+|---|---|---|
+| **Models** | `lib/models/` | Plain Dart data classes (Task, Workflow, Plugin, …) |
+| **Providers** | `lib/core/providers/` | State containers (AppProvider, ThemeProvider, GamificationProvider, …) |
+| **Routing** | `lib/core/routing/` | `GoRouter` config with auth redirect guards |
+| **Shell** | `lib/shared/widgets/` | `AppSidebar`, `AppBottomNav`, `_AppHeader` — responsive nav chrome |
+| **Features** | `lib/features/` | One folder per page/feature, self-contained StatefulWidgets |
+| **Design System** | `lib/shared/widgets/` + `lib/core/theme/` | Tokens, typography, and shared UI atoms |
+
+### Key Providers
+
+| Provider | Responsibility |
+|---|---|
+| `AppProvider` | Tasks, workflows, plugins, chat, voice commands, event bus, logs |
+| `ThemeProvider` | Theme mode + accent color; persisted in SharedPreferences |
+| `GamificationProvider` | XP / level / streak / tasks-completed; persisted in SharedPreferences |
+| `UserProvider` | Auth roles (admin / user) |
+| `CmsProvider` | CMS content types, entries, media, pages, categories |
+
+---
+
+## 🎨 Design System
+
+All visual tokens live in **`lib/core/theme/`**:
 
 | File | Purpose |
 |---|---|
-| `app_colors.dart` | All brand and semantic colors |
-| `app_typography.dart` | All text styles (swap Google Font here) |
-| `app_theme.dart` | `ThemeData` factory – change seed color or any token here |
+| `app_colors.dart` | Brand and semantic color constants |
+| `app_typography.dart` | Text styles — swap the Google Font in one place |
+| `app_theme.dart` | `ThemeData` factory; change the seed color to re-skin the whole app |
 
-Shared UI components live in **`lib/shared/widgets/`**:
+Shared UI atoms live in **`lib/shared/widgets/`**:
 
 | Widget | Description |
 |---|---|
-| `AppButton` | Unified button with `primary`, `secondary`, `outline`, `ghost`, `danger` variants |
-| `AppInput` / `AppSelect` | Unified text field and dropdown |
-| `AppCard` / `StatCard` | Card with optional header, footer, and actions |
-| `AppSidebar` / `AppBottomNav` | Responsive navigation |
-| `AvatarWidget` | 3D-style emoji mascot with event reactions |
+| `AppButton` | Unified button — `primary`, `secondary`, `outline`, `ghost`, `danger` variants with bounce animation |
+| `AppInput` / `AppSelect` | Styled text field and dropdown |
+| `AppCard` / `StatCard` | Card with optional header, actions, and footer |
+| `AppSidebar` / `AppBottomNav` | Responsive navigation (sidebar on tablet+, bottom nav on mobile) |
+| `BounceOnTap` | Spring-scale press animation wrapper |
+| `TutorialBanner` | Collapsible step-by-step guide banner |
+| `AvatarWidget` | 3D-style emoji mascot with event-driven animations |
+
+### Changing the Accent Color
+
+Open `lib/core/theme/app_colors.dart` and update `brandPrimary`:
+
+```dart
+static const Color brandPrimary = Color(0xFF6C63FF); // ← swap any hex here
+```
+
+Or use the **Settings page** at runtime to pick any color with the color picker.
+
+### Changing the Font
+
+Open `lib/core/theme/app_typography.dart` and swap the font family:
+
+```dart
+// Replace with any GoogleFonts family:
+static TextTheme get textTheme => GoogleFonts.poppinsTextTheme(...);
+```
 
 ---
 
@@ -80,53 +139,47 @@ Shared UI components live in **`lib/shared/widgets/`**:
 ```
 lib/
 ├── main.dart                    # Entry point
-├── app.dart                     # Root MaterialApp.router
+├── app.dart                     # Root MaterialApp.router + MultiProvider
 ├── core/
-│   ├── theme/                   # ← Design system tokens
-│   ├── providers/               # ThemeProvider + AppProvider
-│   └── routing/                 # go_router config
+│   ├── theme/                   # Design-system tokens
+│   ├── providers/               # All ChangeNotifier providers
+│   └── routing/                 # go_router config + auth guards
 ├── shared/
 │   ├── widgets/                 # Shared UI components
-│   └── layout/                  # ResponsiveLayout utilities
-├── models/                      # Task, Workflow, Plugin data models
+│   └── layout/                  # Responsive-layout utilities
+├── models/                      # Task, Workflow, Plugin, CMS data models
+├── data/                        # Seed / demo data builders
+├── adapters/                    # Abstract adapter interfaces (Task, Workflow, Plugin, …)
 └── features/
-    ├── dashboard/               # Dashboard with stats & charts
-    ├── tasks/                   # Task CRUD with status lanes
-    ├── workflows/               # Workflow list + visual canvas
-    ├── settings/                # Theme + engine settings
-    ├── dev_mode/                # Logs, state inspector, test runner
-    ├── plugins/                 # Installed plugins manager
+    ├── dashboard/               # Stats, charts, welcome banner
+    ├── tasks/                   # Task CRUD + run history
+    ├── workflows/               # Workflow list + infinite canvas editor
+    ├── plugins/                 # Plugin manager
     ├── marketplace/             # Plugin discovery
     ├── sql_builder/             # Visual SQL query builder
-    └── lua_builder/             # Visual Lua boolean expression builder
+    ├── lua_builder/             # Visual Lua boolean-expression builder
+    ├── cms/                     # CMS (types, entries, media, pages, categories)
+    ├── settings/                # Theme + engine settings
+    └── dev_mode/                # Logs, state inspector, test runner
 ```
 
 ---
 
-## 🧩 Adding a New Page
+## 🧩 Extending FuzzyBoard
+
+### Adding a New Page
 
 1. Create `lib/features/<name>/<name>_page.dart`
 2. Add a `GoRoute` to `lib/core/routing/app_router.dart`
 3. Add a `_NavItem` entry to `lib/shared/widgets/sidebar.dart`
 
-## 🎨 Changing the Accent Color
+### Adding a New Plugin
 
-Open `lib/core/theme/app_colors.dart` and update `brandPrimary`:
+Seed data lives in `lib/data/seed_data.dart`. Add a new `Plugin(...)` entry in `buildSeedPlugins()`. The plugin appears automatically in the Plugin Manager and Marketplace.
 
-```dart
-static const Color brandPrimary = Color(0xFF6C63FF); // ← change this
-```
+### Implementing Real Adapters
 
-Or use the **Settings page** at runtime to pick any color.
-
-## 🔤 Changing the Font
-
-Open `lib/core/theme/app_typography.dart` and swap the font family:
-
-```dart
-// Replace GoogleFonts.interTextTheme with any other Google Font:
-static TextTheme get textTheme => GoogleFonts.poppinsTextTheme(...);
-```
+Abstract adapter interfaces are in `lib/adapters/adapters.dart`. Replace the in-memory stubs (`example/adapters/in_memory_adapter.dart`) with real network or database implementations.
 
 ---
 
@@ -134,17 +187,18 @@ static TextTheme get textTheme => GoogleFonts.poppinsTextTheme(...);
 
 | Package | Purpose |
 |---|---|
-| `go_router` | Declarative routing |
-| `provider` | State management |
-| `fl_chart` | Dashboard charts |
-| `flutter_animate` | Page/widget animations |
-| `google_fonts` | Typography |
-| `flutter_colorpicker` | Theme color picker |
-| `shared_preferences` | Persist theme settings |
-| `uuid` | Unique IDs for models |
+| `go_router` | Declarative URL-based routing with shell routes and auth guards |
+| `provider` | Lightweight reactive state management |
+| `fl_chart` | Pie and line charts on the dashboard |
+| `flutter_animate` | Declarative widget animations |
+| `google_fonts` | Typography (Inter by default) |
+| `flutter_colorpicker` | Runtime accent-color picker in Settings |
+| `shared_preferences` | Persist theme, gamification, and settings across sessions |
+| `uuid` | Unique IDs for all model instances |
 
 ---
 
 ## License
 
 MIT
+

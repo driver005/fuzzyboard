@@ -1702,8 +1702,25 @@ class _WorkflowConfigTabState extends State<_WorkflowConfigTab> {
       final buf = StringBuffer();
       for (final item in value) {
         if (item is Map) {
-          buf.writeln('$pad-');
-          buf.write(_toYaml(item, indent + 1));
+          // Inline the first key-value pair after the hyphen, then indent the rest.
+          final entries = item.entries.toList();
+          if (entries.isEmpty) {
+            buf.writeln('$pad- {}');
+          } else {
+            final first = entries.first;
+            buf.writeln('$pad- ${first.key}: ${_scalar(first.value)}');
+            final rest = entries.skip(1);
+            final childPad = '  ' * (indent + 1);
+            for (final e in rest) {
+              final v = e.value;
+              if (v is Map || v is List) {
+                buf.writeln('$childPad${e.key}:');
+                buf.write(_toYaml(v, indent + 2));
+              } else {
+                buf.writeln('$childPad${e.key}: ${_scalar(v)}');
+              }
+            }
+          }
         } else {
           buf.writeln('$pad- ${_scalar(item)}');
         }
@@ -1713,12 +1730,21 @@ class _WorkflowConfigTabState extends State<_WorkflowConfigTab> {
     return '$pad${_scalar(value)}\n';
   }
 
+  // Characters that require quoting in YAML scalars.
+  static final RegExp _yamlSpecial =
+      RegExp('[:{}\x5b\x5d,|>&*!%@`"\x27\\\\]|^[-?]');
+
   String _scalar(dynamic v) {
     if (v == null) return 'null';
     if (v is bool) return v ? 'true' : 'false';
     if (v is num) return '$v';
     final s = '$v';
-    if (s.isEmpty || s.contains(':') || s.contains('#')) return '"$s"';
+    if (s.isEmpty ||
+        s.contains('\n') ||
+        s.contains('\r') ||
+        _yamlSpecial.hasMatch(s)) {
+      return '"${s.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';
+    }
     return s;
   }
 
@@ -1771,7 +1797,8 @@ class _WorkflowConfigTabState extends State<_WorkflowConfigTab> {
               child: SelectableText(
                 content,
                 style: const TextStyle(
-                  fontFamily: 'monospace',
+                  fontFamily: 'Courier New',
+                  fontFamilyFallback: ['Courier', 'monospace'],
                   fontSize: 12.5,
                   height: 1.6,
                   color: Color(0xFF10B981),

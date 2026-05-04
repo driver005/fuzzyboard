@@ -32,22 +32,22 @@ class AppTheme {
   }
 
   static ThemeData _build(ColorScheme cs) {
+    final isLight = cs.brightness == Brightness.light;
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: cs,
       textTheme: AppTypography.textTheme,
-      scaffoldBackgroundColor: cs.brightness == Brightness.light
-          ? AppColors.backgroundLight
-          : AppColors.backgroundDark,
+      scaffoldBackgroundColor:
+          isLight ? AppColors.backgroundLight : AppColors.backgroundDark,
     );
 
     return base.copyWith(
       // ── AppBar ─────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor:
-            cs.brightness == Brightness.light ? AppColors.surfaceLight : AppColors.surfaceDark,
+        backgroundColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 2,
+        shadowColor: cs.primary.withOpacity(0.18),
         titleTextStyle: AppTypography.textTheme.titleLarge?.copyWith(
           color: cs.onSurface,
         ),
@@ -55,55 +55,53 @@ class AppTheme {
       ),
       // ── Card ──────────────────────────────────────────────────────────
       cardTheme: CardTheme(
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: cs.brightness == Brightness.light
-            ? AppColors.surfaceLight
-            : AppColors.surfaceDark,
+        elevation: 4,
+        shadowColor: cs.primary.withOpacity(0.18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
       ),
       // ── Input ─────────────────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cs.brightness == Brightness.light
-            ? AppColors.neutral100
-            : AppColors.neutral800,
+        fillColor: isLight ? AppColors.neutral100 : AppColors.neutral800,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: cs.primary, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: cs.primary, width: 2.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
       // ── ElevatedButton ────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          elevation: 6,
+          shadowColor: cs.primary.withOpacity(0.45),
         ),
       ),
       // ── OutlinedButton ────────────────────────────────────────────────
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: cs.primary,
-          side: BorderSide(color: cs.primary),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          side: BorderSide(color: cs.primary, width: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         ),
       ),
       // ── Chip ──────────────────────────────────────────────────────────
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide.none,
       ),
       // ── Divider ───────────────────────────────────────────────────────
@@ -111,7 +109,7 @@ class AppTheme {
       // ── ListTile ──────────────────────────────────────────────────────
       listTileTheme: const ListTileThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
     );

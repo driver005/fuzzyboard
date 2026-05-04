@@ -478,6 +478,12 @@ abstract class AppLocalizations {
   /// **'Create your first workflow to get started.'**
   String get createFirstWorkflow;
 
+  /// No description provided for @viewWorkflowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewWorkflowButton;
+
   /// No description provided for @editCanvasButton.
   ///
   /// In en, this message translates to:

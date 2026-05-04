@@ -181,6 +181,7 @@ class _SqlBuilderPageState extends State<SqlBuilderPage> {
             label: context.l10n.saveAsTaskButton,
             icon: const Icon(Icons.add_task),
             size: AppButtonSize.sm,
+            variant: AppButtonVariant.secondary,
             onPressed: () => show_save_as_task_dialog(context),
           ),
           const SizedBox(width: 12),

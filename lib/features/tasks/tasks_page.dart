@@ -598,7 +598,6 @@ class _TaskViewModalState extends State<_TaskViewModal> {
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      softWrap: false,
                     ),
                   ),
                   const SizedBox(width: 10),

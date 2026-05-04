@@ -108,6 +108,7 @@
   },
   "activeStatus": "Active",
   "inactiveStatus": "Inactive",
+  "runningStatus": "Running",
 
   "canvasWorkflowGuideTitle": "Workflow Builder Guide",
   "addingNodesSection": "Adding Nodes",

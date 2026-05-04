@@ -138,7 +138,6 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             label: context.l10n.luaSaveAsTask,
             icon: const Icon(Icons.add_task),
             size: AppButtonSize.sm,
-            variant: AppButtonVariant.secondary,
             onPressed: () => show_save_as_task_dialog(context),
           ),
           const SizedBox(width: 12),
@@ -395,9 +394,9 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             ),
           ),
         ),
-        // Cheat sheet — extra bottom padding so the card shadow isn't clipped
+        // Cheat sheet
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.all(16),
           child: AppCard(
             title: '📖 Lua Cheatsheet',
             child: _LuaCheatsheet(),

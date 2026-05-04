@@ -526,6 +526,12 @@ abstract class AppLocalizations {
   /// **'Inactive'**
   String get inactiveStatus;
 
+  /// No description provided for @runningStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get runningStatus;
+
   /// No description provided for @canvasWorkflowGuideTitle.
   ///
   /// In en, this message translates to:

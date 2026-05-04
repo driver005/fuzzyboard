@@ -165,7 +165,7 @@ class _WorkflowCard extends StatelessWidget {
                     if (isRunning)
                       _InfoChip(
                         icon: Icons.radio_button_checked,
-                        label: 'Running',
+                        label: context.l10n.runningStatus,
                         color: const Color(0xFF3B82F6),
                       ),
                   ],

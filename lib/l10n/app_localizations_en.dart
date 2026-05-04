@@ -239,6 +239,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inactiveStatus => 'Inactive';
 
   @override
+  String get runningStatus => 'Running';
+
+  @override
   String get canvasWorkflowGuideTitle => 'Workflow Builder Guide';
 
   @override

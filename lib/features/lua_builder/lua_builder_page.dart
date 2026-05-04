@@ -138,7 +138,6 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             label: context.l10n.luaSaveAsTask,
             icon: const Icon(Icons.add_task),
             size: AppButtonSize.sm,
-            variant: AppButtonVariant.secondary,
             onPressed: () => show_save_as_task_dialog(context),
           ),
           const SizedBox(width: 12),
@@ -284,18 +283,21 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
                     onTap: () =>
                         setState(() => group.negated = !group.negated)),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  tooltip: 'Add Condition',
-                  visualDensity: VisualDensity.compact,
+                AppButton(
+                  label: 'Add Condition',
+                  icon: const Icon(Icons.add),
+                  size: AppButtonSize.sm,
+                  variant: AppButtonVariant.outline,
                   onPressed: () => setState(() {
                     group.children.add(_ConditionNode());
                   }),
                 ),
-                IconButton(
+                const SizedBox(width: 6),
+                AppButton(
+                  label: 'Add Group',
                   icon: const Icon(Icons.account_tree_outlined),
-                  tooltip: 'Add Group',
-                  visualDensity: VisualDensity.compact,
+                  size: AppButtonSize.sm,
+                  variant: AppButtonVariant.ghost,
                   onPressed: () => setState(() {
                     group.children.add(_GroupNode(op: 'and'));
                   }),
@@ -395,9 +397,9 @@ class _LuaBuilderPageState extends State<LuaBuilderPage> {
             ),
           ),
         ),
-        // Cheat sheet — extra bottom padding so the card shadow isn't clipped
+        // Cheat sheet
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.all(16),
           child: AppCard(
             title: '📖 Lua Cheatsheet',
             child: _LuaCheatsheet(),

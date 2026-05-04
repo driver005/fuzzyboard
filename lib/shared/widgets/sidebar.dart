@@ -5,6 +5,8 @@ import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../extensions/extension_manifest.dart';
+import '../../extensions/extension_registry.dart';
 import 'bounce_widget.dart';
 
 const double _sidebarWidth = 240;
@@ -54,7 +56,8 @@ class _SectionHeader extends _SidebarEntry {
 // ── Data tab nav items ────────────────────────────────────────────────────────
 List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
   final l10n = context.l10n;
-  return [
+  final extensions = context.read<ExtensionRegistry>();
+  final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarDashboard,
       icon: Icons.dashboard_outlined,
@@ -122,12 +125,28 @@ List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
       route: '/settings',
     ),
   ];
+
+  // Append extension-contributed data-tab items.
+  for (final item in extensions.navItems) {
+    if (item.tab == ExtensionTab.data) {
+      base.add(_NavItem(
+        label: item.label,
+        icon: item.icon,
+        activeIcon: item.activeIcon,
+        route: item.route,
+        isSubItem: item.isSubItem,
+      ));
+    }
+  }
+
+  return base;
 }
 
 // ── Pages tab nav items ───────────────────────────────────────────────────────
 List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
   final l10n = context.l10n;
-  return [
+  final extensions = context.read<ExtensionRegistry>();
+  final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarPageBuilder,
       icon: Icons.dashboard_customize_outlined,
@@ -178,6 +197,21 @@ List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
       isSubItem: true,
     ),
   ];
+
+  // Append extension-contributed pages-tab items.
+  for (final item in extensions.navItems) {
+    if (item.tab == ExtensionTab.pages) {
+      base.add(_NavItem(
+        label: item.label,
+        icon: item.icon,
+        activeIcon: item.activeIcon,
+        route: item.route,
+        isSubItem: item.isSubItem,
+      ));
+    }
+  }
+
+  return base;
 }
 
 /// Desktop / tablet sidebar

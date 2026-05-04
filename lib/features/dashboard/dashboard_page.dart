@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../extensions/extension_zone.dart';
 import '../../models/task_run.dart';
 import '../../models/workflow.dart';
 import '../../shared/layout/responsive_layout.dart';
@@ -48,6 +49,8 @@ class DashboardPage extends StatelessWidget {
         children: [
           const SpaceXpBar(),
           const SizedBox(height: 16),
+          // [extension zone] banner area — plugins can add header banners here
+          const ExtensionZone(id: 'dashboard.header_end'),
           _WelcomeBanner(isAdmin: userProvider.isAdmin),
           const SizedBox(height: 20),
           // Stat cards
@@ -92,6 +95,8 @@ class DashboardPage extends StatelessWidget {
               ),
             ].map((c) => c.animate().fadeIn(delay: 100.ms).slideY(begin: 0.2)).toList(),
           ),
+          // [extension zone] extra stat cards from plugins
+          const ExtensionZone(id: 'dashboard.stats_section'),
           const SizedBox(height: 24),
           // Charts row
           ResponsiveGrid(
@@ -108,6 +113,8 @@ class DashboardPage extends StatelessWidget {
           const SizedBox(height: 24),
           // Recent activity
           _RecentActivity(logs: app.logs),
+          // [extension zone] footer — plugins can add summary widgets here
+          const ExtensionZone(id: 'dashboard.footer'),
         ],
       ),
     );

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../extensions/extension_manifest.dart';
+import '../../extensions/extension_registry.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/signup_page.dart';
 import '../../features/config/config_graph_page.dart';
@@ -30,7 +32,7 @@ import '../../shared/widgets/sidebar.dart';
 import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/avatar_widget.dart';
 
-GoRouter createRouter(AuthProvider auth) {
+GoRouter createRouter(AuthProvider auth, ExtensionRegistry extensions) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: auth,
@@ -75,6 +77,8 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(path: '/dev', builder: (_, __) => const DevModePage()),
           GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
           GoRoute(path: '/config', builder: (_, __) => const ConfigGraphPage()),
+          // Extension-contributed routes are appended here.
+          ...extensions.extraRoutes,
         ],
       ),
     ],
@@ -82,9 +86,20 @@ GoRouter createRouter(AuthProvider auth) {
 }
 
 /// Determine the active header tab based on the current route.
-AppHeaderTab _tabFromRoute(String loc) {
+/// Extension-contributed routes are checked via their [ExtensionTab] affinity.
+AppHeaderTab _tabFromRoute(String loc, ExtensionRegistry extensions) {
   if (loc.startsWith('/cms') || loc == '/builder') {
     return AppHeaderTab.pages;
+  }
+  // Check extension routes
+  for (final manifest in extensions.manifests.values) {
+    for (final r in manifest.routes) {
+      if (loc == r.path || (r.path != '/' && loc.startsWith(r.path))) {
+        return r.tab == ExtensionTab.pages
+            ? AppHeaderTab.pages
+            : AppHeaderTab.data;
+      }
+    }
   }
   return AppHeaderTab.data;
 }
@@ -98,8 +113,9 @@ class _AppShell extends StatelessWidget {
     final mobile = isMobile(context);
     final desktop = isDesktop(context);
     final themeProvider = context.watch<ThemeProvider>();
+    final extensions = context.watch<ExtensionRegistry>();
     final loc = GoRouterState.of(context).uri.toString();
-    final currentTab = _tabFromRoute(loc);
+    final currentTab = _tabFromRoute(loc, extensions);
 
     return Scaffold(
       appBar: _AppHeader(currentTab: currentTab),

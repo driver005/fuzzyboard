@@ -40,7 +40,7 @@ class _ConfigGraphWidgetState extends State<ConfigGraphWidget> {
           (p) => p?.id == id,
           orElse: () => null,
         );
-        if (plugin != null) {
+        if (plugin != null && plugin.isInstalled) {
           showDialog(
             context: context,
             useSafeArea: false,
@@ -222,7 +222,7 @@ class _GraphPanelState extends State<_GraphPanel> with TickerProviderStateMixin 
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
-    pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+    pulseAnimation = Tween<double>(begin: 0.97, end: 1.03).animate(
       CurvedAnimation(parent: pulseController, curve: Curves.easeInOut),
     );
   }
@@ -237,9 +237,9 @@ class _GraphPanelState extends State<_GraphPanel> with TickerProviderStateMixin 
   void _maybeCenterCanvas(BoxConstraints constraints) {
     if (!didInit && constraints.maxWidth > 0 && constraints.maxHeight > 0) {
       didInit = true;
-      const cs = _GraphPanel.canvasSize;
-      final dx = (constraints.maxWidth - cs) / 2;
-      final dy = (constraints.maxHeight - cs) / 2;
+      const canvasSize = _GraphPanel.canvasSize;
+      final dx = (constraints.maxWidth - canvasSize) / 2;
+      final dy = (constraints.maxHeight - canvasSize) / 2;
       transformController.value = Matrix4.translationValues(dx, dy, 0);
     }
   }
@@ -372,7 +372,7 @@ class _GraphPanelState extends State<_GraphPanel> with TickerProviderStateMixin 
           animation: pulseAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: isSelected ? 1.1 : pulseAnimation.value * 0.06 + 0.97,
+              scale: isSelected ? 1.1 : pulseAnimation.value,
               child: child,
             );
           },

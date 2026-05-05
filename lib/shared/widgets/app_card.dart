@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import 'bounce_widget.dart';
 
 /// App-wide card widget with optional header, footer, and actions.
@@ -35,6 +36,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
     final effectiveColor = color ?? theme.cardTheme.color ?? cs.surface;
 
     Widget card = SizedBox(
@@ -43,17 +45,15 @@ class AppCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: effectiveColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: cs.primary.withOpacity(0.10),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: isDark ? AppColors.cardBorderDark : AppColors.cardBorderLight,
+            width: AppBorderWidth.thin,
+          ),
+          boxShadow: AppGlow.card(cs.primary),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Material(
             color: Colors.transparent,
             child: Column(
@@ -96,7 +96,10 @@ class AppCard extends StatelessWidget {
                       child: child,
                     ),
                   if (footer != null) ...[
-                    Divider(height: 1, color: cs.outline.withOpacity(0.2)),
+                    Divider(
+                      height: 1,
+                      color: AppColors.borderSubtle(isDark),
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: footer!,
@@ -155,14 +158,8 @@ class StatCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: iconColor.withOpacity(0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: AppGlow.button(iconColor),
             ),
             child: Icon(icon, color: Colors.white, size: 26),
           ),

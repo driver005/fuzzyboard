@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../extensions/extension_manifest.dart';
 import '../../extensions/extension_registry.dart';
 import '../../features/auth/login_page.dart';
@@ -114,6 +115,8 @@ class _AppShell extends StatelessWidget {
     final desktop = isDesktop(context);
     final themeProvider = context.watch<ThemeProvider>();
     final extensions = context.watch<ExtensionRegistry>();
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
     final loc = GoRouterState.of(context).uri.toString();
     final currentTab = _tabFromRoute(loc, extensions);
 
@@ -127,7 +130,10 @@ class _AppShell extends StatelessWidget {
               tab: currentTab,
             ),
           if (!mobile)
-            const VerticalDivider(width: 1),
+            VerticalDivider(
+              width: 1,
+              color: AppColors.borderSubtle(isDark),
+            ),
           Expanded(child: child),
         ],
       ),
@@ -156,67 +162,87 @@ class _AppHeader extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF16162A) : Colors.white,
+        color: isDark ? AppColors.headerDark : AppColors.headerLight,
         border: Border(
-          bottom: BorderSide(color: cs.outline.withOpacity(0.15)),
+          bottom: BorderSide(color: AppColors.borderSubtle(isDark)),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              // Logo mark
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [cs.primary, cs.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+      child: Column(
+        children: [
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    // Logo mark — gradient with neon glow
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.brandPrimary, AppColors.brandSecondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        boxShadow: AppGlow.neon(AppColors.brandPrimary, radius: 10),
+                      ),
+                      child: const Icon(Icons.blur_on, color: Colors.white, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    if (!mobile)
+                      Text(
+                        'FuzzyBoard',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    const SizedBox(width: 20),
+                    // Data tab button
+                    _HeaderTabBtn(
+                      label: 'Data',
+                      icon: Icons.storage_outlined,
+                      selected: currentTab == AppHeaderTab.data,
+                      onTap: () {
+                        if (currentTab != AppHeaderTab.data) context.go('/');
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                    // Pages tab button
+                    _HeaderTabBtn(
+                      label: 'Pages',
+                      icon: Icons.web_outlined,
+                      selected: currentTab == AppHeaderTab.pages,
+                      onTap: () {
+                        if (currentTab != AppHeaderTab.pages) context.go('/cms');
+                      },
+                    ),
+                    const Spacer(),
+                    // Avatar (AI mascot) — always visible when enabled
+                    if (showAvatar) ...[
+                      const AvatarWidget(size: 34),
+                      const SizedBox(width: 4),
+                    ],
+                  ],
                 ),
-                child: const Icon(Icons.blur_on, color: Colors.white, size: 16),
               ),
-              const SizedBox(width: 8),
-              if (!mobile)
-                Text(
-                  'FuzzyBoard',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              const SizedBox(width: 20),
-              // Data tab button
-              _HeaderTabBtn(
-                label: 'Data',
-                icon: Icons.storage_outlined,
-                selected: currentTab == AppHeaderTab.data,
-                onTap: () {
-                  if (currentTab != AppHeaderTab.data) context.go('/');
-                },
-              ),
-              const SizedBox(width: 4),
-              // Pages tab button
-              _HeaderTabBtn(
-                label: 'Pages',
-                icon: Icons.web_outlined,
-                selected: currentTab == AppHeaderTab.pages,
-                onTap: () {
-                  if (currentTab != AppHeaderTab.pages) context.go('/cms');
-                },
-              ),
-              const Spacer(),
-              // Avatar (AI mascot) — always visible when enabled
-              if (showAvatar) ...[
-                const AvatarWidget(size: 34),
-                const SizedBox(width: 4),
-              ],
-            ],
+            ),
           ),
-        ),
+          // Neon gradient border at the very bottom of the header
+          Container(
+            height: 1.5,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.brandPrimary,
+                  AppColors.brandSecondary,
+                  AppColors.brandAccent,
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -240,19 +266,26 @@ class _HeaderTabBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: selected
+              ? cs.primary.withOpacity(isDark ? 0.15 : 0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(
-            color: selected ? cs.primary.withOpacity(0.3) : Colors.transparent,
+            color: selected
+                ? cs.primary.withOpacity(isDark ? 0.50 : 0.30)
+                : Colors.transparent,
+            width: AppBorderWidth.normal,
           ),
+          boxShadow: selected ? AppGlow.neon(cs.primary, radius: 8) : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -262,7 +295,7 @@ class _HeaderTabBtn extends StatelessWidget {
               size: 16,
               color: selected
                   ? cs.primary
-                  : cs.onSurface.withOpacity(0.55),
+                  : cs.onSurface.withOpacity(0.50),
             ),
             const SizedBox(width: 5),
             Text(
@@ -270,9 +303,8 @@ class _HeaderTabBtn extends StatelessWidget {
               style: theme.textTheme.labelMedium?.copyWith(
                 color: selected
                     ? cs.primary
-                    : cs.onSurface.withOpacity(0.7),
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.w500,
+                    : cs.onSurface.withOpacity(0.65),
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

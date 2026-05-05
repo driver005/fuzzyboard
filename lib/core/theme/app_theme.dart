@@ -3,7 +3,9 @@ import 'app_colors.dart';
 import 'app_typography.dart';
 
 /// Generates a [ThemeData] from a seed color and brightness.
-/// Pass any [Color] as [seedColor] to re-skin the entire app.
+/// All structural values (radii, shadows, border widths) are read from the
+/// token classes in [AppColors], [AppRadius], [AppBorderWidth], and [AppGlow]
+/// so the entire app can be re-skinned from one file.
 class AppTheme {
   AppTheme._();
 
@@ -44,10 +46,10 @@ class AppTheme {
     return base.copyWith(
       // ── AppBar ─────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
+        backgroundColor: isLight ? AppColors.headerLight : AppColors.headerDark,
         elevation: 0,
-        scrolledUnderElevation: 2,
-        shadowColor: cs.primary,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
         titleTextStyle: AppTypography.textTheme.titleLarge?.copyWith(
           color: cs.onSurface,
         ),
@@ -55,9 +57,15 @@ class AppTheme {
       ),
       // ── Card ──────────────────────────────────────────────────────────
       cardTheme: CardTheme(
-        elevation: 4,
-        shadowColor: cs.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(
+            color: isLight ? AppColors.cardBorderLight : AppColors.cardBorderDark,
+            width: AppBorderWidth.thin,
+          ),
+        ),
         color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
       ),
@@ -66,50 +74,63 @@ class AppTheme {
         filled: true,
         fillColor: isLight ? AppColors.neutral100 : AppColors.neutral800,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(
+            color: AppColors.borderDefault(isLight ? false : true),
+            width: AppBorderWidth.thin,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: cs.primary, width: 2.5),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: cs.primary, width: AppBorderWidth.thick),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
       // ── ElevatedButton ────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.pill)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          elevation: 6,
-          shadowColor: cs.primary,
+          elevation: 0,
         ),
       ),
       // ── OutlinedButton ────────────────────────────────────────────────
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: cs.primary,
-          side: BorderSide(color: cs.primary, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          side: BorderSide(color: cs.primary, width: AppBorderWidth.normal),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.pill)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         ),
       ),
       // ── Chip ──────────────────────────────────────────────────────────
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide.none,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md)),
+        side: BorderSide(
+          color: AppColors.borderDefault(!isLight),
+          width: AppBorderWidth.thin,
+        ),
       ),
       // ── Divider ───────────────────────────────────────────────────────
-      dividerTheme: const DividerThemeData(space: 1, thickness: 1),
+      dividerTheme: DividerThemeData(
+        space: 1,
+        thickness: 1,
+        color: AppColors.borderSubtle(!isLight),
+      ),
       // ── ListTile ──────────────────────────────────────────────────────
-      listTileTheme: const ListTileThemeData(
+      listTileTheme: ListTileThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
         ),
       ),
     );

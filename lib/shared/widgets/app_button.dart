@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import 'bounce_widget.dart';
 
 /// App-wide button widget. Swap the implementation here to re-skin all
@@ -43,22 +44,22 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.ghost =>
         (Colors.transparent, cs.onSurface, BorderSide.none),
       AppButtonVariant.danger => (
-          const Color(0xFFFF3D71),
+          AppColors.brandAccent,
           Colors.white,
           BorderSide.none
         ),
     };
 
     final (hPad, vPad, fontSize, radius) = switch (size) {
-      AppButtonSize.sm => (14.0, 9.0,  13.0, 20.0),
-      AppButtonSize.md => (22.0, 13.0, 14.0, 24.0),
-      AppButtonSize.lg => (30.0, 17.0, 16.0, 28.0),
+      AppButtonSize.sm => (14.0, 9.0,  13.0, AppRadius.pill),
+      AppButtonSize.md => (22.0, 13.0, 14.0, AppRadius.pill),
+      AppButtonSize.lg => (30.0, 17.0, 16.0, AppRadius.pill),
     };
 
     // Glow shadow for primary / danger variants
     final glowColor = switch (variant) {
-      AppButtonVariant.primary => cs.primary.withOpacity(0.45),
-      AppButtonVariant.danger  => const Color(0xFFFF3D71).withOpacity(0.45),
+      AppButtonVariant.primary => cs.primary,
+      AppButtonVariant.danger  => AppColors.brandAccent,
       _ => Colors.transparent,
     };
 
@@ -95,13 +96,7 @@ class AppButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
           boxShadow: isDisabled || variant == AppButtonVariant.ghost
               ? null
-              : [
-                  BoxShadow(
-                    color: glowColor,
-                    blurRadius: 14,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+              : AppGlow.button(glowColor == Colors.transparent ? cs.primary : glowColor),
         ),
         child: Material(
           color: bgColor,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/gamification_provider.dart';
+import 'animated_gradient_border.dart';
 
 /// Compact space-themed gamification bar shown at the top of the dashboard.
 class SpaceXpBar extends StatelessWidget {
@@ -13,84 +14,91 @@ class SpaceXpBar extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3B0764), Color(0xFF6D28D9), Color(0xFF0E7490)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primary.withOpacity(0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: const Color(0xFF06D6A0).withOpacity(0.2),
-            blurRadius: 40,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Level badge
-          _LevelBadge(level: gam.level, title: gam.levelTitle),
-          const SizedBox(width: 14),
-          // XP progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      gam.levelTitle,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${gam.xp} / ${GamificationProvider.xpPerLevel} XP',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: gam.levelProgress,
-                    minHeight: 10,
-                    backgroundColor: Colors.white.withOpacity(0.15),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF06D6A0),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _StatPill(emoji: '✅', value: '${gam.tasksCompleted}', label: 'tasks'),
-                    const SizedBox(width: 8),
-                    _StatPill(emoji: '🔥', value: gam.streak > 0 ? '${gam.streak}d' : '—', label: 'streak'),
-                  ],
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: AnimatedGradientBorder(
+        borderRadius: 26,
+        borderWidth: 1.5,
+        speed: const Duration(seconds: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B0764), Color(0xFF6D28D9), Color(0xFF0E7490)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: cs.primary.withOpacity(0.45),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: const Color(0xFF06D6A0).withOpacity(0.2),
+                blurRadius: 40,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          // Stars decoration
-          _Stars(),
-        ],
+          child: Row(
+            children: [
+              // Level badge
+              _LevelBadge(level: gam.level, title: gam.levelTitle),
+              const SizedBox(width: 14),
+              // XP progress
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          gam.levelTitle,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${gam.xp} / ${GamificationProvider.xpPerLevel} XP',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: gam.levelProgress,
+                        minHeight: 10,
+                        backgroundColor: Colors.white.withOpacity(0.15),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF06D6A0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _StatPill(emoji: '✅', value: '${gam.tasksCompleted}', label: 'tasks'),
+                        const SizedBox(width: 8),
+                        _StatPill(emoji: '🔥', value: gam.streak > 0 ? '${gam.streak}d' : '—', label: 'streak'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Stars decoration
+              _Stars(),
+            ],
+          ),
+        ),
       ),
     )
         .animate()

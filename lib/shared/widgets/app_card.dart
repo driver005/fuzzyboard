@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import 'animated_gradient_border.dart';
 import 'bounce_widget.dart';
 
 /// App-wide card widget with optional header, footer, and actions.
 /// Tappable cards automatically get a bouncy spring press animation.
+///
+/// Set [glowBorder] to `true` to wrap the card in an [AnimatedGradientBorder]
+/// — the animated-border style popularised by Skiper UI.
 class AppCard extends StatelessWidget {
   final Widget? child;
   final String? title;
@@ -16,6 +20,9 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double? width;
   final double? height;
+
+  /// When `true` the card is wrapped in [AnimatedGradientBorder].
+  final bool glowBorder;
 
   const AppCard({
     super.key,
@@ -30,6 +37,7 @@ class AppCard extends StatelessWidget {
     this.onTap,
     this.width,
     this.height,
+    this.glowBorder = false,
   });
 
   @override
@@ -115,6 +123,15 @@ class AppCard extends StatelessWidget {
     if (onTap != null) {
       card = BounceOnTap(onTap: onTap, scale: 0.96, child: card);
     }
+
+    if (glowBorder) {
+      card = AnimatedGradientBorder(
+        borderRadius: AppRadius.card + AppBorderWidth.normal,
+        borderWidth: AppBorderWidth.normal,
+        child: card,
+      );
+    }
+
     return card;
   }
 }

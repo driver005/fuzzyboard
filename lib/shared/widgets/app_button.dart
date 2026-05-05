@@ -56,12 +56,10 @@ class AppButton extends StatelessWidget {
       AppButtonSize.lg => (30.0, 17.0, 16.0, AppRadius.pill),
     };
 
-    // Glow shadow for primary / danger variants
-    final glowColor = switch (variant) {
-      AppButtonVariant.primary => cs.primary,
-      AppButtonVariant.danger  => AppColors.brandAccent,
-      _ => Colors.transparent,
-    };
+    // Glow shadow only for primary / danger variants.
+    final bool applyGlow = !isDisabled &&
+        variant != AppButtonVariant.ghost &&
+        (variant == AppButtonVariant.primary || variant == AppButtonVariant.danger);
 
     final content = loading
         ? SizedBox(
@@ -88,15 +86,17 @@ class AppButton extends StatelessWidget {
             ],
           );
 
+    final glowColor = variant == AppButtonVariant.danger
+        ? AppColors.brandAccent
+        : cs.primary;
+
     Widget btn = AnimatedOpacity(
       opacity: isDisabled ? 0.55 : 1.0,
       duration: const Duration(milliseconds: 200),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
-          boxShadow: isDisabled || variant == AppButtonVariant.ghost
-              ? null
-              : AppGlow.button(glowColor == Colors.transparent ? cs.primary : glowColor),
+          boxShadow: applyGlow ? AppGlow.button(glowColor) : null,
         ),
         child: Material(
           color: bgColor,

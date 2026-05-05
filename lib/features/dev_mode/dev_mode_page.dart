@@ -76,7 +76,7 @@ class _DevModePageState extends State<DevModePage>
             Tab(icon: const Icon(Icons.terminal, size: 18), text: context.l10n.logsTab),
             Tab(icon: const Icon(Icons.memory, size: 18), text: context.l10n.stateTab),
             Tab(icon: const Icon(Icons.science, size: 18), text: context.l10n.testsTab),
-            const Tab(icon: Icon(Icons.extension, size: 18), text: 'Extensions'),
+            Tab(icon: const Icon(Icons.extension, size: 18), text: context.l10n.extensionsTab),
           ],
         ),
       ),
@@ -392,13 +392,13 @@ class _ExtensionsTab extends StatelessWidget {
             Icon(Icons.extension_off_outlined, size: 48, color: cs.onSurface.withOpacity(0.25)),
             const SizedBox(height: 12),
             Text(
-              'No extensions registered',
+              context.l10n.extensionsEmpty,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: cs.onSurface.withOpacity(0.5)),
             ),
             const SizedBox(height: 4),
             Text(
-              'Call ExtensionRegistry.register() to add an extension.',
+              context.l10n.extensionsEmptyHint,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: cs.onSurface.withOpacity(0.35)),
               textAlign: TextAlign.center,
@@ -424,7 +424,7 @@ class _ExtensionsTab extends StatelessWidget {
               if (manifest.routes.isNotEmpty) ...[
                 _InspectorSection(
                   icon: Icons.route,
-                  label: 'Routes (${manifest.routes.length})',
+                  label: context.l10n.extensionRoutesSection(manifest.routes.length),
                   color: cs.primary,
                 ),
                 ...manifest.routes.map((r) => _InspectorRow(
@@ -440,7 +440,7 @@ class _ExtensionsTab extends StatelessWidget {
               if (manifest.navItems.isNotEmpty) ...[
                 _InspectorSection(
                   icon: Icons.menu,
-                  label: 'Nav items (${manifest.navItems.length})',
+                  label: context.l10n.extensionNavItemsSection(manifest.navItems.length),
                   color: const Color(0xFF10B981),
                 ),
                 ...manifest.navItems.map((n) => _InspectorRow(
@@ -456,7 +456,7 @@ class _ExtensionsTab extends StatelessWidget {
               if (manifest.paletteItems.isNotEmpty) ...[
                 _InspectorSection(
                   icon: Icons.widgets_outlined,
-                  label: 'Palette items (${manifest.paletteItems.length})',
+                  label: context.l10n.extensionPaletteItemsSection(manifest.paletteItems.length),
                   color: const Color(0xFFF59E0B),
                 ),
                 ...manifest.paletteItems.map((p) => _InspectorRow(
@@ -468,7 +468,7 @@ class _ExtensionsTab extends StatelessWidget {
               if (zones.isNotEmpty) ...[
                 _InspectorSection(
                   icon: Icons.crop_square,
-                  label: 'Zone contributions (${zones.length})',
+                  label: context.l10n.extensionZonesSection(zones.length),
                   color: const Color(0xFF8B5CF6),
                 ),
                 ...zones.map((e) {

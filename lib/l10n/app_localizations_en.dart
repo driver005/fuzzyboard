@@ -914,6 +914,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get testsTab => 'Tests';
 
   @override
+  String get extensionsTab => 'Extensions';
+
+  @override
   String get clearLogsButton => 'Clear';
 
   @override
@@ -943,6 +946,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String testsPassed(int passed, int total) {
     return '$passed/$total passed';
   }
+
+  @override
+  String get extensionsEmpty => 'No extensions registered';
+
+  @override
+  String get extensionsEmptyHint => 'Call ExtensionRegistry.register() to add an extension.';
+
+  @override
+  String extensionRoutesSection(int count) => 'Routes ($count)';
+
+  @override
+  String extensionNavItemsSection(int count) => 'Nav items ($count)';
+
+  @override
+  String extensionPaletteItemsSection(int count) => 'Palette items ($count)';
+
+  @override
+  String extensionZonesSection(int count) => 'Zone contributions ($count)';
 
   @override
   String get luaExpressionBuilderTitle => 'Lua Expression Builder';

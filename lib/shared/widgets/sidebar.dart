@@ -57,7 +57,7 @@ class _SectionHeader extends _SidebarEntry {
 // ── Data tab nav items ────────────────────────────────────────────────────────
 List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
   final l10n = context.l10n;
-  final extensions = context.read<ExtensionRegistry>();
+  final extensions = context.watch<ExtensionRegistry>();
   final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarDashboard,
@@ -146,7 +146,7 @@ List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
 // ── Pages tab nav items ───────────────────────────────────────────────────────
 List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
   final l10n = context.l10n;
-  final extensions = context.read<ExtensionRegistry>();
+  final extensions = context.watch<ExtensionRegistry>();
   final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarPageBuilder,

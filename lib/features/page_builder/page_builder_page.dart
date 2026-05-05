@@ -169,9 +169,9 @@ class _CanvasWidgetPreview extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     // Check if an extension has a custom canvas builder for this type.
     final extensions = context.read<ExtensionRegistry>();
-    final extItem = extensions.paletteItems
-        .where((p) => p.type == widget.type && p.canvasBuilder != null)
-        .firstOrNull;
+    final matches = extensions.paletteItems
+        .where((p) => p.type == widget.type && p.canvasBuilder != null);
+    final extItem = matches.isEmpty ? null : matches.first;
 
     if (extItem != null) {
       return Padding(

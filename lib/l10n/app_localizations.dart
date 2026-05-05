@@ -1861,6 +1861,12 @@ abstract class AppLocalizations {
   /// **'Tests'**
   String get testsTab;
 
+  /// No description provided for @extensionsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Extensions'**
+  String get extensionsTab;
+
   /// No description provided for @clearLogsButton.
   ///
   /// In en, this message translates to:
@@ -1914,6 +1920,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{passed}/{total} passed'**
   String testsPassed(int passed, int total);
+
+  /// No description provided for @extensionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No extensions registered'**
+  String get extensionsEmpty;
+
+  /// No description provided for @extensionsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ExtensionRegistry.register() to add an extension.'**
+  String get extensionsEmptyHint;
+
+  /// No description provided for @extensionRoutesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes ({count})'**
+  String extensionRoutesSection(int count);
+
+  /// No description provided for @extensionNavItemsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Nav items ({count})'**
+  String extensionNavItemsSection(int count);
+
+  /// No description provided for @extensionPaletteItemsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Palette items ({count})'**
+  String extensionPaletteItemsSection(int count);
+
+  /// No description provided for @extensionZonesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Zone contributions ({count})'**
+  String extensionZonesSection(int count);
 
   /// No description provided for @luaExpressionBuilderTitle.
   ///

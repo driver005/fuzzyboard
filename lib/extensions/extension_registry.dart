@@ -107,7 +107,7 @@ class ExtensionRegistry extends ChangeNotifier {
       list.removeWhere((c) => c.pluginId == pluginId);
     }
     _zones.removeWhere((_, list) => list.isEmpty);
-    _disabled.removeWhere((key) => key.contains('::$pluginId'));
+    _disabled.removeWhere((key) => key.endsWith('::$pluginId'));
   }
 }
 

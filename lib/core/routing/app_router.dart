@@ -33,6 +33,16 @@ import '../../shared/widgets/sidebar.dart';
 import '../../shared/layout/responsive_layout.dart';
 import '../../shared/widgets/avatar_widget.dart';
 
+/// Creates the application [GoRouter].
+///
+/// [extensions] is queried once at construction time; extension-contributed
+/// routes are appended to the shell route list immediately.  Because GoRouter
+/// is created once in [_AppState.initState], **all route-contributing
+/// extensions must be registered before this function is called**.  Runtime
+/// plugin install/uninstall can add/remove sidebar nav items and zone widgets
+/// (via [ExtensionRegistry] which is a [ChangeNotifier]), but new routes will
+/// only take effect after the router is rebuilt (e.g. hot restart / full
+/// app restart).
 GoRouter createRouter(AuthProvider auth, ExtensionRegistry extensions) {
   return GoRouter(
     initialLocation: '/',

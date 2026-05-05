@@ -48,7 +48,10 @@ class AnimatedGradientBorder extends StatefulWidget {
     this.borderRadius = AppRadius.card,
     this.animate = true,
     this.speed = const Duration(seconds: 3),
-  });
+  }) : assert(gradientColors.length >= 2,
+            'AnimatedGradientBorder requires at least 2 gradient colors'),
+       assert(borderWidth >= 0, 'borderWidth must be non-negative'),
+       assert(borderRadius >= 0, 'borderRadius must be non-negative');
 
   @override
   State<AnimatedGradientBorder> createState() => _AnimatedGradientBorderState();
@@ -63,6 +66,24 @@ class _AnimatedGradientBorderState extends State<AnimatedGradientBorder>
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.speed);
     if (widget.animate) _controller.repeat();
+  }
+
+  @override
+  void didUpdateWidget(AnimatedGradientBorder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.speed != widget.speed) {
+      _controller.duration = widget.speed;
+    }
+    if (oldWidget.animate != widget.animate) {
+      if (widget.animate) {
+        _controller.repeat();
+      } else {
+        _controller.stop();
+      }
+    } else if (widget.animate && oldWidget.speed != widget.speed) {
+      // Restart the repeat loop with the new duration.
+      _controller.repeat();
+    }
   }
 
   @override

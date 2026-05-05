@@ -39,6 +39,7 @@ class AppButton extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDisabled = onPressed == null || loading;
 
+    // Gradient variant is fully handled by its own stateful widget.
     if (variant == AppButtonVariant.gradient) {
       return _GradientButton(
         label: label,
@@ -51,25 +52,9 @@ class AppButton extends StatelessWidget {
       );
     }
 
-    final (bgColor, fgColor, borderSide) = switch (variant) {
-      AppButtonVariant.primary => (cs.primary, cs.onPrimary, BorderSide.none),
-      AppButtonVariant.secondary =>
-        (cs.secondary, cs.onSecondary, BorderSide.none),
-      AppButtonVariant.outline => (
-          Colors.transparent,
-          cs.primary,
-          BorderSide(color: cs.primary, width: 2)
-        ),
-      AppButtonVariant.ghost =>
-        (Colors.transparent, cs.onSurface, BorderSide.none),
-      AppButtonVariant.danger => (
-          AppColors.brandAccent,
-          Colors.white,
-          BorderSide.none
-        ),
-      // gradient is handled by the early return above; this branch is never reached.
-      AppButtonVariant.gradient => (cs.primary, cs.onPrimary, BorderSide.none),
-    };
+    // At this point variant is guaranteed to be one of the non-gradient cases.
+    // Using a local helper avoids having a dead `gradient` arm in an exhaustive switch.
+    final (bgColor, fgColor, borderSide) = _nonGradientStyle(variant, cs);
 
     final (hPad, vPad, fontSize, radius) = switch (size) {
       AppButtonSize.sm => (14.0, 9.0,  13.0, AppRadius.pill),
@@ -147,6 +132,36 @@ class AppButton extends StatelessWidget {
         : btn;
   }
 }
+
+// ── Style helper ──────────────────────────────────────────────────────────────
+
+/// Returns the (background, foreground, border) triple for every non-gradient
+/// variant. The [AppButtonVariant.gradient] case is deliberately excluded
+/// because it is fully handled by [_GradientButton] before this is called.
+(Color, Color, BorderSide) _nonGradientStyle(
+  AppButtonVariant variant,
+  ColorScheme cs,
+) =>
+    switch (variant) {
+      AppButtonVariant.primary  => (cs.primary, cs.onPrimary, BorderSide.none),
+      AppButtonVariant.secondary =>
+        (cs.secondary, cs.onSecondary, BorderSide.none),
+      AppButtonVariant.outline  => (
+          Colors.transparent,
+          cs.primary,
+          BorderSide(color: cs.primary, width: 2),
+        ),
+      AppButtonVariant.ghost =>
+        (Colors.transparent, cs.onSurface, BorderSide.none),
+      AppButtonVariant.danger   => (
+          AppColors.brandAccent,
+          Colors.white,
+          BorderSide.none,
+        ),
+      // This arm exists only to make the switch exhaustive at compile time.
+      // The caller guarantees it is never reached (gradient returns early).
+      AppButtonVariant.gradient => (cs.primary, cs.onPrimary, BorderSide.none),
+    };
 
 // ── Gradient button ──────────────────────────────────────────────────────────
 

@@ -132,17 +132,18 @@ class _WelcomeBanner extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Stack(
       children: [
-        // Gradient background layer
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [cs.primary, cs.secondary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Gradient background — expands to fill whatever height the GlassCard needs.
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.secondary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
-            borderRadius: BorderRadius.circular(16),
           ),
-          child: const SizedBox(width: double.infinity, height: 110),
         ),
         // Glass overlay layer
         GlassCard(

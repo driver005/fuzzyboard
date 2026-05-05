@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
+import '../../extensions/extension_zone.dart';
 import '../../models/task.dart';
 import '../../models/task_run.dart';
 import '../../shared/widgets/app_button.dart';
@@ -199,6 +200,8 @@ class _TaskListTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
+        // [extension zone] above the task list — plugins can add banners or toolbars
+        const ExtensionZone(id: 'tasks.list_top'),
         Expanded(
           child: tasks.isEmpty
               ? Center(
@@ -459,6 +462,8 @@ class _TaskCard extends StatelessWidget {
                 app.deleteTask(task.id);
               },
             ),
+            // [extension zone] extra per-task action buttons
+            const ExtensionZone(id: 'tasks.row_actions'),
           ],
         ),
       ),

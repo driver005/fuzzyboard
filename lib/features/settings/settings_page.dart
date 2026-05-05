@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../extensions/extension_zone.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../app.dart';
@@ -29,6 +30,8 @@ class SettingsPage extends StatelessWidget {
           _MarketplaceSection(),
           SizedBox(height: 20),
           _AboutSection(),
+          // [extension zone] plugin-contributed settings sections
+          const ExtensionZone(id: 'settings.bottom'),
         ],
       ),
     );

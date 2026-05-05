@@ -5,6 +5,9 @@ import '../../app.dart';
 import '../../core/providers/app_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../extensions/extension_manifest.dart';
+import '../../extensions/extension_registry.dart';
 import 'bounce_widget.dart';
 
 const double _sidebarWidth = 240;
@@ -54,7 +57,8 @@ class _SectionHeader extends _SidebarEntry {
 // ── Data tab nav items ────────────────────────────────────────────────────────
 List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
   final l10n = context.l10n;
-  return [
+  final extensions = context.watch<ExtensionRegistry>();
+  final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarDashboard,
       icon: Icons.dashboard_outlined,
@@ -122,12 +126,28 @@ List<_SidebarEntry> _buildDataNavItems(BuildContext context) {
       route: '/settings',
     ),
   ];
+
+  // Append extension-contributed data-tab items.
+  for (final item in extensions.navItems) {
+    if (item.tab == ExtensionTab.data) {
+      base.add(_NavItem(
+        label: item.label,
+        icon: item.icon,
+        activeIcon: item.activeIcon,
+        route: item.route,
+        isSubItem: item.isSubItem,
+      ));
+    }
+  }
+
+  return base;
 }
 
 // ── Pages tab nav items ───────────────────────────────────────────────────────
 List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
   final l10n = context.l10n;
-  return [
+  final extensions = context.watch<ExtensionRegistry>();
+  final base = <_SidebarEntry>[
     _NavItem(
       label: l10n.sidebarPageBuilder,
       icon: Icons.dashboard_customize_outlined,
@@ -178,6 +198,21 @@ List<_SidebarEntry> _buildPagesNavItems(BuildContext context) {
       isSubItem: true,
     ),
   ];
+
+  // Append extension-contributed pages-tab items.
+  for (final item in extensions.navItems) {
+    if (item.tab == ExtensionTab.pages) {
+      base.add(_NavItem(
+        label: item.label,
+        icon: item.icon,
+        activeIcon: item.activeIcon,
+        route: item.route,
+        isSubItem: item.isSubItem,
+      ));
+    }
+  }
+
+  return base;
 }
 
 /// Desktop / tablet sidebar
@@ -217,7 +252,8 @@ class _AppSidebarState extends State<AppSidebar> {
     final devMode = context.watch<AppProvider>().devMode;
     final themeProvider = context.watch<ThemeProvider>();
 
-    final sidebarColor = isDark ? const Color(0xFF16162A) : Colors.white;
+    final sidebarColor =
+        isDark ? AppColors.sidebarDark : AppColors.sidebarLight;
 
     // Build visible items based on section-expansion state.
     final items = navItems(context);
@@ -301,7 +337,7 @@ class _AppSidebarState extends State<AppSidebar> {
               },
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: AppColors.borderSubtle(isDark)),
           // Dev mode toggle & theme
           Padding(
             padding: const EdgeInsets.all(12),
@@ -360,6 +396,7 @@ class _NavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
 
     return Tooltip(
       message: collapsed ? item.label : '',
@@ -373,23 +410,31 @@ class _NavTile extends StatelessWidget {
               ? BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      cs.primary.withOpacity(0.22),
-                      cs.secondary.withOpacity(0.12),
+                      cs.primary.withOpacity(isDark ? 0.18 : 0.10),
+                      cs.secondary.withOpacity(isDark ? 0.06 : 0.04),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.primary.withOpacity(0.18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  boxShadow: AppGlow.neon(cs.primary, radius: 8),
+                  border: Border(
+                    left: BorderSide(
+                      color: cs.primary,
+                      width: 3.0,
                     ),
-                  ],
-                  border: Border.all(
-                    color: cs.primary.withOpacity(0.30),
-                    width: 1.5,
+                    top: BorderSide(
+                      color: AppColors.borderDefault(isDark),
+                      width: AppBorderWidth.thin,
+                    ),
+                    right: BorderSide(
+                      color: AppColors.borderDefault(isDark),
+                      width: AppBorderWidth.thin,
+                    ),
+                    bottom: BorderSide(
+                      color: AppColors.borderDefault(isDark),
+                      width: AppBorderWidth.thin,
+                    ),
                   ),
                 )
               : null,
@@ -402,7 +447,7 @@ class _NavTile extends StatelessWidget {
             leading: Icon(
               isActive ? item.activeIcon : item.icon,
               size: item.isSubItem ? 18 : 22,
-              color: isActive ? cs.primary : cs.onSurface.withOpacity(0.6),
+              color: isActive ? cs.primary : cs.onSurface.withOpacity(0.55),
             ),
             title: collapsed
                 ? null
@@ -412,7 +457,7 @@ class _NavTile extends StatelessWidget {
                       fontWeight:
                           isActive ? FontWeight.w800 : FontWeight.w500,
                       color:
-                          isActive ? cs.primary : cs.onSurface.withOpacity(0.8),
+                          isActive ? cs.primary : cs.onSurface.withOpacity(0.75),
                     )),
             onTap: null, // handled by BounceOnTap
           ),

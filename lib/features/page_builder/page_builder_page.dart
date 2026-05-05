@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../app.dart';
+import '../../extensions/extension_registry.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/providers/app_provider.dart';
 import '../../models/page_widget.dart';
@@ -18,7 +19,7 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
   final uuid = const Uuid();
   String? selectedId;
 
-  List<({String type, IconData icon, String label})> _getPaletteItems(AppLocalizations l10n) => [
+  List<({String type, IconData icon, String label})> _getPaletteItems(AppLocalizations l10n, ExtensionRegistry extensions) => [
     (type: 'Text', icon: Icons.text_fields, label: l10n.textPaletteItem),
     (type: 'Button', icon: Icons.smart_button, label: l10n.buttonPaletteItem),
     (type: 'Image', icon: Icons.image_outlined, label: l10n.imagePaletteItem),
@@ -26,18 +27,21 @@ class _PageBuilderPageState extends State<PageBuilderPage> {
     (type: 'Row', icon: Icons.table_rows_outlined, label: l10n.rowPaletteItem),
     (type: 'Column', icon: Icons.view_column_outlined, label: l10n.columnPaletteItem),
     (type: 'Divider', icon: Icons.horizontal_rule, label: l10n.dividerPaletteItem),
+    // Extension-contributed palette items
+    ...extensions.paletteItems.map((p) => (type: p.type, icon: p.icon, label: p.label)),
   ];
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
+    final extensions = context.watch<ExtensionRegistry>();
     final widgets = app.pageWidgets;
     final matchingWidgets = selectedId != null ? widgets.where((w) => w.id == selectedId) : const Iterable<PageWidget>.empty();
     final selected = matchingWidgets.isEmpty ? null : matchingWidgets.first;
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = cs.brightness == Brightness.dark;
-    final items = _getPaletteItems(context.l10n);
+    final items = _getPaletteItems(context.l10n, extensions);
 
     return Scaffold(
       appBar: AppBar(
@@ -163,6 +167,19 @@ class _CanvasWidgetPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Check if an extension has a custom canvas builder for this type.
+    final extensions = context.read<ExtensionRegistry>();
+    final matches = extensions.paletteItems
+        .where((p) => p.type == widget.type && p.canvasBuilder != null);
+    final extItem = matches.isEmpty ? null : matches.first;
+
+    if (extItem != null) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: extItem.canvasBuilder!(context),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(children: [

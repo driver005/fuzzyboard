@@ -10,6 +10,7 @@ import 'core/providers/screen_registry.dart';
 import 'core/providers/cms_provider.dart';
 import 'core/providers/gamification_provider.dart';
 import 'core/routing/app_router.dart';
+import 'extensions/extension_registry.dart';
 import 'l10n/app_localizations.dart';
 
 class FuzzyBoardApp extends StatefulWidget {
@@ -21,18 +22,21 @@ class FuzzyBoardApp extends StatefulWidget {
 
 class _FuzzyBoardAppState extends State<FuzzyBoardApp> {
   late final AuthProvider authProvider;
+  late final ExtensionRegistry extensionRegistry;
   late final GoRouter router;
 
   @override
   void initState() {
     super.initState();
     authProvider = AuthProvider();
-    router = createRouter(authProvider);
+    extensionRegistry = ExtensionRegistry();
+    router = createRouter(authProvider, extensionRegistry);
   }
 
   @override
   void dispose() {
     authProvider.dispose();
+    extensionRegistry.dispose();
     router.dispose();
     super.dispose();
   }
@@ -48,6 +52,7 @@ class _FuzzyBoardAppState extends State<FuzzyBoardApp> {
         ChangeNotifierProvider(create: (_) => ScreenRegistryProvider()),
         ChangeNotifierProvider(create: (_) => CmsProvider()),
         ChangeNotifierProvider(create: (_) => GamificationProvider()),
+        ChangeNotifierProvider.value(value: extensionRegistry),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) => MaterialApp.router(

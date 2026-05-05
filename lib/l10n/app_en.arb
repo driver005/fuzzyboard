@@ -376,6 +376,7 @@
   "logsTab": "Logs",
   "stateTab": "State",
   "testsTab": "Tests",
+  "extensionsTab": "Extensions",
   "clearLogsButton": "Clear",
   "logEntriesCount": "{count} entries",
   "@logEntriesCount": {
@@ -394,6 +395,32 @@
     "placeholders": {
       "passed": { "type": "int" },
       "total": { "type": "int" }
+    }
+  },
+  "extensionsEmpty": "No extensions registered",
+  "extensionsEmptyHint": "Call ExtensionRegistry.register() to add an extension.",
+  "extensionRoutesSection": "Routes ({count})",
+  "@extensionRoutesSection": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "extensionNavItemsSection": "Nav items ({count})",
+  "@extensionNavItemsSection": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "extensionPaletteItemsSection": "Palette items ({count})",
+  "@extensionPaletteItemsSection": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "extensionZonesSection": "Zone contributions ({count})",
+  "@extensionZonesSection": {
+    "placeholders": {
+      "count": { "type": "int" }
     }
   },
 

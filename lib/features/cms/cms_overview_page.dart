@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/cms_provider.dart';
+import '../../extensions/extension_zone.dart';
 import '../../models/cms_entry.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../app.dart';
@@ -66,6 +67,8 @@ class CmsOverviewPage extends StatelessWidget {
               ).animate(delay: Duration(milliseconds: e.key * 60)).fadeIn().slideX(begin: 0.05),
             );
           }),
+          // [extension zone] below entries — plugins can add extra CMS panels
+          const ExtensionZone(id: 'cms.entry_form_bottom'),
         ],
       ),
     );

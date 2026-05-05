@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import 'bounce_widget.dart';
 
 /// App-wide button widget. Swap the implementation here to re-skin all
@@ -43,24 +44,22 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.ghost =>
         (Colors.transparent, cs.onSurface, BorderSide.none),
       AppButtonVariant.danger => (
-          const Color(0xFFFF3D71),
+          AppColors.brandAccent,
           Colors.white,
           BorderSide.none
         ),
     };
 
     final (hPad, vPad, fontSize, radius) = switch (size) {
-      AppButtonSize.sm => (14.0, 9.0,  13.0, 20.0),
-      AppButtonSize.md => (22.0, 13.0, 14.0, 24.0),
-      AppButtonSize.lg => (30.0, 17.0, 16.0, 28.0),
+      AppButtonSize.sm => (14.0, 9.0,  13.0, AppRadius.pill),
+      AppButtonSize.md => (22.0, 13.0, 14.0, AppRadius.pill),
+      AppButtonSize.lg => (30.0, 17.0, 16.0, AppRadius.pill),
     };
 
-    // Glow shadow for primary / danger variants
-    final glowColor = switch (variant) {
-      AppButtonVariant.primary => cs.primary.withOpacity(0.45),
-      AppButtonVariant.danger  => const Color(0xFFFF3D71).withOpacity(0.45),
-      _ => Colors.transparent,
-    };
+    // Glow shadow only for primary / danger variants.
+    final bool applyGlow = !isDisabled &&
+        variant != AppButtonVariant.ghost &&
+        (variant == AppButtonVariant.primary || variant == AppButtonVariant.danger);
 
     final content = loading
         ? SizedBox(
@@ -87,21 +86,17 @@ class AppButton extends StatelessWidget {
             ],
           );
 
+    final glowColor = variant == AppButtonVariant.danger
+        ? AppColors.brandAccent
+        : cs.primary;
+
     Widget btn = AnimatedOpacity(
       opacity: isDisabled ? 0.55 : 1.0,
       duration: const Duration(milliseconds: 200),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(radius),
-          boxShadow: isDisabled || variant == AppButtonVariant.ghost
-              ? null
-              : [
-                  BoxShadow(
-                    color: glowColor,
-                    blurRadius: 14,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+          boxShadow: applyGlow ? AppGlow.button(glowColor) : null,
         ),
         child: Material(
           color: bgColor,

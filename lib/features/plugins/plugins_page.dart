@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/app_provider.dart';
+import '../../extensions/extension_zone.dart';
 import '../../models/plugin.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../app.dart';
@@ -69,6 +70,9 @@ class _PluginsPageState extends State<PluginsPage> with SingleTickerProviderStat
                                 .slideX(begin: 0.1),
                           ),
                         ),
+                    // [extension zone] below the plugin list — plugins can add
+                    // extra panels or status widgets here
+                    const ExtensionZone(id: 'plugins.detail_panel'),
                   ],
                 ),
           // Tab 2: Config Graph — use LayoutBuilder so InteractiveViewer

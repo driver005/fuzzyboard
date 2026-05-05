@@ -67,6 +67,7 @@ class AppButton extends StatelessWidget {
           Colors.white,
           BorderSide.none
         ),
+      // gradient is handled by the early return above; this branch is never reached.
       AppButtonVariant.gradient => (cs.primary, cs.onPrimary, BorderSide.none),
     };
 

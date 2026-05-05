@@ -17,7 +17,7 @@ class SpaceXpBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: AnimatedGradientBorder(
-        borderRadius: 26,
+        borderRadius: 24 + 1.5, // inner radius (24) + borderWidth (1.5)
         borderWidth: 1.5,
         speed: const Duration(seconds: 4),
         child: Container(

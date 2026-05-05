@@ -10,9 +10,11 @@ import '../../extensions/extension_zone.dart';
 import '../../models/task_run.dart';
 import '../../models/workflow.dart';
 import '../../shared/layout/responsive_layout.dart';
+import '../../shared/widgets/animated_gradient_border.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/avatar_widget.dart';
+import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/space_xp_bar.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -128,59 +130,84 @@ class _WelcomeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [cs.primary, cs.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.welcomeBanner,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.workflowRunningSmooth,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.white.withOpacity(0.85)),
-                ),
-                if (isAdmin) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.admin_panel_settings, color: Colors.white, size: 14),
-                        const SizedBox(width: 4),
-                        Text(context.l10n.adminDashboard, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+    return Stack(
+      children: [
+        // Gradient background — expands to fill whatever height the GlassCard needs.
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.secondary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
-          const AvatarWidget(size: 64),
-        ],
-      ),
+        ),
+        // Glass overlay layer
+        GlassCard(
+          borderRadius: 16,
+          blurSigma: 10,
+          backgroundColor: cs.primary.withOpacity(0.25),
+          borderColor: cs.secondary.withOpacity(0.4),
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.welcomeBanner,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.workflowRunningSmooth,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.white.withOpacity(0.85)),
+                    ),
+                    if (isAdmin) ...[
+                      const SizedBox(height: 8),
+                      AnimatedGradientBorder(
+                        borderRadius: 10,
+                        borderWidth: 1.5,
+                        speed: const Duration(seconds: 3),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.admin_panel_settings,
+                                  color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text(context.l10n.adminDashboard,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const AvatarWidget(size: 64),
+            ],
+          ),
+        ),
+      ],
     ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
   }
 }

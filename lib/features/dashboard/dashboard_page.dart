@@ -219,13 +219,19 @@ class _LivingPcCore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return AnimatedGradientBorder(
-      borderRadius: 18,
-      borderWidth: 1.4,
-      speed: const Duration(seconds: 4),
+    return Container(
+      width: 152,
+      height: 92,
+      padding: const EdgeInsets.all(1.4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [cs.primary, cs.secondary, const Color(0xFFEC4899)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Container(
-        width: 152,
-        height: 92,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.18),
@@ -281,9 +287,9 @@ class _LivingPcCore extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Column(
+            const Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 _PcSignal(color: Color(0xFF00FFD1), value: 0.86),
                 SizedBox(height: 7),
                 _PcSignal(color: Color(0xFF6C63FF), value: 0.61),

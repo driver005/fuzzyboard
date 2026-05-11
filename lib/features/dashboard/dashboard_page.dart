@@ -144,8 +144,8 @@ class _SmartHeroBanner extends StatelessWidget {
     final mobile = isMobile(context);
 
     final activeCount = app.workflows.where((w) => w.isActive).length;
-    final totalCount = app.workflows.isEmpty ? 1 : app.workflows.length;
-    final healthPct = activeCount / totalCount;
+    final totalCount = app.workflows.length;
+    final healthPct = totalCount == 0 ? 0.0 : activeCount / totalCount;
 
     return Container(
       decoration: BoxDecoration(
@@ -540,7 +540,7 @@ class _SystemStatusDial extends StatelessWidget {
                 ),
               ),
               Text(
-                'ACTIVE',
+                context.l10n.activeBadge,
                 style: TextStyle(
                   color: dialColor,
                   fontSize: 9,
@@ -783,7 +783,7 @@ class _ControlZonesSection extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              'Control Zones',
+              context.l10n.controlZonesTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const Spacer(),
@@ -791,7 +791,7 @@ class _ControlZonesSection extends StatelessWidget {
               onPressed: () => context.go('/workflows'),
               icon: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: cs.primary),
               label: Text(
-                'View All',
+                context.l10n.viewAllButton,
                 style: TextStyle(color: cs.primary, fontSize: 13),
               ),
             ),
@@ -905,7 +905,7 @@ class _ZoneCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          workflow.isActive ? 'Active' : 'Idle',
+                          workflow.isActive ? context.l10n.activeStatus : context.l10n.idleStatus,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: workflow.isActive
                                 ? const Color(0xFF22C55E)
@@ -926,7 +926,7 @@ class _ZoneCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${workflow.runCount} runs total',
+                  context.l10n.runsTotalLabel(workflow.runCount),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurface.withOpacity(0.42),
                   ),

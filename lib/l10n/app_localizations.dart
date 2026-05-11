@@ -187,6 +187,24 @@ abstract class AppLocalizations {
   /// **'View all'**
   String get viewAllButton;
 
+  /// No description provided for @controlZonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Control Zones'**
+  String get controlZonesTitle;
+
+  /// No description provided for @idleStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get idleStatus;
+
+  /// No description provided for @runsTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} runs total'**
+  String runsTotalLabel(int count);
+
   /// No description provided for @viewTasksAction.
   ///
   /// In en, this message translates to:

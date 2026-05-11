@@ -154,9 +154,9 @@ class _WelcomeBanner extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       context.l10n.welcomeBanner,
@@ -200,15 +200,141 @@ class _WelcomeBanner extends StatelessWidget {
                         ),
                       ),
                     ],
+                   ],
+                 ),
+               ),
+               const SizedBox(width: 12),
+               const _LivingPcCore(),
+             ],
+           ),
+         ),
+       ],
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
+  }
+}
+
+class _LivingPcCore extends StatelessWidget {
+  const _LivingPcCore();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AnimatedGradientBorder(
+      borderRadius: 18,
+      borderWidth: 1.4,
+      speed: const Duration(seconds: 4),
+      child: Container(
+        width: 152,
+        height: 92,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      cs.secondary.withOpacity(0.20),
+                      cs.primary.withOpacity(0.18),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.25)),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.secondary.withOpacity(0.55),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                        gradient: LinearGradient(
+                          colors: [cs.secondary, cs.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    )
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .scale(
+                          begin: const Offset(0.9, 0.9),
+                          end: const Offset(1.12, 1.12),
+                          duration: 1200.ms,
+                        ),
+                    const Icon(Icons.memory, color: Colors.white, size: 16),
                   ],
                 ),
               ),
-              const AvatarWidget(size: 64),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                _PcSignal(color: Color(0xFF00FFD1), value: 0.86),
+                SizedBox(height: 7),
+                _PcSignal(color: Color(0xFF6C63FF), value: 0.61),
+                SizedBox(height: 7),
+                _PcSignal(color: Color(0xFFFFD166), value: 0.42),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1);
+  }
+}
+
+class _PcSignal extends StatelessWidget {
+  final Color color;
+  final double value;
+  const _PcSignal({required this.color, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 10,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(99),
+        color: Colors.white.withOpacity(0.14),
+      ),
+      alignment: Alignment.centerLeft,
+      child: FractionallySizedBox(
+        widthFactor: value.clamp(0.0, 1.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(99),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.6), color],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.6),
+                blurRadius: 10,
+                spreadRadius: -2,
+              ),
             ],
           ),
-        ),
-      ],
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
+        ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(
+            begin: 0.72, end: 1, duration: 1000.ms),
+      ),
+    );
   }
 }
 

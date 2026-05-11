@@ -21,57 +21,57 @@ class AppColors {
 
   // ── Brand palette (change these 3 to re-skin the whole app) ──────────────
   /// Primary brand colour — used for interactive highlights, active states.
-  static const Color brandPrimary   = Color(0xFF7B2FFF); // electric violet
+  static const Color brandPrimary   = Color(0xFF3B82F6); // smart home blue
   /// Secondary brand colour — used for accents, progress, success states.
-  static const Color brandSecondary = Color(0xFF00FFD1); // neon teal
+  static const Color brandSecondary = Color(0xFF22D3EE); // cool cyan
   /// Accent colour — used for badges, danger, special call-to-actions.
-  static const Color brandAccent    = Color(0xFFFF0080); // hot magenta
+  static const Color brandAccent    = Color(0xFFF59E0B); // warm amber
 
   // ── Extended neon palette ─────────────────────────────────────────────────
-  static const Color neonCyan   = Color(0xFF00E5FF);
-  static const Color neonYellow = Color(0xFFFFD600);
-  static const Color neonOrange = Color(0xFFFF6B00);
-  static const Color neonGreen  = Color(0xFF39FF14);
-  static const Color neonBlue   = Color(0xFF00A8FF);
-  static const Color neonPink   = Color(0xFFFF0080);
+  static const Color neonCyan   = Color(0xFF22D3EE);
+  static const Color neonYellow = Color(0xFFEAB308);
+  static const Color neonOrange = Color(0xFFF59E0B);
+  static const Color neonGreen  = Color(0xFF22C55E);
+  static const Color neonBlue   = Color(0xFF3B82F6);
+  static const Color neonPink   = Color(0xFFEC4899);
   static const Color gold       = Color(0xFFEAB308);
 
-  // ── Neutral palette (violet-tinted greys) ─────────────────────────────────
-  static const Color neutral50  = Color(0xFFF3F0FF);
-  static const Color neutral100 = Color(0xFFE9E4FF);
-  static const Color neutral200 = Color(0xFFD4CBFF);
-  static const Color neutral300 = Color(0xFFB8ABFF);
-  static const Color neutral400 = Color(0xFF9A88FF);
-  static const Color neutral500 = Color(0xFF7B65FF);
-  static const Color neutral600 = Color(0xFF6347D9);
-  static const Color neutral700 = Color(0xFF4A31B3);
-  static const Color neutral800 = Color(0xFF2A1880);
-  static const Color neutral900 = Color(0xFF100A40);
+  // ── Neutral palette (blue-tinted greys) ──────────────────────────────────
+  static const Color neutral50  = Color(0xFFEFF6FF);
+  static const Color neutral100 = Color(0xFFDBEAFE);
+  static const Color neutral200 = Color(0xFFBFDBFE);
+  static const Color neutral300 = Color(0xFF93C5FD);
+  static const Color neutral400 = Color(0xFF60A5FA);
+  static const Color neutral500 = Color(0xFF3B82F6);
+  static const Color neutral600 = Color(0xFF2563EB);
+  static const Color neutral700 = Color(0xFF1D4ED8);
+  static const Color neutral800 = Color(0xFF1E3A8A);
+  static const Color neutral900 = Color(0xFF0F1F4A);
 
   // ── Semantic colours ──────────────────────────────────────────────────────
-  static const Color success = Color(0xFF00FFD1);
-  static const Color warning = Color(0xFFFFD600);
-  static const Color error   = Color(0xFFFF0080);
-  static const Color info    = Color(0xFF00E5FF);
+  static const Color success = Color(0xFF22C55E);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error   = Color(0xFFEF4444);
+  static const Color info    = Color(0xFF22D3EE);
 
   // ── Backgrounds ───────────────────────────────────────────────────────────
-  /// Very deep navy — the "night city" canvas behind all surfaces.
-  static const Color backgroundDark  = Color(0xFF070912);
-  static const Color backgroundLight = Color(0xFFF0F2FF); // cool off-white
+  /// Very deep navy — the "smart home night" canvas behind all surfaces.
+  static const Color backgroundDark  = Color(0xFF060B18);
+  static const Color backgroundLight = Color(0xFFF0F7FF); // cool off-white
 
   // ── Surfaces (cards / dialogs / sheets) ──────────────────────────────────
   static const Color surfaceLight = Color(0xFFFFFFFF);
   /// Slightly lighter than the background so cards visibly "float".
-  static const Color surfaceDark  = Color(0xFF0E1220);
+  static const Color surfaceDark  = Color(0xFF0C1428);
 
   // ── Sidebar ───────────────────────────────────────────────────────────────
   static const Color sidebarLight = Color(0xFFFFFFFF);
   /// Darker than surfaceDark — creates a subtle depth contrast.
-  static const Color sidebarDark  = Color(0xFF090C18);
+  static const Color sidebarDark  = Color(0xFF080E20);
 
   // ── Header ────────────────────────────────────────────────────────────────
   static const Color headerLight = Color(0xFFFFFFFF);
-  static const Color headerDark  = Color(0xFF0B0E1C);
+  static const Color headerDark  = Color(0xFF0A1228);
 
   // ── Border helper colours ─────────────────────────────────────────────────
   /// Barely-visible structural divider.

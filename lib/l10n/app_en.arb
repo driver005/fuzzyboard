@@ -19,6 +19,14 @@
   "doneButton": "Done",
   "importButton": "Import",
   "viewAllButton": "View all",
+  "controlZonesTitle": "Control Zones",
+  "idleStatus": "Idle",
+  "runsTotalLabel": "{count} runs total",
+  "@runsTotalLabel": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "viewTasksAction": "View Tasks",
 
   "dashboardTitle": "Dashboard",

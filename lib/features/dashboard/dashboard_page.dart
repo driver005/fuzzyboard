@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -5,17 +7,15 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/providers/app_provider.dart';
+import '../../core/providers/gamification_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../extensions/extension_zone.dart';
 import '../../models/task_run.dart';
 import '../../models/workflow.dart';
 import '../../shared/layout/responsive_layout.dart';
-import '../../shared/widgets/animated_gradient_border.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/avatar_widget.dart';
-import '../../shared/widgets/glass_card.dart';
-import '../../shared/widgets/space_xp_bar.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -40,22 +40,21 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          if (mobile) const Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: AvatarWidget(size: 40),
-          ),
+          if (mobile)
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: AvatarWidget(size: 40),
+            ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const SpaceXpBar(),
-          const SizedBox(height: 16),
           // [extension zone] banner area — plugins can add header banners here
           const ExtensionZone(id: 'dashboard.header_end'),
-          _WelcomeBanner(isAdmin: userProvider.isAdmin),
+          _SmartHeroBanner(isAdmin: userProvider.isAdmin),
           const SizedBox(height: 20),
-          // Stat cards
+          // Control tiles (stat cards with 3D depth style)
           ResponsiveGrid(
             mobileColumns: 2,
             tabletColumns: 2,
@@ -63,36 +62,36 @@ class DashboardPage extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: [
-              StatCard(
+              _ControlTile(
                 title: context.l10n.totalTasksCard,
                 value: '${app.tasks.length}',
-                change: context.l10n.todayChange,
-                icon: Icons.task_alt,
-                iconColor: const Color(0xFF6C63FF),
+                subtitle: context.l10n.todayChange,
+                icon: Icons.task_alt_outlined,
+                color: const Color(0xFF3B82F6),
                 onTap: () => context.go('/tasks'),
               ),
-              StatCard(
+              _ControlTile(
                 title: context.l10n.activeWorkflowsCard,
                 value: '${app.workflows.where((w) => w.isActive).length}',
-                change: 'of ${app.workflows.length} total',
-                icon: Icons.account_tree,
-                iconColor: const Color(0xFF10B981),
+                subtitle: 'of ${app.workflows.length} total',
+                icon: Icons.account_tree_outlined,
+                color: const Color(0xFF22C55E),
                 onTap: () => context.go('/workflows'),
               ),
-              StatCard(
+              _ControlTile(
                 title: context.l10n.pluginsCard,
                 value: '${app.installedPlugins.length}',
-                change: context.l10n.installedLabel,
-                icon: Icons.extension,
-                iconColor: const Color(0xFF3B82F6),
+                subtitle: context.l10n.installedLabel,
+                icon: Icons.extension_outlined,
+                color: const Color(0xFF8B5CF6),
                 onTap: () => context.go('/plugins'),
               ),
-              StatCard(
+              _ControlTile(
                 title: context.l10n.runsTodayCard,
                 value: '${app.workflows.fold(0, (s, w) => s + w.runCount)}',
-                change: context.l10n.upChangePercent,
-                icon: Icons.play_circle,
-                iconColor: const Color(0xFFF59E0B),
+                subtitle: context.l10n.upChangePercent,
+                icon: Icons.play_circle_outline,
+                color: const Color(0xFFF59E0B),
                 onTap: () => context.go('/workflows'),
               ),
             ].map((c) => c.animate().fadeIn(delay: 100.ms).slideY(begin: 0.2)).toList(),
@@ -100,7 +99,10 @@ class DashboardPage extends StatelessWidget {
           // [extension zone] extra stat cards from plugins
           const ExtensionZone(id: 'dashboard.stats_section'),
           const SizedBox(height: 24),
-          // Charts row
+          // Control Zones — workflows shown as smart-home room cards
+          _ControlZonesSection(workflows: app.workflows),
+          const SizedBox(height: 24),
+          // Charts + activity feed row
           ResponsiveGrid(
             mobileColumns: 1,
             tabletColumns: 1,
@@ -109,12 +111,9 @@ class DashboardPage extends StatelessWidget {
             runSpacing: 16,
             children: [
               _TaskStatusChart(runs: app.taskRuns),
-              _WorkflowRunsChart(workflows: app.workflows),
+              _SystemActivityFeed(logs: app.logs),
             ],
           ),
-          const SizedBox(height: 24),
-          // Recent activity
-          _RecentActivity(logs: app.logs),
           // [extension zone] footer — plugins can add summary widgets here
           const ExtensionZone(id: 'dashboard.footer'),
         ],
@@ -123,234 +122,870 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-class _WelcomeBanner extends StatelessWidget {
+// ── Smart Hero Banner ─────────────────────────────────────────────────────────
+
+class _SmartHeroBanner extends StatelessWidget {
   final bool isAdmin;
-  const _WelcomeBanner({required this.isAdmin});
+  const _SmartHeroBanner({required this.isAdmin});
 
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        // Gradient background — expands to fill whatever height the GlassCard needs.
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primary, cs.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        // Glass overlay layer
-        GlassCard(
-          borderRadius: 16,
-          blurSigma: 10,
-          backgroundColor: cs.primary.withOpacity(0.25),
-          borderColor: cs.secondary.withOpacity(0.4),
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-               Expanded(
-                 child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.welcomeBanner,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.l10n.workflowRunningSmooth,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: Colors.white.withOpacity(0.85)),
-                    ),
-                    if (isAdmin) ...[
-                      const SizedBox(height: 8),
-                      AnimatedGradientBorder(
-                        borderRadius: 10,
-                        borderWidth: 1.5,
-                        speed: const Duration(seconds: 3),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.admin_panel_settings,
-                                  color: Colors.white, size: 14),
-                              const SizedBox(width: 4),
-                              Text(context.l10n.adminDashboard,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                   ],
-                 ),
-               ),
-               const SizedBox(width: 12),
-               const _LivingPcCore(),
-             ],
-           ),
-         ),
-       ],
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1);
+  String _timeGreeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
-}
-
-class _LivingPcCore extends StatelessWidget {
-  // Decorative signal levels used for the animated "living PC" effect.
-  static const _signalHigh = 0.86;
-  static const _signalMedium = 0.61;
-  static const _signalLow = 0.42;
-  const _LivingPcCore();
 
   @override
   Widget build(BuildContext context) {
+    final gam = context.watch<GamificationProvider>();
+    final app = context.watch<AppProvider>();
     final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+    final mobile = isMobile(context);
+
+    final activeCount = app.workflows.where((w) => w.isActive).length;
+    final totalCount = app.workflows.length;
+    final healthPct = totalCount == 0 ? 0.0 : activeCount / totalCount;
+
     return Container(
-      width: 152,
-      height: 92,
-      padding: const EdgeInsets.all(1.4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
         gradient: LinearGradient(
-          colors: [cs.primary, cs.secondary, const Color(0xFFEC4899)],
+          colors: isDark
+              ? [const Color(0xFF0A1628), cs.primary.withOpacity(0.18), const Color(0xFF0C1A30)]
+              : [cs.primary.withOpacity(0.07), cs.secondary.withOpacity(0.04), cs.primary.withOpacity(0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.18),
-          borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: cs.primary.withOpacity(isDark ? 0.22 : 0.14),
+          width: 1.5,
         ),
-        child: Row(
+        boxShadow: [
+          BoxShadow(color: cs.primary.withOpacity(0.10), blurRadius: 40, offset: const Offset(0, 8)),
+          BoxShadow(color: cs.secondary.withOpacity(0.05), blurRadius: 60, offset: const Offset(0, 16)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      cs.secondary.withOpacity(0.20),
-                      cs.primary.withOpacity(0.18),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: Colors.white.withOpacity(0.25)),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: cs.secondary.withOpacity(0.55),
-                            blurRadius: 20,
-                            spreadRadius: 2,
+            // Decorative glow orbs for depth
+            Positioned(top: -40, right: 100, child: _GlowOrb(color: cs.primary, size: 140)),
+            Positioned(bottom: -30, right: 30, child: _GlowOrb(color: cs.secondary, size: 90)),
+            if (!mobile)
+              Positioned(top: 15, left: 220, child: _GlowOrb(color: cs.secondary.withOpacity(0.4), size: 55)),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: mobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _HeroLeftContent(
+                          isAdmin: isAdmin,
+                          gam: gam,
+                          greeting: _timeGreeting(),
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: _SystemStatusDial(
+                            healthPct: healthPct,
+                            active: activeCount,
+                            total: totalCount,
                           ),
-                        ],
-                        gradient: LinearGradient(
-                          colors: [cs.secondary, cs.primary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
                         ),
-                      ),
+                      ],
                     )
-                        .animate(onPlay: (c) => c.repeat(reverse: true))
-                        .scale(
-                          begin: const Offset(0.9, 0.9),
-                          end: const Offset(1.12, 1.12),
-                          duration: 1200.ms,
+                  : Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _HeroLeftContent(
+                            isAdmin: isAdmin,
+                            gam: gam,
+                            greeting: _timeGreeting(),
+                          ),
                         ),
-                    const Icon(Icons.memory, color: Colors.white, size: 16),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _PcSignal(
-                    color: Color(0xFF00FFD1), value: _signalHigh),
-                SizedBox(height: 7),
-                _PcSignal(
-                    color: Color(0xFF6C63FF), value: _signalMedium),
-                SizedBox(height: 7),
-                _PcSignal(
-                    color: Color(0xFFFFD166), value: _signalLow),
-              ],
+                        const SizedBox(width: 28),
+                        _SystemStatusDial(
+                          healthPct: healthPct,
+                          active: activeCount,
+                          total: totalCount,
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1);
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.05);
   }
 }
 
-class _PcSignal extends StatelessWidget {
-  static const _signalMinOpacity = 0.72;
+class _GlowOrb extends StatelessWidget {
   final Color color;
-  final double value;
-  const _PcSignal({required this.color, required this.value});
+  final double size;
+  const _GlowOrb({required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 46,
-      height: 10,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(99),
-        color: Colors.white.withOpacity(0.14),
-      ),
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: value,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(99),
-            gradient: LinearGradient(
-              colors: [color.withOpacity(0.6), color],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.6),
-                blurRadius: 10,
-                spreadRadius: -2,
-              ),
-            ],
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.20),
+            blurRadius: size,
+            spreadRadius: size * 0.28,
           ),
-        ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(
-            begin: _signalMinOpacity, end: 1, duration: 1000.ms),
+        ],
       ),
     );
   }
 }
+
+class _HeroLeftContent extends StatelessWidget {
+  final bool isAdmin;
+  final GamificationProvider gam;
+  final String greeting;
+  const _HeroLeftContent({
+    required this.isAdmin,
+    required this.gam,
+    required this.greeting,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          greeting,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: cs.onSurface.withOpacity(0.55),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          context.l10n.welcomeBanner,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: isDark ? Colors.white : cs.onSurface,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          context.l10n.workflowRunningSmooth,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: cs.onSurface.withOpacity(0.60),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (isAdmin) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary.withOpacity(0.18), cs.secondary.withOpacity(0.10)],
+              ),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: cs.primary.withOpacity(0.35), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.admin_panel_settings, color: cs.primary, size: 14),
+                const SizedBox(width: 5),
+                Text(
+                  context.l10n.adminDashboard,
+                  style: TextStyle(
+                    color: cs.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        // XP progress row
+        _HeroXpRow(gam: gam),
+      ],
+    );
+  }
+}
+
+class _HeroXpRow extends StatelessWidget {
+  final GamificationProvider gam;
+  const _HeroXpRow({required this.gam});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.58),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.08 : 0.5), width: 1),
+      ),
+      child: Row(
+        children: [
+          // Level badge
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEAB308), Color(0xFFFF6B00)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEAB308).withOpacity(0.45),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${gam.level}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'LVL',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 7,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scaleXY(begin: 1.0, end: 1.08, duration: 900.ms, curve: Curves.easeInOut),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      gam.levelTitle,
+                      style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${gam.xp} / ${GamificationProvider.xpPerLevel} XP',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurface.withOpacity(0.50),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: gam.levelProgress,
+                    minHeight: 6,
+                    backgroundColor: cs.onSurface.withOpacity(0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _XpPill(emoji: '✅', value: '${gam.tasksCompleted}', label: 'tasks'),
+                    const SizedBox(width: 8),
+                    _XpPill(
+                      emoji: '🔥',
+                      value: gam.streak > 0 ? '${gam.streak}d' : '—',
+                      label: 'streak',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _XpPill extends StatelessWidget {
+  final String emoji;
+  final String value;
+  final String label;
+  const _XpPill({required this.emoji, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: cs.primary.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.primary.withOpacity(0.18), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 11)),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: cs.onSurface,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              color: cs.onSurface.withOpacity(0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── System Status Dial ────────────────────────────────────────────────────────
+
+class _SystemStatusDial extends StatelessWidget {
+  final double healthPct;
+  final int active;
+  final int total;
+  const _SystemStatusDial({
+    required this.healthPct,
+    required this.active,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
+
+    final dialColor = healthPct > 0.7
+        ? const Color(0xFF22C55E)
+        : healthPct > 0.4
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFFEF4444);
+
+    return Container(
+      width: 148,
+      height: 148,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.65),
+        border: Border.all(color: cs.primary.withOpacity(0.12), width: 1),
+        boxShadow: [
+          BoxShadow(color: dialColor.withOpacity(0.18), blurRadius: 30, spreadRadius: 2),
+          BoxShadow(color: cs.primary.withOpacity(0.08), blurRadius: 50),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(148, 148),
+            painter: _DialArcPainter(
+              progress: healthPct,
+              trackColor: cs.onSurface.withOpacity(0.08),
+              progressColor: dialColor,
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(healthPct * 100).round()}%',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: isDark ? Colors.white : cs.onSurface,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 26,
+                ),
+              ),
+              Text(
+                context.l10n.activeBadge,
+                style: TextStyle(
+                  color: dialColor,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.8,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$active / $total zones',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurface.withOpacity(0.45),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .shimmer(duration: 3000.ms, color: dialColor.withOpacity(0.08));
+  }
+}
+
+class _DialArcPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color progressColor;
+
+  const _DialArcPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 14;
+    const startAngle = math.pi * 0.75;
+    const sweepAngle = math.pi * 1.5;
+
+    // Background track
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 9
+        ..strokeCap = StrokeCap.round
+        ..color = trackColor,
+    );
+
+    if (progress > 0) {
+      final sweep = sweepAngle * progress;
+
+      // Glow layer
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 15
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+          ..color = progressColor.withOpacity(0.28),
+      );
+
+      // Main progress arc
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 9
+          ..strokeCap = StrokeCap.round
+          ..color = progressColor,
+      );
+
+      // End dot
+      final endAngle = startAngle + sweep;
+      final dotX = center.dx + radius * math.cos(endAngle);
+      final dotY = center.dy + radius * math.sin(endAngle);
+      canvas.drawCircle(
+        Offset(dotX, dotY),
+        5.5,
+        Paint()..color = progressColor,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DialArcPainter old) => old.progress != progress;
+}
+
+// ── Control Tile ─────────────────────────────────────────────────────────────
+
+/// Dashboard stat tile with a 3D-depth card style inspired by smart home UIs.
+class _ControlTile extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _ControlTile({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = cs.brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0D1628) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.20), width: 1),
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.13), blurRadius: 22, offset: const Offset(0, 6)),
+            BoxShadow(color: color.withOpacity(0.05), blurRadius: 45, offset: const Offset(0, 14)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.65)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.38),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 21),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.arrow_outward, color: color, size: 14),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              value,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: isDark ? Colors.white : cs.onSurface,
+                fontWeight: FontWeight.w800,
+                fontSize: 28,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              title,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withOpacity(0.55),
+              ),
+            ),
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: theme.textTheme.labelSmall?.copyWith(color: color),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Control Zones Section ─────────────────────────────────────────────────────
+
+class _ControlZonesSection extends StatelessWidget {
+  final List<Workflow> workflows;
+  const _ControlZonesSection({required this.workflows});
+
+  static const _zoneColors = [
+    Color(0xFF3B82F6),
+    Color(0xFF8B5CF6),
+    Color(0xFF22C55E),
+    Color(0xFFF59E0B),
+    Color(0xFFEF4444),
+    Color(0xFF06B6D4),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
+    if (workflows.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: cs.primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(Icons.grid_view_rounded, color: cs.primary, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              context.l10n.controlZonesTitle,
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () => context.go('/workflows'),
+              icon: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: cs.primary),
+              label: Text(
+                context.l10n.viewAllButton,
+                style: TextStyle(color: cs.primary, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        ResponsiveGrid(
+          mobileColumns: 1,
+          tabletColumns: 2,
+          desktopColumns: 3,
+          spacing: 12,
+          runSpacing: 12,
+          children: workflows.take(6).toList().asMap().entries.map((e) {
+            final color = _zoneColors[e.key % _zoneColors.length];
+            return _ZoneCard(workflow: e.value, accentColor: color)
+                .animate()
+                .fadeIn(delay: (e.key * 55).ms)
+                .slideY(begin: 0.15);
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ZoneCard extends StatelessWidget {
+  final Workflow workflow;
+  final Color accentColor;
+  const _ZoneCard({required this.workflow, required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0C1428) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: workflow.isActive
+              ? accentColor.withOpacity(0.28)
+              : cs.onSurface.withOpacity(0.06),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: workflow.isActive
+                ? accentColor.withOpacity(0.10)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Coloured top strip
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: workflow.isActive
+                    ? [accentColor, accentColor.withOpacity(0.45)]
+                    : [cs.onSurface.withOpacity(0.12), cs.onSurface.withOpacity(0.04)],
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(workflow.isActive ? 0.14 : 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.account_tree_outlined,
+                        color: workflow.isActive ? accentColor : cs.onSurface.withOpacity(0.38),
+                        size: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: workflow.isActive
+                                ? const Color(0xFF22C55E)
+                                : cs.onSurface.withOpacity(0.22),
+                            boxShadow: workflow.isActive
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF22C55E).withOpacity(0.60),
+                                      blurRadius: 6,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          workflow.isActive ? context.l10n.activeStatus : context.l10n.idleStatus,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: workflow.isActive
+                                ? const Color(0xFF22C55E)
+                                : cs.onSurface.withOpacity(0.38),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  workflow.name,
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  context.l10n.runsTotalLabel(workflow.runCount),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurface.withOpacity(0.42),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 34,
+                  child: _MiniSparkline(accentColor: accentColor, active: workflow.isActive),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniSparkline extends StatelessWidget {
+  final Color accentColor;
+  final bool active;
+  const _MiniSparkline({required this.accentColor, required this.active});
+
+  static const _sparkData = [0.3, 0.5, 0.4, 0.65, 0.55, 0.78, 0.88, 0.70, 0.95, 0.82];
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? accentColor : accentColor.withOpacity(0.28);
+    return LineChart(
+      LineChartData(
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        minY: 0,
+        maxY: 1,
+        lineBarsData: [
+          LineChartBarData(
+            spots: _sparkData
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value))
+                .toList(),
+            isCurved: true,
+            color: color,
+            barWidth: 1.8,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: color.withOpacity(0.12),
+            ),
+          ),
+        ],
+        lineTouchData: const LineTouchData(enabled: false),
+      ),
+    );
+  }
+}
+
+// ── Task Status Chart ─────────────────────────────────────────────────────────
 
 class _TaskStatusChart extends StatelessWidget {
   final List<TaskRun> runs;
@@ -360,8 +995,7 @@ class _TaskStatusChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final Map<TaskRunStatus, int> counts = {
-      for (final s in TaskRunStatus.values)
-        s: runs.where((r) => r.status == s).length,
+      for (final s in TaskRunStatus.values) s: runs.where((r) => r.status == s).length,
     };
     final total = runs.length;
 
@@ -382,7 +1016,7 @@ class _TaskStatusChart extends StatelessWidget {
                     child: PieChart(
                       PieChartData(
                         sectionsSpace: 3,
-                        centerSpaceRadius: 40,
+                        centerSpaceRadius: 42,
                         sections: TaskRunStatus.values.map((s) {
                           final val = counts[s] ?? 0;
                           return PieChartSectionData(
@@ -391,15 +1025,16 @@ class _TaskStatusChart extends StatelessWidget {
                             radius: 50,
                             title: val > 0 ? '$val' : '',
                             titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           );
                         }).toList(),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,14 +1044,15 @@ class _TaskStatusChart extends StatelessWidget {
                         child: Row(
                           children: [
                             Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                    color: s.color,
-                                    borderRadius: BorderRadius.circular(3))),
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: s.color,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                            Text(s.label,
-                                style: theme.textTheme.bodySmall),
+                            Text(s.label, style: theme.textTheme.bodySmall),
                           ],
                         ),
                       );
@@ -429,78 +1065,22 @@ class _TaskStatusChart extends StatelessWidget {
   }
 }
 
-class _WorkflowRunsChart extends StatelessWidget {
-  final List<Workflow> workflows;
-  const _WorkflowRunsChart({required this.workflows});
+// ── System Activity Feed ──────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    final totalRuns = workflows.fold(0, (s, w) => s + w.runCount);
-    final base = totalRuns > 0 ? totalRuns / 7 : 5;
-    final spots = List.generate(7, (i) {
-      final variance = (i % 3 == 0 ? 1.3 : i % 2 == 0 ? 0.8 : 1.0);
-      return FlSpot(i.toDouble(), (base * variance).clamp(0.0, base * 2.0));
-    });
-    return AppCard(
-      title: context.l10n.runsLastSevenDays,
-      child: SizedBox(
-        height: 200,
-        child: LineChart(
-          LineChartData(
-            gridData: const FlGridData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (v, _) {
-                    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                    return Text(days[v.toInt() % 7],
-                        style: Theme.of(context).textTheme.bodySmall);
-                  },
-                ),
-              ),
-            ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                color: Theme.of(context).colorScheme.primary,
-                barWidth: 3,
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withOpacity(0.15),
-                ),
-                dotData: const FlDotData(show: false),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(delay: 300.ms);
-  }
-}
-
-class _RecentActivity extends StatelessWidget {
+class _SystemActivityFeed extends StatelessWidget {
   final List<String> logs;
-  const _RecentActivity({required this.logs});
+  const _SystemActivityFeed({required this.logs});
 
-  String relativeTime(String logEntry) {
+  String _relativeTime(String logEntry) {
     try {
       final match = RegExp(r'\[(\d{4}-\d{2}-\d{2}T[\d:.]+)\]').firstMatch(logEntry);
       if (match != null) {
         final dt = DateTime.parse(match.group(1)!);
         final diff = DateTime.now().difference(dt);
-        if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
-        if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-        if (diff.inHours < 24) return '${diff.inHours}h ago';
-        return '${diff.inDays}d ago';
+        if (diff.inSeconds < 60) return '${diff.inSeconds}s';
+        if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+        if (diff.inHours < 24) return '${diff.inHours}h';
+        return '${diff.inDays}d';
       }
     } catch (_) {}
     return '';
@@ -509,7 +1089,8 @@ class _RecentActivity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
     final recent = logs.take(5).toList();
 
     return AppCard(
@@ -523,31 +1104,67 @@ class _RecentActivity extends StatelessWidget {
             )
           : Column(
               children: recent.asMap().entries.map((e) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                final isLast = e.key == recent.length - 1;
+                return IntrinsicHeight(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: cs.primary,
-                          shape: BoxShape.circle,
-                        ),
+                      // Timeline spine
+                      Column(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: cs.primary,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: cs.primary.withOpacity(0.50),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!isLast)
+                            Expanded(
+                              child: Container(
+                                width: 1,
+                                color: cs.primary.withOpacity(isDark ? 0.18 : 0.14),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(e.value,
-                            style: theme.textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  e.value,
+                                  style: theme.textTheme.bodySmall,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _relativeTime(e.value),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: cs.onSurface.withOpacity(0.35),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      Text(relativeTime(e.value), style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 );
               }).toList(),
             ),
-    ).animate().fadeIn(delay: 400.ms);
+    ).animate().fadeIn(delay: 350.ms);
   }
 }

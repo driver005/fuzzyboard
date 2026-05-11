@@ -53,6 +53,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewAllButton => 'View all';
 
   @override
+  String get controlZonesTitle => 'Control Zones';
+
+  @override
+  String get idleStatus => 'Idle';
+
+  @override
+  String runsTotalLabel(int count) {
+    return '$count runs total';
+  }
+
+  @override
   String get viewTasksAction => 'View Tasks';
 
   @override
@@ -954,16 +965,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get extensionsEmptyHint => 'Call ExtensionRegistry.register() to add an extension.';
 
   @override
-  String extensionRoutesSection(int count) => 'Routes ($count)';
+  String extensionRoutesSection(int count) {
+    return 'Routes ($count)';
+  }
 
   @override
-  String extensionNavItemsSection(int count) => 'Nav items ($count)';
+  String extensionNavItemsSection(int count) {
+    return 'Nav items ($count)';
+  }
 
   @override
-  String extensionPaletteItemsSection(int count) => 'Palette items ($count)';
+  String extensionPaletteItemsSection(int count) {
+    return 'Palette items ($count)';
+  }
 
   @override
-  String extensionZonesSection(int count) => 'Zone contributions ($count)';
+  String extensionZonesSection(int count) {
+    return 'Zone contributions ($count)';
+  }
 
   @override
   String get luaExpressionBuilderTitle => 'Lua Expression Builder';

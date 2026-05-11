@@ -214,6 +214,10 @@ class _WelcomeBanner extends StatelessWidget {
 }
 
 class _LivingPcCore extends StatelessWidget {
+  // Decorative signal levels used for the animated "living PC" effect.
+  static const _signalHigh = 0.86;
+  static const _signalMedium = 0.61;
+  static const _signalLow = 0.42;
   const _LivingPcCore();
 
   @override
@@ -290,11 +294,14 @@ class _LivingPcCore extends StatelessWidget {
             const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _PcSignal(color: Color(0xFF00FFD1), value: 0.86),
+                _PcSignal(
+                    color: Color(0xFF00FFD1), value: _signalHigh),
                 SizedBox(height: 7),
-                _PcSignal(color: Color(0xFF6C63FF), value: 0.61),
+                _PcSignal(
+                    color: Color(0xFF6C63FF), value: _signalMedium),
                 SizedBox(height: 7),
-                _PcSignal(color: Color(0xFFFFD166), value: 0.42),
+                _PcSignal(
+                    color: Color(0xFFFFD166), value: _signalLow),
               ],
             ),
           ],
@@ -305,6 +312,7 @@ class _LivingPcCore extends StatelessWidget {
 }
 
 class _PcSignal extends StatelessWidget {
+  static const _signalMinOpacity = 0.72;
   final Color color;
   final double value;
   const _PcSignal({required this.color, required this.value});
@@ -320,7 +328,7 @@ class _PcSignal extends StatelessWidget {
       ),
       alignment: Alignment.centerLeft,
       child: FractionallySizedBox(
-        widthFactor: value.clamp(0.0, 1.0),
+        widthFactor: value,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(99),
@@ -338,7 +346,7 @@ class _PcSignal extends StatelessWidget {
             ],
           ),
         ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(
-            begin: 0.72, end: 1, duration: 1000.ms),
+            begin: _signalMinOpacity, end: 1, duration: 1000.ms),
       ),
     );
   }
